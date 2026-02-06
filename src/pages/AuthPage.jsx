@@ -1,16 +1,14 @@
-import { useParams, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { motion } from "framer-motion"
 import toast from "react-hot-toast"
 import { register, login } from "../utils/auth"
 
 export default function AuthPage() {
-  const { role } = useParams()
   const navigate = useNavigate()
 
   const [isLogin, setIsLogin] = useState(true)
 
-  // 🔥 SEPARATE STATES
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
@@ -24,20 +22,22 @@ export default function AuthPage() {
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    // SIGNUP FLOW
+    // ✅ SIGNUP FLOW
     if (!isLogin) {
       if (form.password !== form.confirmPassword) {
         toast.error("Passwords do not match ❌")
         return
       }
-      register(role, form)
+
+      register(form)
       toast.success("Account created successfully ✅")
       setIsLogin(true)
       return
     }
 
-    // LOGIN FLOW
-    const success = login(role, form.email, form.password)
+    // ✅ LOGIN FLOW
+    const success = login(form.email, form.password)
+
     if (success) {
       toast.success("Login successful 🎉")
       setTimeout(() => navigate("/dashboard"), 700)
@@ -49,7 +49,7 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex">
 
-      {/* 🌈 LEFT BRAND SECTION */}
+      {/* 🌈 LEFT SIDE BRANDING */}
       <div className="hidden md:flex w-1/2 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 items-center justify-center px-10">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -75,8 +75,8 @@ export default function AuthPage() {
           onSubmit={handleSubmit}
           className="w-full max-w-md px-10"
         >
-          <h2 className="text-3xl font-bold mb-2 text-gray-800 capitalize">
-            {isLogin ? "Login" : "Create"} {role} Account
+          <h2 className="text-3xl font-bold mb-2 text-gray-800">
+            {isLogin ? "Login" : "Create Account"}
           </h2>
 
           <p className="text-gray-500 mb-8">
@@ -132,7 +132,7 @@ export default function AuthPage() {
             <div className="relative mb-6">
               <input
                 type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm password"
+                placeholder="Confirm Password"
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
                 onChange={(e) =>
@@ -166,7 +166,6 @@ export default function AuthPage() {
           </p>
         </motion.form>
       </div>
-
     </div>
   )
 }

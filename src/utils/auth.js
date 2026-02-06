@@ -1,17 +1,42 @@
-export function register(role, data) {
-  localStorage.setItem("user", JSON.stringify({ role, ...data }))
+// 🔹 REGISTER USER
+export function register(data) {
+  const existingUser = localStorage.getItem(data.email)
+  if (existingUser) return false
+
+  const userWithRole = {
+    ...data,
+    role: "driver", // ✅ default role
+  }
+
+  localStorage.setItem(data.email, JSON.stringify(userWithRole))
+  return true
 }
 
-export function login(role, email, password) {
-  const user = JSON.parse(localStorage.getItem("user"))
+
+// 🔹 LOGIN USER
+export function login(email, password) {
+  const user = JSON.parse(localStorage.getItem(email))
+
   if (!user) return false
-  return user.email === email && user.password === password
+  if (user.password !== password) return false
+
+  // store logged in session
+  localStorage.setItem("currentUser", JSON.stringify(user))
+
+  return true
 }
 
+// 🔹 CHECK IF LOGGED IN
 export function isLoggedIn() {
-  return !!localStorage.getItem("user")
+  return !!localStorage.getItem("currentUser")
 }
 
+// 🔹 LOGOUT
 export function logout() {
-  localStorage.removeItem("user")
+  localStorage.removeItem("currentUser")
+}
+
+// 🔹 GET CURRENT USER
+export function getCurrentUser() {
+  return JSON.parse(localStorage.getItem("currentUser"))
 }

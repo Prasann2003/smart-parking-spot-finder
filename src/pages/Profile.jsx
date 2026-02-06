@@ -1,10 +1,11 @@
-import indiaData from "../utils/indiaData";
-import Navbar from "../components/Navbar";
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import indiaData from "../utils/indiaData"
+import Navbar from "../components/Navbar"
+import { motion } from "framer-motion"
+import { useEffect, useState } from "react"
+import { getCurrentUser } from "../utils/auth"
 
 export default function Profile() {
-  const storedUser = JSON.parse(localStorage.getItem("user"));
+  const user = getCurrentUser()
 
   const [profile, setProfile] = useState({
     name: "",
@@ -16,43 +17,51 @@ export default function Profile() {
     state: "",
     district: "",
     pincode: "",
-  });
+  })
 
   // 🔹 Load logged-in user data
   useEffect(() => {
-    if (storedUser) {
-      const savedProfile = JSON.parse(localStorage.getItem("profile")) || {};
+    if (user) {
+      const savedProfile =
+        JSON.parse(localStorage.getItem(`profile_${user.email}`)) || {}
 
       setProfile({
-        name: savedProfile.name || storedUser.name || "",
-        email: storedUser.email || "",
-        role: storedUser.role || "",
+        name: savedProfile.name || user.name || "",
+        email: user.email || "",
+        role: user.role || "driver",
         phone: savedProfile.phone || "",
         address1: savedProfile.address1 || "",
         address2: savedProfile.address2 || "",
         state: savedProfile.state || "",
         district: savedProfile.district || "",
         pincode: savedProfile.pincode || "",
-      });
+      })
     }
-  }, []);
+  }, [user])
 
   const handleChange = (e) => {
-    setProfile({ ...profile, [e.target.name]: e.target.value });
-  };
+    setProfile({ ...profile, [e.target.name]: e.target.value })
+  }
 
   const handleStateChange = (e) => {
     setProfile({
       ...profile,
       state: e.target.value,
       district: "",
-    });
-  };
+    })
+  }
 
   const handleSave = () => {
-    localStorage.setItem("profile", JSON.stringify(profile));
-    alert("Profile updated successfully ✅");
-  };
+    // Save profile separately per user
+    localStorage.setItem(
+      `profile_${profile.email}`,
+      JSON.stringify(profile)
+    )
+
+    alert("Profile updated successfully ✅")
+  }
+
+  if (!user) return null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600">
@@ -66,7 +75,9 @@ export default function Profile() {
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
           {/* HEADER */}
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-10 text-white">
-            <h2 className="text-4xl font-extrabold mb-2">My Profile</h2>
+            <h2 className="text-4xl font-extrabold mb-2">
+              My Profile
+            </h2>
             <p className="text-white/90">
               Manage your personal and address details
             </p>
@@ -74,19 +85,35 @@ export default function Profile() {
 
           {/* BODY */}
           <div className="p-10 grid md:grid-cols-2 gap-8">
-            {/* AVATAR */}
+
+            {/* AVATAR + ROLE */}
             <div className="flex flex-col items-center">
               <div className="w-36 h-36 rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 flex items-center justify-center text-white text-5xl font-bold shadow-lg">
                 {profile.name?.charAt(0)}
               </div>
-              <p className="mt-4 text-gray-500 text-sm">
-                Logged in as {profile.role}
+
+              {/* ✅ ROLE DISPLAY */}
+              <p className="mt-4 text-sm font-semibold">
+                {profile.role === "provider" ? (
+                  <span className="text-emerald-600">
+                    🏢 Parking Provider
+                  </span>
+                ) : profile.role === "admin" ? (
+                  <span className="text-red-600">
+                    🛠 Admin
+                  </span>
+                ) : (
+                  <span className="text-indigo-600">
+                    🚗 Driver
+                  </span>
+                )}
               </p>
             </div>
 
             {/* FORM */}
             <div className="space-y-5">
-              {/* ✅ NAME IS EDITABLE */}
+
+              {/* NAME (Editable) */}
               <Input
                 label="Full Name"
                 name="name"
@@ -94,8 +121,12 @@ export default function Profile() {
                 onChange={handleChange}
               />
 
-              {/* ❌ EMAIL NOT EDITABLE */}
-              <Input label="Email" value={profile.email} disabled />
+              {/* EMAIL (Read Only) */}
+              <Input
+                label="Email"
+                value={profile.email}
+                disabled
+              />
 
               <Input
                 label="Phone Number"
@@ -146,6 +177,7 @@ export default function Profile() {
                 onChange={handleChange}
                 placeholder="6-digit pincode"
               />
+
             </div>
           </div>
 
@@ -158,17 +190,20 @@ export default function Profile() {
               Save Changes
             </button>
           </div>
+
         </div>
       </motion.div>
     </div>
-  );
+  )
 }
 
 /* 🔧 INPUT COMPONENT */
 function Input({ label, name, value, onChange, placeholder, disabled }) {
   return (
     <div>
-      <label className="block text-gray-600 text-sm mb-1">{label}</label>
+      <label className="block text-gray-600 text-sm mb-1">
+        {label}
+      </label>
       <input
         name={name}
         value={value}
@@ -182,14 +217,16 @@ function Input({ label, name, value, onChange, placeholder, disabled }) {
         }`}
       />
     </div>
-  );
+  )
 }
 
 /* 🔽 SELECT COMPONENT */
 function Select({ label, value, onChange, options, name, disabled }) {
   return (
     <div>
-      <label className="block text-gray-600 text-sm mb-1">{label}</label>
+      <label className="block text-gray-600 text-sm mb-1">
+        {label}
+      </label>
       <select
         name={name}
         value={value}
@@ -205,5 +242,5 @@ function Select({ label, value, onChange, options, name, disabled }) {
         ))}
       </select>
     </div>
-  );
+  )
 }

@@ -1,109 +1,230 @@
 import { motion } from "framer-motion"
 import Navbar from "../components/Navbar"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import indiaData from "../utils/indiaData"
+import { getCurrentUser } from "../utils/auth"
+import { useNavigate } from "react-router-dom"
+import ProviderDashboard from "./ProviderDashboard"
+import AdminDashboard from "./AdminDashboard"
 
 export default function Dashboard() {
+  const user = getCurrentUser()
+  const navigate = useNavigate()
+
+  if (!user) return null
+
+  /* =========================
+     ROLE BASED RENDERING
+  ========================= */
+
+  if (user.role === "provider") {
+    return (
+      <>
+        <Navbar />
+        <ProviderDashboard />
+      </>
+    )
+  }
+
+  if (user.role === "admin") {
+    return (
+      <>
+        <Navbar />
+        <AdminDashboard />
+      </>
+    )
+  }
+
+  /* =========================
+     DRIVER DASHBOARD
+  ========================= */
+
+  return <DriverDashboard user={user} navigate={navigate} />
+}
+
+/* =====================================================
+   🚗 DRIVER DASHBOARD COMPONENT
+===================================================== */
+
+function DriverDashboard({ user, navigate }) {
   const [search, setSearch] = useState({
     state: "",
     district: "",
-    area: "",
   })
 
+  const [loading, setLoading] = useState(false)
+  const [parkingSpots, setParkingSpots] = useState([])
   const [showResults, setShowResults] = useState(false)
+  const [error, setError] = useState("")
 
-  // 🗺️ MAP QUERY STRING (STEP 1)
-  const mapQuery =
-    search.state && search.district
-      ? `${search.district}, ${search.state}, India`
-      : "India"
+  const [stats, setStats] = useState({
+    nearbySpots: 0,
+    activeBookings: 0,
+    favorites: 0,
+    moneySaved: 0,
+  })
 
-  const parkingSpots = [
-    {
-      name: "City Mall Parking",
-      distance: "1.2 km",
-      price: 30,
-      slots: 12,
-      rating: 4.5,
-      cctv: true,
-      guarded: true,
-    },
-    {
-      name: "Railway Station Parking",
-      distance: "2.5 km",
-      price: 20,
-      slots: 0,
-      rating: 3.8,
-      cctv: true,
-      guarded: false,
-    },
-    {
-      name: "Airport Zone Parking",
-      distance: "5 km",
-      price: 50,
-      slots: 4,
-      rating: 4.8,
-      cctv: true,
-      guarded: true,
-    },
-  ]
+  const [recentActivity, setRecentActivity] = useState([])
+
+  /* =========================
+     FETCH DASHBOARD SUMMARY
+  ========================= */
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const summaryRes = await fetch("http://localhost:5000/api/dashboard/summary")
+        if (summaryRes.ok) {
+          const summaryData = await summaryRes.json()
+          setStats(summaryData)
+        }
+
+        const activityRes = await fetch("http://localhost:5000/api/dashboard/activity")
+        if (activityRes.ok) {
+          const activityData = await activityRes.json()
+          setRecentActivity(activityData)
+        }
+      } catch (err) {
+        console.error("Dashboard fetch error:", err)
+      }
+    }
+
+    fetchDashboardData()
+  }, [])
+
+  /* =========================
+     SEARCH BY LOCATION
+  ========================= */
+
+  const handleSearch = async () => {
+    if (!search.state || !search.district) return
+
+    setLoading(true)
+    setShowResults(true)
+    setError("")
+
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/parking?state=${search.state}&district=${search.district}`
+      )
+
+      if (!res.ok) throw new Error("Failed")
+
+      const data = await res.json()
+
+      setParkingSpots(data)
+      setStats(prev => ({
+        ...prev,
+        nearbySpots: data.length,
+      }))
+    } catch (err) {
+      setError("Unable to fetch parking spots.")
+      setParkingSpots([])
+    }
+
+    setLoading(false)
+  }
+
+  /* =========================
+     FIND NEAR ME
+  ========================= */
+
+  const handleFindNearMe = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported")
+      return
+    }
+
+    setLoading(true)
+    setShowResults(true)
+    setError("")
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords
+
+          const res = await fetch(
+            `http://localhost:5000/api/parking/nearby?lat=${latitude}&lng=${longitude}&radius=7`
+          )
+
+          if (!res.ok) throw new Error()
+
+          const data = await res.json()
+
+          setParkingSpots(data)
+          setStats(prev => ({
+            ...prev,
+            nearbySpots: data.length,
+          }))
+        } catch {
+          setError("Unable to fetch nearby parking.")
+        }
+
+        setLoading(false)
+      },
+      () => {
+        setError("Location permission denied.")
+        setLoading(false)
+      }
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
       <Navbar />
 
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-7xl mx-auto pt-28 px-6 space-y-14"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="max-w-7xl mx-auto pt-28 px-6 space-y-16"
       >
-        {/* HERO */}
-        <div>
-          <h1 className="text-4xl font-extrabold text-gray-800">
-            Smart Parking Dashboard
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Find, book, and manage parking spots in real-time
-          </p>
+        {/* HEADER */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold">
+              Welcome, {user.name}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Find smart parking in seconds 🚗
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate("/become-provider")}
+            className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700"
+          >
+            🏢 Become Parking Provider
+          </button>
         </div>
 
         {/* STATS */}
         <div className="grid md:grid-cols-4 gap-6">
-          {[
-            { label: "Available Spots", value: "16", color: "bg-emerald-500" },
-            { label: "Active Bookings", value: "2", color: "bg-indigo-500" },
-            { label: "Favorites", value: "5", color: "bg-pink-500" },
-            { label: "Money Saved", value: "₹320", color: "bg-purple-500" },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className={`${s.color} text-white p-6 rounded-2xl shadow-xl`}
-            >
-              <p className="text-sm opacity-90">{s.label}</p>
-              <h3 className="text-3xl font-extrabold mt-2">{s.value}</h3>
-            </div>
-          ))}
+          <StatCard label="Nearby Spots" value={stats.nearbySpots} color="bg-emerald-500" />
+          <StatCard label="Active Bookings" value={stats.activeBookings} color="bg-indigo-500" />
+          <StatCard label="Favorites" value={stats.favorites} color="bg-pink-500" />
+          <StatCard label="Money Saved" value={`₹${stats.moneySaved}`} color="bg-purple-500" />
         </div>
 
-        {/* FIND PARKING */}
-        <div className="bg-white rounded-3xl shadow-2xl p-8">
-          <h2 className="text-2xl font-bold mb-6">
-            🔍 Find Parking Spot
-          </h2>
+        {/* FIND NEAR ME */}
+        <button
+          onClick={handleFindNearMe}
+          className="px-8 py-3 bg-emerald-600 text-white rounded-xl"
+        >
+          📍 Find Parking Near Me (7km)
+        </button>
 
-          {/* STATE / DISTRICT / AREA */}
+        {/* SEARCH SECTION */}
+        <div className="bg-white p-8 rounded-3xl shadow-xl space-y-6">
+          <h2 className="text-2xl font-bold">Search by Location</h2>
+
           <div className="grid md:grid-cols-3 gap-6">
-            {/* STATE */}
             <select
-              className="w-full px-4 py-3 border rounded-lg bg-white"
               value={search.state}
               onChange={(e) =>
-                setSearch({
-                  ...search,
-                  state: e.target.value,
-                  district: "",
-                })
+                setSearch({ ...search, state: e.target.value, district: "" })
               }
+              className="px-4 py-3 border rounded-lg"
             >
               <option value="">Select State</option>
               {Object.keys(indiaData).map((state) => (
@@ -113,14 +234,13 @@ export default function Dashboard() {
               ))}
             </select>
 
-            {/* DISTRICT */}
             <select
-              className="w-full px-4 py-3 border rounded-lg bg-white"
               value={search.district}
               disabled={!search.state}
               onChange={(e) =>
                 setSearch({ ...search, district: e.target.value })
               }
+              className="px-4 py-3 border rounded-lg"
             >
               <option value="">Select District</option>
               {(indiaData[search.state] || []).map((district) => (
@@ -130,103 +250,68 @@ export default function Dashboard() {
               ))}
             </select>
 
-            {/* AREA */}
-            <input
-              placeholder="Area / Landmark (optional)"
-              className="w-full px-4 py-3 border rounded-lg"
-              onChange={(e) =>
-                setSearch({ ...search, area: e.target.value })
-              }
-            />
-          </div>
-
-          {/* FIND BUTTON */}
-          <div className="mt-6 flex justify-center">
             <button
-              onClick={() => setShowResults(true)}
-              disabled={!search.state || !search.district}
-              className={`px-10 py-3 rounded-xl font-semibold transition
-                ${
-                  !search.state || !search.district
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700"
-                }`}
+              onClick={handleSearch}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg"
             >
-              🔍 Find Parking
+              🔍 Search
             </button>
           </div>
+        </div>
 
-          {/* RESULTS + MAP (STEP 3) */}
-          {showResults && (
-            <div className="mt-10 grid md:grid-cols-2 gap-8">
-              {/* PARKING CARDS */}
-              {parkingSpots.map((p, i) => (
-                <motion.div
-                  key={i}
-                  whileHover={{ scale: 1.03 }}
-                  className="bg-gray-50 p-6 rounded-2xl shadow"
-                >
-                  <h3 className="text-xl font-bold">{p.name}</h3>
-                  <p className="text-gray-600">{p.distance}</p>
+        {/* RESULTS */}
+        {showResults && (
+          <div>
+            {loading ? (
+              <p>Loading...</p>
+            ) : error ? (
+              <p className="text-red-500">{error}</p>
+            ) : parkingSpots.length === 0 ? (
+              <p>No parking spots found.</p>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-8">
+                {parkingSpots.map((spot) => (
+                  <motion.div
+                    key={spot.id}
+                    whileHover={{ scale: 1.03 }}
+                    className="bg-white p-6 rounded-2xl shadow-xl border"
+                  >
+                    <h3 className="text-xl font-bold">{spot.name}</h3>
+                    <p className="text-gray-600">{spot.address}</p>
 
-                  <p className="mt-2">
-                    {p.slots === 0
-                      ? "🔴 Full"
-                      : p.slots < 5
-                      ? "🟡 Limited"
-                      : "🟢 Available"}{" "}
-                    ({p.slots} slots)
-                  </p>
+                    <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                      <p>💰 ₹{spot.pricePerHour}/hour</p>
+                      <p>📍 {spot.distance || "N/A"} km</p>
+                      <p>🅿 {spot.totalSlots}</p>
+                      <p>⭐ {spot.rating || "N/A"}</p>
+                    </div>
 
-                  <p className="mt-1">₹{p.price}/hour</p>
-
-                  <p className="text-sm mt-2 text-gray-500">
-                    CCTV: {p.cctv ? "Yes" : "No"} | Guarded:{" "}
-                    {p.guarded ? "Yes" : "No"} | ⭐ {p.rating}
-                  </p>
-
-                  <div className="flex gap-3 mt-4">
-                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg">
+                    <button
+                      onClick={() => navigate("/payment", { state: { spot } })}
+                      className="mt-6 w-full py-3 bg-indigo-600 text-white rounded-xl"
+                    >
                       Book Now
                     </button>
-                    <button className="px-4 py-2 border rounded-lg">
-                      ⭐ Save
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-
-              {/* 🗺️ REAL MAP (STEP 2) */}
-              <div className="rounded-2xl overflow-hidden shadow-lg">
-                <iframe
-                  title="Parking Map"
-                  width="100%"
-                  height="100%"
-                  className="min-h-[350px] border-0"
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://www.google.com/maps?q=${encodeURIComponent(
-                    mapQuery
-                  )}&output=embed`}
-                ></iframe>
+                  </motion.div>
+                ))}
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* RECENT ACTIVITY */}
-        <div className="bg-white rounded-3xl shadow-xl p-8">
-          <h2 className="text-2xl font-bold mb-4">
-            🕒 Recent Activity
-          </h2>
-          <ul className="list-disc ml-6 text-gray-700">
-            <li>Booked City Mall Parking</li>
-            <li>Searched Airport Zone</li>
-            <li>Saved Railway Station Parking</li>
-          </ul>
-        </div>
+            )}
+          </div>
+        )}
       </motion.div>
     </div>
+  )
+}
+
+/* STAT CARD */
+function StatCard({ label, value, color }) {
+  return (
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      className={`${color} text-white p-6 rounded-2xl shadow-xl`}
+    >
+      <p className="text-sm">{label}</p>
+      <h3 className="text-3xl font-bold mt-2">{value}</h3>
+    </motion.div>
   )
 }

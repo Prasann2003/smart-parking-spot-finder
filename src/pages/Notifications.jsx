@@ -1,41 +1,82 @@
 import Navbar from "../components/Navbar"
 import { motion } from "framer-motion"
+import { useEffect, useState } from "react"
 
 export default function Notifications() {
-  const notifications = [
-    {
-      id: 1,
-      title: "Booking Confirmed",
-      message: "Your parking spot at City Mall has been successfully booked.",
-      time: "2 minutes ago",
-      type: "success",
-      read: false,
-    },
-    {
-      id: 2,
-      title: "Parking Available",
-      message: "Slots are now available at Airport Zone.",
-      time: "1 hour ago",
-      type: "info",
-      read: false,
-    },
-    {
-      id: 3,
-      title: "Booking Completed",
-      message: "Your booking at Railway Station has been completed.",
-      time: "Yesterday",
-      type: "completed",
-      read: true,
-    },
-    {
-      id: 4,
-      title: "Booking Cancelled",
-      message: "Your booking at Sector 17 Parking was cancelled.",
-      time: "2 days ago",
-      type: "danger",
-      read: true,
-    },
-  ]
+  const [notifications, setNotifications] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  /* ===============================
+     FETCH REAL NOTIFICATIONS
+  =============================== */
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch(
+          "http://localhost:5000/api/notifications"
+        )
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch notifications")
+        }
+
+        const data = await res.json()
+        setNotifications(data)
+      } catch (err) {
+        console.error(err)
+        setError("Unable to load notifications.")
+      }
+
+      setLoading(false)
+    }
+
+    fetchNotifications()
+  }, [])
+
+  /* ===============================
+     MARK AS READ
+  =============================== */
+  const markAsRead = async (id) => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/notifications/${id}/read`,
+        {
+          method: "PATCH",
+        }
+      )
+
+      if (!res.ok) {
+        throw new Error("Failed to update")
+      }
+
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === id ? { ...n, read: true } : n
+        )
+      )
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  /* ===============================
+     DELETE NOTIFICATION
+  =============================== */
+  const deleteNotification = async (id) => {
+    try {
+      await fetch(
+        `http://localhost:5000/api/notifications/${id}`,
+        { method: "DELETE" }
+      )
+
+      setNotifications((prev) =>
+        prev.filter((n) => n.id !== id)
+      )
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-100 via-indigo-100 to-purple-100">
@@ -46,66 +87,97 @@ export default function Notifications() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-6xl mx-auto mt-16 px-6"
       >
-        {/* 🔔 HEADER */}
+        {/* HEADER */}
         <div className="mb-12">
           <h2 className="text-4xl font-extrabold text-gray-800 mb-2">
             Notifications
           </h2>
           <p className="text-gray-600">
-            Stay updated with your parking activity
+            Stay updated with real-time parking activity
           </p>
         </div>
 
-        {/* 🔔 NOTIFICATION LIST */}
-        <div className="space-y-6">
-          {notifications.map((n, index) => (
-            <motion.div
-              key={n.id}
-              initial={{ opacity: 0, x: -40 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ scale: 1.02 }}
-              className={`flex gap-6 p-6 rounded-3xl shadow-xl bg-white ${
-                !n.read ? "border-l-8 border-indigo-500" : ""
-              }`}
-            >
-              {/* ICON */}
-              <div
-                className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl ${getIconBg(
-                  n.type
-                )}`}
+        {/* STATES */}
+        {loading ? (
+          <p className="text-lg font-semibold">
+            Loading notifications...
+          </p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : notifications.length === 0 ? (
+          <div className="bg-white rounded-2xl p-10 text-center shadow-xl">
+            <p className="text-gray-500 text-lg">
+              No notifications yet 🔔
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {notifications.map((n, index) => (
+              <motion.div
+                key={n.id}
+                initial={{ opacity: 0, x: -40 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.08 }}
+                whileHover={{ scale: 1.02 }}
+                onClick={() => !n.read && markAsRead(n.id)}
+                className={`flex gap-6 p-6 rounded-3xl shadow-xl bg-white cursor-pointer ${
+                  !n.read
+                    ? "border-l-8 border-indigo-500"
+                    : ""
+                }`}
               >
-                {getIcon(n.type)}
-              </div>
+                {/* ICON */}
+                <div
+                  className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl ${getIconBg(
+                    n.type
+                  )}`}
+                >
+                  {getIcon(n.type)}
+                </div>
 
-              {/* CONTENT */}
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-800">
-                  {n.title}
-                </h3>
-                <p className="text-gray-600 mt-1">
-                  {n.message}
-                </p>
-                <p className="text-sm text-gray-400 mt-2">
-                  {n.time}
-                </p>
-              </div>
+                {/* CONTENT */}
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-gray-800">
+                    {n.title}
+                  </h3>
+                  <p className="text-gray-600 mt-1">
+                    {n.message}
+                  </p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    {new Date(
+                      n.createdAt
+                    ).toLocaleString()}
+                  </p>
+                </div>
 
-              {/* READ STATUS */}
-              {!n.read && (
-                <span className="self-start mt-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
-                  NEW
-                </span>
-              )}
-            </motion.div>
-          ))}
-        </div>
+                {/* ACTIONS */}
+                <div className="flex flex-col items-end gap-3">
+                  {!n.read && (
+                    <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                      NEW
+                    </span>
+                  )}
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteNotification(n.id)
+                    }}
+                    className="text-red-500 text-sm hover:underline"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </motion.div>
     </div>
   )
 }
 
-/* 🔹 ICON HELPERS */
+/* ICONS */
 function getIcon(type) {
   switch (type) {
     case "success":

@@ -1,0 +1,201 @@
+import Navbar from "../components/Navbar"
+import { motion } from "framer-motion"
+import { useEffect, useState } from "react"
+import { getCurrentUser } from "../utils/auth"
+import { useNavigate } from "react-router-dom"
+
+export default function ProviderDashboard() {
+  const user = getCurrentUser()
+  const navigate = useNavigate()
+
+  const [stats, setStats] = useState({
+    totalParkings: 0,
+    activeBookings: 0,
+    todayEarnings: 0,
+    monthlyEarnings: 0,
+  })
+
+  const [parkings, setParkings] = useState([])
+  const [recentBookings, setRecentBookings] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user) return
+
+    const fetchProviderData = async () => {
+      try {
+        const dashboardRes = await fetch(
+          `http://localhost:5000/api/provider/dashboard?email=${user.email}`
+        )
+        const dashboardData = await dashboardRes.json()
+        setStats(dashboardData)
+
+        const parkingRes = await fetch(
+          `http://localhost:5000/api/provider/parkings?email=${user.email}`
+        )
+        const parkingData = await parkingRes.json()
+        setParkings(parkingData)
+
+        const bookingRes = await fetch(
+          `http://localhost:5000/api/provider/bookings?email=${user.email}`
+        )
+        const bookingData = await bookingRes.json()
+        setRecentBookings(bookingData)
+      } catch (err) {
+        console.error("Provider Dashboard Error:", err)
+      }
+
+      setLoading(false)
+    }
+
+    fetchProviderData()
+  }, [user])
+
+  if (!user) return null
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+      <Navbar />
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="max-w-7xl mx-auto pt-28 px-6 space-y-16"
+      >
+        {/* HEADER */}
+        <div className="flex justify-between items-center flex-wrap gap-6">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-800">
+              Welcome, {user.name}
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Manage your parking spaces & earnings 🏢
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate("/add-parking")}
+            className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-lg"
+          >
+            ➕ Add New Parking
+          </button>
+        </div>
+
+        {/* STATS */}
+        <div className="grid md:grid-cols-4 gap-6">
+          <StatCard label="Total Parkings" value={stats.totalParkings} />
+          <StatCard label="Active Bookings" value={stats.activeBookings} />
+          <StatCard label="Today's Earnings" value={`₹${stats.todayEarnings}`} />
+          <StatCard label="Monthly Earnings" value={`₹${stats.monthlyEarnings}`} />
+        </div>
+
+        {/* PARKING LIST */}
+        <div>
+          <h2 className="text-2xl font-bold mb-6">
+            Your Parking Spaces
+          </h2>
+
+          {loading ? (
+            <p>Loading...</p>
+          ) : parkings.length === 0 ? (
+            <p className="text-gray-500">
+              You have not added any parking spaces yet.
+            </p>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-8">
+              {parkings.map((spot) => (
+                <motion.div
+                  key={spot.id}
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-white p-6 rounded-2xl shadow-xl border"
+                >
+                  <h3 className="text-xl font-bold">{spot.name}</h3>
+
+                  <p className="text-gray-600 mt-1">
+                    {spot.address}
+                  </p>
+
+                  <div className="mt-4 text-sm space-y-1">
+                    <p>💰 ₹{spot.pricePerHour}/hour</p>
+                    <p>🅿 Total Slots: {spot.totalSlots}</p>
+                    <p>
+                      {spot.availableSlots > 0
+                        ? "🟢 Available"
+                        : "🔴 Full"}
+                    </p>
+                    <p>⭐ Rating: {spot.rating || "N/A"}</p>
+                  </div>
+
+                  <div className="mt-6 flex gap-3">
+                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg">
+                      View Details
+                    </button>
+                    <button className="px-4 py-2 border rounded-lg">
+                      Edit
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* RECENT BOOKINGS */}
+        <div>
+          <h2 className="text-2xl font-bold mb-6">
+            Recent Bookings
+          </h2>
+
+          {recentBookings.length === 0 ? (
+            <p className="text-gray-500">
+              No bookings yet.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {recentBookings.map((booking) => (
+                <div
+                  key={booking.id}
+                  className="bg-white p-6 rounded-2xl shadow-md flex justify-between items-center"
+                >
+                  <div>
+                    <p className="font-semibold">
+                      {booking.parkingName}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {booking.date} • {booking.vehicle}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                      booking.status === "Active"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : booking.status === "Completed"
+                        ? "bg-sky-100 text-sky-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {booking.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+/* STAT CARD */
+function StatCard({ label, value }) {
+  return (
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      className="bg-emerald-600 text-white p-6 rounded-2xl shadow-xl"
+    >
+      <p className="text-sm opacity-90">{label}</p>
+      <h3 className="text-3xl font-bold mt-2">{value}</h3>
+    </motion.div>
+  )
+}
