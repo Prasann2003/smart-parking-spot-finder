@@ -1,42 +1,60 @@
+import api from "./api"
+import toast from "react-hot-toast"
+
 // 🔹 REGISTER USER
-export function register(data) {
-  const existingUser = localStorage.getItem(data.email)
-  if (existingUser) return false
-
-  const userWithRole = {
-    ...data,
-    role: "driver", // ✅ default role
+export async function register(data) {
+  try {
+    const response = await api.post("/auth/register", data)
+    toast.success("Registration successful! Please login.")
+    return true
+  } catch (error) {
+    console.error("Registration error", error)
+    toast.error(error.response?.data?.message || "Registration failed")
+    return false
   }
-
-  localStorage.setItem(data.email, JSON.stringify(userWithRole))
-  return true
 }
 
 
 // 🔹 LOGIN USER
-export function login(email, password) {
-  const user = JSON.parse(localStorage.getItem(email))
+export async function login(email, password) {
+  try {
+    const response = await api.post("/auth/login", { email, password })
+    const { token, ...user } = response.data
 
-  if (!user) return false
-  if (user.password !== password) return false
+    localStorage.setItem("token", token)
+    localStorage.setItem("currentUser", JSON.stringify(user))
 
-  // store logged in session
-  localStorage.setItem("currentUser", JSON.stringify(user))
+    // Set default auth header for future requests
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`
 
-  return true
+    return true
+  } catch (error) {
+    console.error("Login error", error)
+    // toast handled in component usually, but we accept return generic false
+    return false
+  }
 }
 
 // 🔹 CHECK IF LOGGED IN
 export function isLoggedIn() {
-  return !!localStorage.getItem("currentUser")
+  return !!localStorage.getItem("token")
 }
 
 // 🔹 LOGOUT
 export function logout() {
+  localStorage.removeItem("token")
   localStorage.removeItem("currentUser")
+  delete api.defaults.headers.common["Authorization"]
+  window.location.href = "/auth"
 }
 
 // 🔹 GET CURRENT USER
 export function getCurrentUser() {
   return JSON.parse(localStorage.getItem("currentUser"))
+}
+
+// Initialize Auth Header on Load
+const token = localStorage.getItem("token")
+if (token) {
+  api.defaults.headers.common["Authorization"] = `Bearer ${token}`
 }

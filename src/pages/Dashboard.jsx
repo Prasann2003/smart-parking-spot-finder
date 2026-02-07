@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar"
 import { useState, useEffect } from "react"
 import indiaData from "../utils/indiaData"
 import { getCurrentUser } from "../utils/auth"
+import api from "../utils/api"
 import { useNavigate } from "react-router-dom"
 import ProviderDashboard from "./ProviderDashboard"
 import AdminDashboard from "./AdminDashboard"
@@ -70,20 +71,20 @@ function DriverDashboard({ user, navigate }) {
      FETCH DASHBOARD SUMMARY
   ========================= */
 
+  // ... imports
+
+  /* =========================
+     FETCH DASHBOARD SUMMARY
+  ========================= */
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const summaryRes = await fetch("http://localhost:5000/api/dashboard/summary")
-        if (summaryRes.ok) {
-          const summaryData = await summaryRes.json()
-          setStats(summaryData)
-        }
+        const summaryRes = await api.get("/dashboard/summary")
+        setStats(summaryRes.data)
 
-        const activityRes = await fetch("http://localhost:5000/api/dashboard/activity")
-        if (activityRes.ok) {
-          const activityData = await activityRes.json()
-          setRecentActivity(activityData)
-        }
+        const activityRes = await api.get("/dashboard/activity")
+        setRecentActivity(activityRes.data)
       } catch (err) {
         console.error("Dashboard fetch error:", err)
       }
@@ -104,18 +105,11 @@ function DriverDashboard({ user, navigate }) {
     setError("")
 
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/parking?state=${search.state}&district=${search.district}`
-      )
-
-      if (!res.ok) throw new Error("Failed")
-
-      const data = await res.json()
-
-      setParkingSpots(data)
+      const res = await api.get(`/parking/search?state=${search.state}&district=${search.district}`)
+      setParkingSpots(res.data)
       setStats(prev => ({
         ...prev,
-        nearbySpots: data.length,
+        nearbySpots: res.data.length,
       }))
     } catch (err) {
       setError("Unable to fetch parking spots.")
@@ -144,13 +138,12 @@ function DriverDashboard({ user, navigate }) {
         try {
           const { latitude, longitude } = position.coords
 
-          const res = await fetch(
-            `http://localhost:5000/api/parking/nearby?lat=${latitude}&lng=${longitude}&radius=7`
+          const res = await api.get(
+            `/parking/nearby?lat=${latitude}&lng=${longitude}&radius=7`
           )
 
-          if (!res.ok) throw new Error()
-
-          const data = await res.json()
+          // if (!res.ok) throw new Error() // api.get throws on error, so we catch it
+          const data = res.data
 
           setParkingSpots(data)
           setStats(prev => ({

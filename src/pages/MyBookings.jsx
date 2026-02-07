@@ -1,6 +1,8 @@
 import Navbar from "../components/Navbar"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
+import api from "../utils/api"
+import toast from "react-hot-toast"
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([])
@@ -13,14 +15,8 @@ export default function MyBookings() {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/bookings")
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch bookings")
-        }
-
-        const data = await res.json()
-        setBookings(data)
+        const res = await api.get("/bookings/my-bookings")
+        setBookings(res.data)
       } catch (err) {
         console.error(err)
         setError("Unable to load bookings.")
@@ -37,16 +33,8 @@ export default function MyBookings() {
   =============================== */
   const handleCancel = async (id) => {
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/bookings/${id}/cancel`,
-        {
-          method: "PATCH",
-        }
-      )
-
-      if (!res.ok) {
-        throw new Error("Cancel failed")
-      }
+      await api.patch(`/bookings/${id}/cancel`)
+      toast.success("Booking cancelled")
 
       // Update UI after cancel
       setBookings((prev) =>
@@ -57,7 +45,7 @@ export default function MyBookings() {
         )
       )
     } catch (err) {
-      alert("Failed to cancel booking.")
+      toast.error("Failed to cancel booking.")
     }
   }
 
@@ -162,9 +150,8 @@ function StatusBadge({ status }) {
 
   return (
     <span
-      className={`px-4 py-2 rounded-full text-sm font-semibold ${
-        styles[status] || "bg-gray-100 text-gray-700"
-      }`}
+      className={`px-4 py-2 rounded-full text-sm font-semibold ${styles[status] || "bg-gray-100 text-gray-700"
+        }`}
     >
       {status}
     </span>

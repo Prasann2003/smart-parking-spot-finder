@@ -3,6 +3,7 @@ import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { getCurrentUser } from "../utils/auth"
 import { useNavigate } from "react-router-dom"
+import api from "../utils/api"
 
 export default function ProviderDashboard() {
   const user = getCurrentUser()
@@ -19,28 +20,20 @@ export default function ProviderDashboard() {
   const [recentBookings, setRecentBookings] = useState([])
   const [loading, setLoading] = useState(true)
 
+
   useEffect(() => {
     if (!user) return
 
     const fetchProviderData = async () => {
       try {
-        const dashboardRes = await fetch(
-          `http://localhost:5000/api/provider/dashboard?email=${user.email}`
-        )
-        const dashboardData = await dashboardRes.json()
-        setStats(dashboardData)
+        const dashboardRes = await api.get(`/provider/dashboard?email=${user.email}`)
+        setStats(dashboardRes.data)
 
-        const parkingRes = await fetch(
-          `http://localhost:5000/api/provider/parkings?email=${user.email}`
-        )
-        const parkingData = await parkingRes.json()
-        setParkings(parkingData)
+        const parkingRes = await api.get(`/provider/parkings?email=${user.email}`)
+        setParkings(parkingRes.data)
 
-        const bookingRes = await fetch(
-          `http://localhost:5000/api/provider/bookings?email=${user.email}`
-        )
-        const bookingData = await bookingRes.json()
-        setRecentBookings(bookingData)
+        const bookingRes = await api.get(`/provider/bookings?email=${user.email}`)
+        setRecentBookings(bookingRes.data)
       } catch (err) {
         console.error("Provider Dashboard Error:", err)
       }
@@ -167,13 +160,12 @@ export default function ProviderDashboard() {
                   </div>
 
                   <span
-                    className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                      booking.status === "Active"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : booking.status === "Completed"
+                    className={`px-4 py-2 rounded-full text-sm font-semibold ${booking.status === "Active"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : booking.status === "Completed"
                         ? "bg-sky-100 text-sky-700"
                         : "bg-red-100 text-red-700"
-                    }`}
+                      }`}
                   >
                     {booking.status}
                   </span>

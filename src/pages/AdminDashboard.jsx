@@ -1,5 +1,7 @@
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
+import api from "../utils/api"
+import toast from "react-hot-toast"
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
@@ -14,22 +16,11 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
-        const statsRes = await fetch(
-          "http://localhost:5000/api/admin/stats"
-        )
-        const appsRes = await fetch(
-          "http://localhost:5000/api/admin/provider-applications"
-        )
+        const statsRes = await api.get("/admin/stats")
+        const appsRes = await api.get("/admin/provider-applications")
 
-        if (!statsRes.ok || !appsRes.ok) {
-          throw new Error("Failed to fetch admin data")
-        }
-
-        const statsData = await statsRes.json()
-        const appsData = await appsRes.json()
-
-        setStats(statsData)
-        setApplications(appsData)
+        setStats(statsRes.data)
+        setApplications(appsRes.data)
       } catch (err) {
         console.error(err)
         setError("Unable to load admin dashboard.")
@@ -47,16 +38,15 @@ export default function AdminDashboard() {
 
   const handleAction = async (id, action) => {
     try {
-      await fetch(
-        `http://localhost:5000/api/admin/provider/${id}/${action}`,
-        { method: "POST" }
-      )
+      await api.post(`/admin/provider/${id}/${action}`)
+      toast.success(`Application ${action}ed`)
 
       setApplications(prev =>
         prev.filter(app => app.id !== id)
       )
     } catch (err) {
       console.error("Action failed", err)
+      toast.error("Action failed")
     }
   }
 
