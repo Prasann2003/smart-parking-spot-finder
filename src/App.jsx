@@ -2,9 +2,11 @@ import { Routes, Route } from "react-router-dom"
 
 import Home from "./pages/Home"
 import AuthPage from "./pages/AuthPage"
+import AdminLogin from "./pages/AdminLogin"
 import Dashboard from "./pages/Dashboard"
 import BecomeProvider from "./pages/BecomeProvider"
 import Payment from "./pages/Payment"
+import BookingDetails from "./pages/BookingDetails"
 
 import Profile from "./pages/Profile"
 import MyBookings from "./pages/MyBookings"
@@ -20,9 +22,11 @@ export default function App() {
       {/* =========================
            🌍 PUBLIC ROUTES
       ========================= */}
+
       <Route path="/" element={<Home />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/become-provider" element={<BecomeProvider />} />
+      <Route path="/admin-login" element={<AdminLogin />} />
 
       {/* =========================
            🔐 PROTECTED ROUTES
@@ -42,6 +46,16 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Payment />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ✅ IMPORTANT — BOOKING DETAILS ROUTE */}
+      <Route
+        path="/booking/:id"
+        element={
+          <ProtectedRoute>
+            <BookingDetails />
           </ProtectedRoute>
         }
       />

@@ -1,11 +1,13 @@
 import Navbar from "../components/Navbar"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const navigate = useNavigate()
 
   /* ===============================
      FETCH REAL BOOKINGS
@@ -39,19 +41,16 @@ export default function MyBookings() {
     try {
       const res = await fetch(
         `http://localhost:5000/api/bookings/${id}/cancel`,
-        {
-          method: "PATCH",
-        }
+        { method: "PATCH" }
       )
 
       if (!res.ok) {
         throw new Error("Cancel failed")
       }
 
-      // Update UI after cancel
       setBookings((prev) =>
         prev.map((booking) =>
-          booking.id === id
+          (booking.id || booking._id) === id
             ? { ...booking, status: "Cancelled" }
             : booking
         )
@@ -93,58 +92,66 @@ export default function MyBookings() {
           </div>
         ) : (
           <div className="space-y-8">
-            {bookings.map((booking, index) => (
-              <motion.div
-                key={booking.id}
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
-                className="bg-white rounded-3xl shadow-xl p-8 flex flex-col md:flex-row justify-between gap-6"
-              >
-                {/* LEFT */}
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                    {booking.place}
-                  </h3>
+            {bookings.map((booking, index) => {
+              const bookingId = booking.id || booking._id
 
-                  <div className="text-gray-600 space-y-1">
-                    <p>
-                      📅{" "}
-                      {new Date(booking.date).toLocaleDateString()}
-                    </p>
-                    <p>
-                      ⏰ {booking.startTime} - {booking.endTime}
-                    </p>
-                    <p>
-                      🚗 {booking.vehicle}
-                    </p>
+              return (
+                <motion.div
+                  key={bookingId}
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-white rounded-3xl shadow-xl p-8 flex flex-col md:flex-row justify-between gap-6"
+                >
+                  {/* LEFT SIDE */}
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                      {booking.place}
+                    </h3>
+
+                    <div className="text-gray-600 space-y-1">
+                      <p>
+                        📅 {new Date(booking.date).toLocaleDateString()}
+                      </p>
+                      <p>
+                        ⏰ {booking.startTime} - {booking.endTime}
+                      </p>
+                      <p>
+                        🚗 {booking.vehicle}
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                {/* RIGHT */}
-                <div className="flex flex-col items-end justify-between">
-                  <StatusBadge status={booking.status} />
+                  {/* RIGHT SIDE */}
+                  <div className="flex flex-col items-end justify-between">
+                    <StatusBadge status={booking.status} />
 
-                  <div className="flex gap-4 mt-6">
-                    <button className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition">
-                      View
-                    </button>
-
-                    {booking.status === "Active" && (
+                    <div className="flex gap-4 mt-6">
+                      {/* ✅ WORKING VIEW BUTTON */}
                       <button
                         onClick={() =>
-                          handleCancel(booking.id)
+                          navigate(`/booking/${bookingId}`)
                         }
-                        className="px-5 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+                        className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
                       >
-                        Cancel
+                        View
                       </button>
-                    )}
+
+                      {/* Cancel only if Active */}
+                      {booking.status === "Active" && (
+                        <button
+                          onClick={() => handleCancel(bookingId)}
+                          className="px-5 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              )
+            })}
           </div>
         )}
       </motion.div>
