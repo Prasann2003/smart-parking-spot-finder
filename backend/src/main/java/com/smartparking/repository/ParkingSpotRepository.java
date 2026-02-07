@@ -8,4 +8,9 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Long> 
     List<ParkingSpot> findByOwnerId(Long ownerId);
 
     List<ParkingSpot> findByStateAndDistrict(String state, String district);
+
+    List<ParkingSpot> findByStatus(com.smartparking.entity.ParkingSpot.ParkingStatus status);
+
+    List<ParkingSpot> findByStateAndDistrictAndStatus(String state, String district,
+            com.smartparking.entity.ParkingSpot.ParkingStatus status);
 }

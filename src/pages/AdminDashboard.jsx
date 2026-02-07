@@ -118,16 +118,16 @@ export default function AdminDashboard() {
               >
                 <div>
                   <h3 className="text-xl font-semibold">
-                    {app.ownerName}
+                    {app.user.name}
                   </h3>
                   <p className="text-gray-600">
-                    📍 {app.address}
+                    📍 {app.parkingSpot.address}
                   </p>
                   <p className="text-gray-600">
-                    📞 {app.phone}
+                    📞 {app.user.phoneNumber || "N/A"}
                   </p>
                   <p className="text-gray-600">
-                    🅿 Capacity: {app.totalCapacity}
+                    🅿 Capacity: {app.parkingSpot.totalCapacity}
                   </p>
                 </div>
 

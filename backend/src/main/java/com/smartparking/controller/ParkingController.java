@@ -40,6 +40,7 @@ public class ParkingController {
     @GetMapping("/search")
     public ResponseEntity<List<ParkingSpotDTO>> searchParkingSpots(@RequestParam String state,
             @RequestParam String district) {
+        System.out.println("Searching for spots in State: " + state + ", District: " + district);
         return ResponseEntity.ok(parkingSpotService.searchParkingSpots(state, district));
     }
 

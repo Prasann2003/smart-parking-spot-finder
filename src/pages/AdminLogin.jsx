@@ -1,5 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { login } from "../utils/auth"
+import toast from "react-hot-toast"
 
 export default function AdminLogin() {
   const navigate = useNavigate()
@@ -7,12 +9,24 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  const handleLogin = () => {
-    // Replace with real backend call later
-    if (email === "admin@smart.com" && password === "admin123") {
-      navigate("/dashboard")
+  const handleLogin = async () => {
+    // Call backend API
+    const success = await login(email, password)
+
+    if (success) {
+      // Check if user is actually admin
+      const user = JSON.parse(localStorage.getItem("currentUser"))
+      if (user.role === "ADMIN") {
+        toast.success("Welcome Admin! 🚀")
+        navigate("/dashboard")
+      } else {
+        toast.error("Access Denied: Not an Admin ❌")
+        // Optional: Logout if not admin
+        localStorage.removeItem("token")
+        localStorage.removeItem("currentUser")
+      }
     } else {
-      alert("Invalid Admin Credentials")
+      toast.error("Invalid Admin Credentials ❌")
     }
   }
 

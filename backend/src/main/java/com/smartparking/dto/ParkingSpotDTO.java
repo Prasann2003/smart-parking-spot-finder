@@ -71,4 +71,6 @@ public class ParkingSpotDTO {
 
     private String status;
     private Long ownerId;
+    private String ownerName;
+    private String phoneNumber;
 }

@@ -51,19 +51,21 @@ public class ParkingSpot {
     private boolean evCharging;
 
     // New Fields matching Frontend
+    @Builder.Default
     @ElementCollection
     @CollectionTable(name = "parking_spot_vehicles", joinColumns = @JoinColumn(name = "parking_spot_id"))
     @Column(name = "vehicle_type")
-    private java.util.Set<String> vehicleTypes;
+    private java.util.Set<String> vehicleTypes = new java.util.HashSet<>();
 
     private String parkingType; // "Covered" or "Open"
     private boolean monthlyPlan;
     private Double weekendPricing;
 
+    @Builder.Default
     @ElementCollection
     @CollectionTable(name = "parking_spot_images", joinColumns = @JoinColumn(name = "parking_spot_id"))
     @Column(name = "image_url")
-    private java.util.List<String> imageUrls;
+    private java.util.List<String> imageUrls = new java.util.ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     private ParkingStatus status;

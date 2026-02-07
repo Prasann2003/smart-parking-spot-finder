@@ -46,11 +46,19 @@ public class AuthService {
     }
 
     public AuthResponse login(AuthRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+        System.out.println("Attempting login for: " + request.getEmail());
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+        } catch (Exception e) {
+            System.out.println("Authentication failed for " + request.getEmail() + ": " + e.getMessage());
+            throw e;
+        }
 
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        System.out.println("User found: " + user.getEmail() + ", Role: " + user.getRole());
 
         var token = jwtTokenProvider.generateToken(user);
         return AuthResponse.builder()
@@ -59,5 +67,20 @@ public class AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .build();
+    }
+
+    public void changePassword(String email, com.smartparking.dto.ChangePasswordDTO request) {
+        System.out.println("Processing change password for: " + email);
+        var user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            System.out.println("Password Mismatch! provided: " + request.getOldPassword() + " vs stored hash");
+            throw new RuntimeException("Incorrect old password");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        System.out.println("Password updated successfully for: " + email);
     }
 }

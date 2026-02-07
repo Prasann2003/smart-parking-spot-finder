@@ -48,7 +48,6 @@ export default function ProviderDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
-      <Navbar />
 
       <motion.div
         initial={{ opacity: 0 }}
@@ -102,7 +101,15 @@ export default function ProviderDashboard() {
                   whileHover={{ scale: 1.02 }}
                   className="bg-white p-6 rounded-2xl shadow-xl border"
                 >
-                  <h3 className="text-xl font-bold">{spot.name}</h3>
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-xl font-bold">{spot.name}</h3>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${spot.status === "APPROVED" ? "bg-green-100 text-green-700" :
+                      spot.status === "REJECTED" ? "bg-red-100 text-red-700" :
+                        "bg-yellow-100 text-yellow-700"
+                      }`}>
+                      {spot.status}
+                    </span>
+                  </div>
 
                   <p className="text-gray-600 mt-1">
                     {spot.address}

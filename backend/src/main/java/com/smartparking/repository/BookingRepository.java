@@ -10,4 +10,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByParkingSpotId(Long parkingSpotId);
 
     List<Booking> findByParkingSpot_Owner_Id(Long ownerId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(b.totalPrice) FROM Booking b")
+    Double calculateTotalRevenue();
+
+    long countByStatus(String status);
 }
