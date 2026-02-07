@@ -2,6 +2,8 @@ import Navbar from "../components/Navbar"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import api from "../utils/api"
+import toast from "react-hot-toast"
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([])
@@ -15,19 +17,12 @@ export default function MyBookings() {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/bookings")
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch bookings")
-        }
-
-        const data = await res.json()
-        setBookings(data)
+        const res = await api.get("/bookings/my-bookings")
+        setBookings(res.data)
       } catch (err) {
         console.error(err)
         setError("Unable to load bookings.")
       }
-
       setLoading(false)
     }
 
@@ -39,14 +34,8 @@ export default function MyBookings() {
   =============================== */
   const handleCancel = async (id) => {
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/bookings/${id}/cancel`,
-        { method: "PATCH" }
-      )
-
-      if (!res.ok) {
-        throw new Error("Cancel failed")
-      }
+      await api.patch(`/bookings/${id}/cancel`)
+      toast.success("Booking cancelled")
 
       setBookings((prev) =>
         prev.map((booking) =>
@@ -56,7 +45,7 @@ export default function MyBookings() {
         )
       )
     } catch (err) {
-      alert("Failed to cancel booking.")
+      toast.error("Failed to cancel booking.")
     }
   }
 
@@ -69,7 +58,6 @@ export default function MyBookings() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-6xl mx-auto mt-16 px-6"
       >
-        {/* HEADER */}
         <div className="mb-12">
           <h2 className="text-4xl font-extrabold text-gray-800 mb-2">
             My Bookings
@@ -79,7 +67,6 @@ export default function MyBookings() {
           </p>
         </div>
 
-        {/* STATES */}
         {loading ? (
           <p className="text-lg font-semibold">Loading bookings...</p>
         ) : error ? (
@@ -104,41 +91,29 @@ export default function MyBookings() {
                   whileHover={{ scale: 1.02 }}
                   className="bg-white rounded-3xl shadow-xl p-8 flex flex-col md:flex-row justify-between gap-6"
                 >
-                  {/* LEFT SIDE */}
                   <div>
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">
                       {booking.place}
                     </h3>
 
                     <div className="text-gray-600 space-y-1">
-                      <p>
-                        📅 {new Date(booking.date).toLocaleDateString()}
-                      </p>
-                      <p>
-                        ⏰ {booking.startTime} - {booking.endTime}
-                      </p>
-                      <p>
-                        🚗 {booking.vehicle}
-                      </p>
+                      <p>📅 {new Date(booking.date).toLocaleDateString()}</p>
+                      <p>⏰ {booking.startTime} - {booking.endTime}</p>
+                      <p>🚗 {booking.vehicle}</p>
                     </div>
                   </div>
 
-                  {/* RIGHT SIDE */}
                   <div className="flex flex-col items-end justify-between">
                     <StatusBadge status={booking.status} />
 
                     <div className="flex gap-4 mt-6">
-                      {/* ✅ WORKING VIEW BUTTON */}
                       <button
-                        onClick={() =>
-                          navigate(`/booking/${bookingId}`)
-                        }
+                        onClick={() => navigate(`/booking/${bookingId}`)}
                         className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
                       >
                         View
                       </button>
 
-                      {/* Cancel only if Active */}
                       {booking.status === "Active" && (
                         <button
                           onClick={() => handleCancel(bookingId)}
