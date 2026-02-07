@@ -2,6 +2,8 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import Navbar from "../components/Navbar"
 import indiaData from "../utils/indiaData"
+import api from "../utils/api"
+import toast from "react-hot-toast"
 
 export default function BecomeProvider() {
   const [form, setForm] = useState({
@@ -17,7 +19,7 @@ export default function BecomeProvider() {
     mapsLink: "",
     capacity: "",
     vehicleTypes: [],
-    parkingType: "",
+    parkingType: "Covered",
     cctv: false,
     guard: false,
     evCharging: false,
@@ -31,7 +33,13 @@ export default function BecomeProvider() {
     declaration: false,
   })
 
-  const [successMessage, setSuccessMessage] = useState("")
+  const [images, setImages] = useState({
+    parkingArea: null,
+    entryGate: null,
+    surrounding: null
+  })
+
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -39,6 +47,10 @@ export default function BecomeProvider() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }))
+  }
+
+  const handleFileChange = (e, key) => {
+    setImages(prev => ({ ...prev, [key]: e.target.files[0] }))
   }
 
   const handleVehicleChange = (type) => {
@@ -50,17 +62,51 @@ export default function BecomeProvider() {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const uploadImage = async (file) => {
+    const formData = new FormData()
+    formData.append("file", file)
+    const res = await api.post("/parking/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" }
+    })
+    return res.data // returns url string
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (!form.declaration) {
-      alert("Please accept legal declaration")
+      toast.error("Please accept legal declaration")
       return
     }
 
-    setSuccessMessage(
-      "Parking provider application successfully applied"
-    )
+    setLoading(true)
+    try {
+      // 1. Upload Images
+      const imageUrls = []
+      if (images.parkingArea) imageUrls.push(await uploadImage(images.parkingArea))
+      if (images.entryGate) imageUrls.push(await uploadImage(images.entryGate))
+      if (images.surrounding) imageUrls.push(await uploadImage(images.surrounding))
+
+      // 2. Prepare Payload
+      const payload = {
+        ...form,
+        totalCapacity: Number(form.capacity),
+        pricePerHour: Number(form.pricePerHour),
+        weekendPricing: form.weekendPricing ? Number(form.weekendPricing) : 0,
+        address: `${form.address1}, ${form.address2}`,
+        imageUrls,
+        googleMapsLink: form.mapsLink
+      }
+
+      // 3. Submit
+      await api.post("/parking/add", payload)
+      toast.success("Parking provider application submitted! 🚀")
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to submit application. Try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -92,7 +138,6 @@ export default function BecomeProvider() {
               <Input label="Phone Number" name="phone" onChange={handleChange} />
               <Input label="Email" name="email" onChange={handleChange} />
               <Input label="Government ID Number" name="governmentId" onChange={handleChange} />
-              <FileInput label="Upload ID Proof (optional)" />
             </Section>
 
             {/* =================== LOCATION =================== */}
@@ -124,7 +169,7 @@ export default function BecomeProvider() {
 
             {/* =================== PARKING DETAILS =================== */}
             <Section title="🚗 Parking Space Details">
-              <Input label="Total Parking Capacity" name="capacity" onChange={handleChange} />
+              <Input label="Total Parking Capacity" name="capacity" type="number" onChange={handleChange} />
 
               <div>
                 <label className="block text-sm font-semibold mb-2">
@@ -136,11 +181,10 @@ export default function BecomeProvider() {
                       type="button"
                       key={type}
                       onClick={() => handleVehicleChange(type)}
-                      className={`px-4 py-2 rounded-lg border transition ${
-                        form.vehicleTypes.includes(type)
+                      className={`px-4 py-2 rounded-lg border transition ${form.vehicleTypes.includes(type)
                           ? "bg-indigo-600 text-white"
                           : "bg-gray-100"
-                      }`}
+                        }`}
                     >
                       {type}
                     </button>
@@ -164,16 +208,16 @@ export default function BecomeProvider() {
 
             {/* =================== PRICING =================== */}
             <Section title="💰 Pricing Details">
-              <Input label="Price Per Hour (₹)" name="pricePerHour" onChange={handleChange} />
+              <Input label="Price Per Hour (₹)" name="pricePerHour" type="number" onChange={handleChange} />
               <Checkbox label="Monthly Plan Available" name="monthlyPlan" onChange={handleChange} />
-              <Input label="Special Weekend Pricing (optional)" name="weekendPricing" onChange={handleChange} />
+              <Input label="Special Weekend Pricing (optional)" name="weekendPricing" type="number" onChange={handleChange} />
             </Section>
 
             {/* =================== IMAGES =================== */}
             <Section title="🖼️ Parking Area Images">
-              <FileInput label="Upload Parking Area Image" />
-              <FileInput label="Upload Entry Gate Image" />
-              <FileInput label="Upload Surrounding Area (optional)" />
+              <FileInput label="Upload Parking Area Image" onChange={(e) => handleFileChange(e, "parkingArea")} />
+              <FileInput label="Upload Entry Gate Image" onChange={(e) => handleFileChange(e, "entryGate")} />
+              <FileInput label="Upload Surrounding Area (optional)" onChange={(e) => handleFileChange(e, "surrounding")} />
             </Section>
 
             {/* =================== PAYMENT =================== */}
@@ -198,17 +242,13 @@ export default function BecomeProvider() {
             <div className="text-center">
               <button
                 type="submit"
-                className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-lg transition"
+                disabled={loading}
+                className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-lg transition disabled:bg-gray-400"
               >
-                Submit Application
+                {loading ? "Submitting..." : "Submit Application"}
               </button>
             </div>
 
-            {successMessage && (
-              <div className="mt-6 p-4 bg-green-100 text-green-700 rounded-xl text-center font-semibold">
-                {successMessage}
-              </div>
-            )}
           </form>
         </div>
       </motion.div>
@@ -235,13 +275,14 @@ function Section({ title, children }) {
   )
 }
 
-function Input({ label, name, onChange }) {
+function Input({ label, name, onChange, type = "text" }) {
   return (
     <div>
       <label className="block text-sm font-semibold mb-1">
         {label}
       </label>
       <input
+        type={type}
         name={name}
         onChange={onChange}
         className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500"
@@ -280,13 +321,13 @@ function Checkbox({ label, name, onChange }) {
   )
 }
 
-function FileInput({ label }) {
+function FileInput({ label, onChange }) {
   return (
     <div>
       <label className="block text-sm font-semibold mb-1">
         {label}
       </label>
-      <input type="file" className="w-full" />
+      <input type="file" onChange={onChange} className="w-full" />
     </div>
   )
 }

@@ -19,7 +19,7 @@ export default function AuthPage() {
     confirmPassword: "",
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     // ✅ SIGNUP FLOW
@@ -29,14 +29,15 @@ export default function AuthPage() {
         return
       }
 
-      register(form)
-      toast.success("Account created successfully ✅")
-      setIsLogin(true)
+      const success = await register(form)
+      if (success) {
+        setIsLogin(true)
+      }
       return
     }
 
     // ✅ LOGIN FLOW
-    const success = login(form.email, form.password)
+    const success = await login(form.email, form.password)
 
     if (success) {
       toast.success("Login successful 🎉")

@@ -144,9 +144,8 @@ function StatusBadge({ status }) {
 
   return (
     <span
-      className={`px-4 py-2 rounded-full text-sm font-semibold ${
-        styles[status] || "bg-gray-100 text-gray-700"
-      }`}
+      className={`px-4 py-2 rounded-full text-sm font-semibold ${styles[status] || "bg-gray-100 text-gray-700"
+        }`}
     >
       {status}
     </span>
