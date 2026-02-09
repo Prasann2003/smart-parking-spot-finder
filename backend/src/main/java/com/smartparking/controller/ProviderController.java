@@ -33,15 +33,21 @@ public class ProviderController {
     private final ProviderRepository providerRepository;
     private final ProviderService providerService;
 
-
     @GetMapping("/parkings")
     public ResponseEntity<List<ParkingSpotResponseDTO>> getMyParkingSpots(@RequestParam String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Optional<Provider> provider = providerRepository.findByUser(user);
-        return provider.map(value -> ResponseEntity.ok(parkingSpotService.getParkingSpotsByOwner(value.getId()))).orElseGet(() -> ResponseEntity.ok(List.of()));
+        return provider.map(value -> ResponseEntity.ok(parkingSpotService.getParkingSpotsByOwner(value.getId())))
+                .orElseGet(() -> ResponseEntity.ok(List.of()));
 
+    }
+
+    @GetMapping("/view/{id}")
+    public ResponseEntity<ParkingSpotResponseDTO> getProviderSpotView(@PathVariable Long id) {
+        // In future, verify ownership here if needed
+        return ResponseEntity.ok(parkingSpotService.getParkingSpotById(id));
     }
 
     @GetMapping("/bookings")
@@ -88,7 +94,7 @@ public class ProviderController {
         return bookings.stream().mapToDouble(BookingDTO::getTotalPrice).sum();
     }
 
-    @PostMapping(value="/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> addProviderWithSpot(@ModelAttribute ParkingProviderApplicationDto dto) {
         providerService.saveApplication(dto);
         return ResponseEntity.ok(Map.of("message", "Application submitted successfully!"));

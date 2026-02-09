@@ -29,13 +29,10 @@ public class ParkingController {
         // Frontend can append /api/images/
         return ResponseEntity.ok("/api/images/" + filename);
     }
-    @PostMapping(
-            value="/add",
-    consumes=org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+
+    @PostMapping(value = "/add", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> addParkingSpot(
-            @ModelAttribute ParkingSpotDTO parkingSpotDTO
-    ){
+            @ModelAttribute ParkingSpotDTO parkingSpotDTO) {
         parkingSpotService.save(parkingSpotDTO);
         return ResponseEntity.ok("success");
     }
@@ -47,7 +44,7 @@ public class ParkingController {
 
     @GetMapping("/search")
     public ResponseEntity<List<ParkingSpotResponseDTO>> searchParkingSpots(@RequestParam String state,
-                                                                               @RequestParam String district) {
+            @RequestParam String district) {
         System.out.println("Searching for spots in State: " + state + ", District: " + district);
         return ResponseEntity.ok(parkingSpotService.searchParkingSpots(state, district));
     }
@@ -62,6 +59,11 @@ public class ParkingController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ParkingSpotResponseDTO> getParkingSpotById(@PathVariable Long id) {
+        return ResponseEntity.ok(parkingSpotService.getParkingSpotById(id));
+    }
+
+    @GetMapping("/view/{id}")
+    public ResponseEntity<ParkingSpotResponseDTO> getParkingSpotView(@PathVariable Long id) {
         return ResponseEntity.ok(parkingSpotService.getParkingSpotById(id));
     }
 }

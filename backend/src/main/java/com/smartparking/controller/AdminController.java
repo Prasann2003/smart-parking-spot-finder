@@ -65,6 +65,44 @@ public class AdminController {
 
     }
 
+    @GetMapping("/view/{id}")
+    public ResponseEntity<Map<String, Object>> getApplicationById(@PathVariable Long id) {
+        ProviderApplication app = parkingProviderApplicationRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Application not found"));
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", app.getId());
+        map.put("status", app.getStatus());
+        map.put("name", app.getName());
+        map.put("submissionDate", "N/A"); // or app.getCreatedAt() later
+
+        // user block
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("id", app.getOwnerId());
+        userMap.put("email", null);
+        userMap.put("phoneNumber", app.getPhoneNumber());
+        userMap.put("name", app.getName());
+        map.put("user", userMap);
+
+        // parkingSpot block
+        Map<String, Object> spotMap = new HashMap<>();
+        spotMap.put("name", app.getName());
+        spotMap.put("address", app.getAddress());
+        spotMap.put("totalCapacity", app.getTotalCapacity());
+        map.put("parkingSpot", spotMap);
+
+        // Add other details needed for detailed view
+        map.put("address", app.getAddress());
+        map.put("latitude", app.getLatitude());
+        map.put("longitude", app.getLongitude());
+        map.put("totalCapacity", app.getTotalCapacity());
+        map.put("pricePerHour", app.getPricePerHour());
+        map.put("description", app.getDescription());
+        map.put("imageUrls", app.getImageUrls());
+
+        return ResponseEntity.ok(map);
+    }
+
     @PostMapping("/provider/{id}/{action}")
     public ResponseEntity<?> updateApplicationStatus(
             @PathVariable Long id,
@@ -134,16 +172,5 @@ public class AdminController {
                 "activeBookings", activeBookings,
                 "totalRevenue", revenue != null ? revenue : 0.0,
                 "systemAlerts", alerts));
-    }}
-
-    
-    
-    
-
-    
-
-    
-            
-    
-
-    
+    }
+}
