@@ -1,26 +1,29 @@
 package com.smartparking.dto;
 
+import com.smartparking.entity.ProviderApplication;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Date;
-import java.util.Set;
-@Builder
 @Data
-@NoArgsConstructor
+@Builder
 @AllArgsConstructor
-public class ParkingSpotDTO {
-    // ===== Location Details =====
+@NoArgsConstructor
+public class ParkingProviderApplicationDto {
 
-    @NotBlank(message = "Parking name is required")
+    // private Long id;
+
+    @NotBlank(message = "Name is required")
     private String name;
+
+    private String ownerName;
+
+    private String description;
 
     @NotBlank(message = "State is required")
     private String state;
@@ -28,7 +31,7 @@ public class ParkingSpotDTO {
     @NotBlank(message = "District is required")
     private String district;
 
-    @NotBlank(message = "Full address is required")
+    @NotBlank(message = "Address is required")
     private String address;
 
     @NotBlank(message = "Pincode is required")
@@ -36,45 +39,49 @@ public class ParkingSpotDTO {
 
     private String googleMapsLink;
 
-    // ===== Parking Features =====
-
-    @NotNull(message = "Vehicle types are required")
-    @Size(min = 1, message = "Select at least one vehicle type")
-    private Set<String> vehicleTypes; // Car, Bike, Bus, EV
-
-    @NotNull(message = "Total capacity is required")
+    @NotNull(message = "Capacity is required")
     @Min(value = 1, message = "Capacity must be at least 1")
     private Integer totalCapacity;
 
-    @NotNull(message = "Price per hour is required")
-    @Min(value = 0, message = "Price per hour cannot be negative")
+    @NotNull(message = "Price is required")
+    @Min(value = 0, message = "Price cannot be negative")
     private Double pricePerHour;
-
-    private Double weekendPricing;
-
-    private boolean monthlyPlan;
 
     private boolean covered;
     private boolean cctv;
     private boolean guard;
     private boolean evCharging;
 
+    // New Fields
+    @NotNull(message = "Vehicle types are required")
+    private java.util.Set<String> vehicleTypes;
+
     @NotBlank(message = "Parking type is required")
     private String parkingType;
 
-    private Double latitude;
-    private Double longitude;
-    // ===== Images =====
+    private boolean monthlyPlan;
+    private Double weekendPricing;
 
     @NotNull(message = "Parking area image is required")
     private MultipartFile parkingAreaImage;
 
     @NotNull(message = "Entry gate image is required")
-    private MultipartFile gateImage;
+    private MultipartFile entryGateImage;
 
     // Optional
-    private MultipartFile surroundingImage;
+    private MultipartFile surroundingAreaImage;
 
-    // ===== Optional Metadata =====
-    private String description;
+    // Provider Bank Details (Optional in DTO, can be updated in User profile)
+    private String bankAccount;
+    private String upiId;
+    private String gstNumber;
+    private String panNumber;
+
+    private Double latitude;
+    private Double longitude;
+
+    private ProviderApplication.ApplicationStatus status;
+    private Long ownerId;
+    // private String ownerName;
+    private String phoneNumber;
 }

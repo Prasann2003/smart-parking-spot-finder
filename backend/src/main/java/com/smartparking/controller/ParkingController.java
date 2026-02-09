@@ -1,6 +1,7 @@
 package com.smartparking.controller;
 
 import com.smartparking.dto.ParkingSpotDTO;
+import com.smartparking.dto.ParkingSpotResponseDTO;
 import com.smartparking.service.ParkingSpotService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +18,7 @@ public class ParkingController {
     private final ParkingSpotService parkingSpotService;
     private final com.smartparking.service.ImageStorageService imageStorageService;
 
-    @PostMapping("/add")
-    public ResponseEntity<ParkingSpotDTO> addParkingSpot(@Valid @RequestBody ParkingSpotDTO dto) {
-        return ResponseEntity.ok(parkingSpotService.addParkingSpot(dto));
-    }
+    // addParkingSpot removed - use ProviderService via ProviderController
 
     @PostMapping(value = "/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadImage(
@@ -31,21 +29,31 @@ public class ParkingController {
         // Frontend can append /api/images/
         return ResponseEntity.ok("/api/images/" + filename);
     }
+    @PostMapping(
+            value="/add",
+    consumes=org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<String> addParkingSpot(
+            @ModelAttribute ParkingSpotDTO parkingSpotDTO
+    ){
+        parkingSpotService.save(parkingSpotDTO);
+        return ResponseEntity.ok("success");
+    }
 
     @GetMapping("/all")
-    public ResponseEntity<List<ParkingSpotDTO>> getAllParkingSpots() {
+    public ResponseEntity<List<ParkingSpotResponseDTO>> getAllParkingSpots() {
         return ResponseEntity.ok(parkingSpotService.getAllParkingSpots());
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ParkingSpotDTO>> searchParkingSpots(@RequestParam String state,
-            @RequestParam String district) {
+    public ResponseEntity<List<ParkingSpotResponseDTO>> searchParkingSpots(@RequestParam String state,
+                                                                               @RequestParam String district) {
         System.out.println("Searching for spots in State: " + state + ", District: " + district);
         return ResponseEntity.ok(parkingSpotService.searchParkingSpots(state, district));
     }
 
     @GetMapping("/nearby")
-    public ResponseEntity<List<ParkingSpotDTO>> getNearbyParkingSpots(
+    public ResponseEntity<List<ParkingSpotResponseDTO>> getNearbyParkingSpots(
             @RequestParam double lat,
             @RequestParam double lng,
             @RequestParam double radius) {
@@ -53,7 +61,7 @@ public class ParkingController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ParkingSpotDTO> getParkingSpotById(@PathVariable Long id) {
+    public ResponseEntity<ParkingSpotResponseDTO> getParkingSpotById(@PathVariable Long id) {
         return ResponseEntity.ok(parkingSpotService.getParkingSpotById(id));
     }
 }

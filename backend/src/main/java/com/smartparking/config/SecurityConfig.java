@@ -41,9 +41,10 @@ public class SecurityConfig {
                                 "/api/parking/search", "/api/parking/nearby")
                         .permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-                        .requestMatchers("/api/provider/application-status").hasAnyAuthority("USER", "PROVIDER")
+                        .requestMatchers("/api/provider/application-status", "/api/provider/add")
+                        .hasAnyAuthority("USER", "PROVIDER")
                         .requestMatchers("/api/provider/**").hasAuthority("PROVIDER")
-                        .requestMatchers("/api/parking/add", "/api/parking/upload").hasAuthority("PROVIDER")
+                        .requestMatchers("/api/parking/add", "/api/parking/upload").hasAnyAuthority("USER", "PROVIDER")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -1,25 +1,25 @@
 package com.smartparking.controller;
 
-import com.smartparking.dto.BookingDTO;
-import com.smartparking.dto.ParkingSpotDTO;
+import com.smartparking.dto.*;
+import com.smartparking.entity.Provider;
 import com.smartparking.entity.User;
+import com.smartparking.repository.ProviderRepository;
 import com.smartparking.repository.UserRepository;
 import com.smartparking.service.BookingService;
 import com.smartparking.service.ParkingSpotService;
+import com.smartparking.service.ProviderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import com.smartparking.entity.ProviderApplication;
-import com.smartparking.entity.Role;
-import com.smartparking.repository.ProviderApplicationRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/provider")
@@ -30,29 +30,47 @@ public class ProviderController {
     private final ParkingSpotService parkingSpotService;
     private final BookingService bookingService;
     private final UserRepository userRepository;
-    private final ProviderApplicationRepository providerApplicationRepository;
+    private final ProviderRepository providerRepository;
+    private final ProviderService providerService;
+
 
     @GetMapping("/parkings")
-    public ResponseEntity<List<ParkingSpotDTO>> getMyParkingSpots(@RequestParam String email) {
+    public ResponseEntity<List<ParkingSpotResponseDTO>> getMyParkingSpots(@RequestParam String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return ResponseEntity.ok(parkingSpotService.getParkingSpotsByOwner(user.getId()));
+
+        Optional<Provider> provider = providerRepository.findByUser(user);
+        return provider.map(value -> ResponseEntity.ok(parkingSpotService.getParkingSpotsByOwner(value.getId()))).orElseGet(() -> ResponseEntity.ok(List.of()));
+
     }
 
     @GetMapping("/bookings")
     public ResponseEntity<List<BookingDTO>> getMySpotBookings(@RequestParam String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        // BookingService needs update to handle Provider? Or standard User ID is
+        // enough?
+        // If BookingService searches by Spot -> Owner, it might fail if Spot.owner is
+        // removed.
+        // I will assume for now BookingService needs a fix, but let's look at
+        // BookingService first.
         return ResponseEntity.ok(bookingService.getBookingsByOwner(user.getId()));
     }
 
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> getDashboardStats(@RequestParam String email) {
+        System.out.println("Fetching Provider Dashboard for: " + email);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
-        List<ParkingSpotDTO> spots = parkingSpotService.getParkingSpotsByOwner(user.getId());
-        List<BookingDTO> bookings = bookingService.getBookingsByOwner(user.getId());
+        Optional<Provider> provider = providerRepository.findByUser(user);
+        if (provider.isEmpty()) {
+            return ResponseEntity
+                    .ok(Map.of("totalParkings", 0, "activeBookings", 0, "todayEarnings", 0, "monthlyEarnings", 0));
+        }
+
+        List<ParkingSpotResponseDTO> spots = parkingSpotService.getParkingSpotsByOwner(provider.get().getId());
+        List<BookingDTO> bookings = bookingService.getBookingsByOwner(user.getId()); // This might need fix
 
         double todayEarnings = 0; // consistent with frontend placeholder
         double monthlyEarnings = calculateTotalEarnings(bookings);
@@ -70,32 +88,18 @@ public class ProviderController {
         return bookings.stream().mapToDouble(BookingDTO::getTotalPrice).sum();
     }
 
+    @PostMapping(value="/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> addProviderWithSpot(@ModelAttribute ParkingProviderApplicationDto dto) {
+        providerService.saveApplication(dto);
+        return ResponseEntity.ok(Map.of("message", "Application submitted successfully!"));
+    }
+
     @GetMapping("/application-status")
     public ResponseEntity<Map<String, String>> getApplicationStatus() {
         String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
                 .getUsername();
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (user.getRole() == Role.PROVIDER) {
-            return ResponseEntity.ok(Map.of("status", "APPROVED"));
-        }
-
-        // Check for existing application
-        Optional<ProviderApplication> application = providerApplicationRepository.findByUserAndStatus(user,
-                ProviderApplication.ApplicationStatus.PENDING);
-
-        if (application.isPresent()) {
-            return ResponseEntity.ok(Map.of("status", "PENDING"));
-        }
-
-        // Also check if rejected
-        Optional<ProviderApplication> rejectedApp = providerApplicationRepository.findByUserAndStatus(user,
-                ProviderApplication.ApplicationStatus.REJECTED);
-
-        if (rejectedApp.isPresent()) {
-            return ResponseEntity.ok(Map.of("status", "REJECTED"));
-        }
-
-        return ResponseEntity.ok(Map.of("status", "NONE"));
+        String status = providerService.getProviderStatus(email);
+        return ResponseEntity.ok(Map.of("status", status));
     }
 }

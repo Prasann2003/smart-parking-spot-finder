@@ -23,16 +23,17 @@ export default function ProviderDashboard() {
 
   useEffect(() => {
     if (!user) return
+    const email = user.email
 
     const fetchProviderData = async () => {
       try {
-        const dashboardRes = await api.get(`/provider/dashboard?email=${user.email}`)
+        const dashboardRes = await api.get(`/provider/dashboard?email=${email}`)
         setStats(dashboardRes.data)
 
-        const parkingRes = await api.get(`/provider/parkings?email=${user.email}`)
+        const parkingRes = await api.get(`/provider/parkings?email=${email}`)
         setParkings(parkingRes.data)
 
-        const bookingRes = await api.get(`/provider/bookings?email=${user.email}`)
+        const bookingRes = await api.get(`/provider/bookings?email=${email}`)
         setRecentBookings(bookingRes.data)
       } catch (err) {
         console.error("Provider Dashboard Error:", err)
@@ -42,7 +43,7 @@ export default function ProviderDashboard() {
     }
 
     fetchProviderData()
-  }, [user])
+  }, []) // Empty dependency array to run only once on mount
 
   if (!user) return null
 

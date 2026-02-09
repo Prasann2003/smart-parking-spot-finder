@@ -1,15 +1,21 @@
 package com.smartparking.service;
 
 import com.smartparking.dto.ParkingSpotDTO;
+import com.smartparking.dto.ParkingSpotResponseDTO;
+import com.smartparking.entity.ImageDirectoryType;
 import com.smartparking.entity.ParkingSpot;
+import com.smartparking.entity.Provider;
 import com.smartparking.entity.User;
 import com.smartparking.repository.ParkingSpotRepository;
+import com.smartparking.repository.ProviderRepository;
 import com.smartparking.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,72 +26,116 @@ public class ParkingSpotService {
 
     private final ParkingSpotRepository parkingSpotRepository;
     private final UserRepository userRepository;
-    private final com.smartparking.repository.ProviderApplicationRepository providerApplicationRepository;
+    private final ProviderRepository providerRepository;
+    private final ImageStorageService imageStorageService;
 
-    public ParkingSpotDTO addParkingSpot(ParkingSpotDTO dto) {
-        String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
-                .getUsername();
-        User owner = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    // addParkingSpot logic moved to ProviderService.addProviderWithSpot
 
-        // Update Owner Details if provided
-        if (dto.getBankAccount() != null)
-            owner.setBankAccount(dto.getBankAccount());
-        if (dto.getUpiId() != null)
-            owner.setUpiId(dto.getUpiId());
-        if (dto.getGstNumber() != null)
-            owner.setGstNumber(dto.getGstNumber());
-        if (dto.getPanNumber() != null)
-            owner.setPanNumber(dto.getPanNumber());
-        userRepository.save(owner);
+    // addParkingSpot removed - moved to ProviderService
 
-        // Determine Status based on Role
-        boolean isProvider = owner.getRole() == com.smartparking.entity.Role.PROVIDER;
-        ParkingSpot.ParkingStatus spotStatus = isProvider ? ParkingSpot.ParkingStatus.APPROVED
-                : ParkingSpot.ParkingStatus.PENDING;
-
-        ParkingSpot parkingSpot = ParkingSpot.builder()
-                .name(dto.getName())
-                .description(dto.getDescription())
-                .state(dto.getState())
-                .district(dto.getDistrict())
-                .address(dto.getAddress())
-                .pincode(dto.getPincode())
-                .googleMapsLink(dto.getGoogleMapsLink())
-                .totalCapacity(dto.getTotalCapacity())
-                .pricePerHour(dto.getPricePerHour())
-                .covered(dto.isCovered())
-                .cctv(dto.isCctv())
-                .guard(dto.isGuard())
-                .evCharging(dto.isEvCharging())
-                // New Fields
-                .vehicleTypes(dto.getVehicleTypes())
-                .parkingType(dto.getParkingType())
-                .monthlyPlan(dto.isMonthlyPlan())
-                .weekendPricing(dto.getWeekendPricing())
-                .imageUrls(dto.getImageUrls())
-                .status(spotStatus)
-                .owner(owner)
-                .build();
-
-        ParkingSpot savedSpot = parkingSpotRepository.save(parkingSpot);
-
-        // If NOT a provider, create a ProviderApplication
-        if (!isProvider) {
-            com.smartparking.entity.ProviderApplication application = com.smartparking.entity.ProviderApplication
-                    .builder()
-                    .user(owner)
-                    .parkingSpot(savedSpot)
-                    .status(com.smartparking.entity.ProviderApplication.ApplicationStatus.PENDING)
-                    .build();
-            providerApplicationRepository.save(application);
-        }
-
-        return mapToDTO(savedSpot);
+    public List<ParkingSpotResponseDTO> getParkingSpotsByOwner(Long providerId) {
+        return parkingSpotRepository.findByProviderId(providerId).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
-    public List<ParkingSpotDTO> getNearbyParkingSpots(double userLat, double userLng, double radiusKm) {
-        List<ParkingSpot> allSpots = parkingSpotRepository.findByStatus(ParkingSpot.ParkingStatus.APPROVED);
+    @Transactional
+    public ParkingSpot save(ParkingSpotDTO dto) {
+
+        // 1️⃣ Get logged-in user
+        String email = ((UserDetails) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal())
+                .getUsername();
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 2️⃣ Get provider for user
+        Provider provider = providerRepository.findByUser(user)
+                .orElseThrow(() ->
+                        new RuntimeException("Provider not found for user"));
+
+        // 3️⃣ Save images
+        List<String> imageUrls = new ArrayList<>();
+
+        imageUrls.add(
+                imageStorageService.saveFile(
+                        dto.getParkingAreaImage(),
+                        provider.getId(),
+                        ImageDirectoryType.PARKING_SPOT
+                )
+        );
+
+        imageUrls.add(
+                imageStorageService.saveFile(
+                        dto.getGateImage(),
+                        provider.getId(),
+                        ImageDirectoryType.PARKING_SPOT
+                )
+        );
+
+        if (dto.getSurroundingImage() != null) {
+            imageUrls.add(
+                    imageStorageService.saveFile(
+                            dto.getSurroundingImage(),
+                            provider.getId(),
+                            ImageDirectoryType.PARKING_SPOT
+                    )
+            );
+        }
+
+        // 4️⃣ Create ParkingSpot entity
+        ParkingSpot spot = new ParkingSpot();
+
+        spot.setProvider(provider);
+        spot.setName(dto.getName());
+        spot.setDescription(dto.getDescription());
+
+        // Address
+        spot.setState(dto.getState());
+        spot.setDistrict(dto.getDistrict());
+        spot.setAddress(dto.getAddress());
+        spot.setPincode(dto.getPincode());
+        spot.setGoogleMapsLink(dto.getGoogleMapsLink());
+        spot.setLatitude(dto.getLatitude());
+        spot.setLongitude(dto.getLongitude());
+
+        // Details
+        spot.setTotalCapacity(dto.getTotalCapacity());
+        spot.setPricePerHour(dto.getPricePerHour());
+        spot.setWeekendPricing(dto.getWeekendPricing());
+        spot.setMonthlyPlan(dto.isMonthlyPlan());
+
+        // Features
+        spot.setCovered(dto.isCovered());
+        spot.setCctv(dto.isCctv());
+        spot.setGuard(dto.isGuard());
+        spot.setEvCharging(dto.isEvCharging());
+
+        // Config
+        spot.setVehicleTypes(dto.getVehicleTypes());
+        spot.setParkingType(dto.getParkingType());
+
+        // Images
+        spot.setImageUrls(imageUrls);
+
+        // System-controlled fields
+        spot.setStatus(ParkingSpot.ParkingStatus.ACTIVE);
+
+        // 5️⃣ Save
+        return parkingSpotRepository.save(spot);
+    }
+
+    public ParkingSpotResponseDTO getParkingSpotById(Long id) {
+        ParkingSpot parkingSpot = parkingSpotRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Parking Spot not found"));
+        return mapToDTO(parkingSpot);
+    }
+
+    public List<ParkingSpotResponseDTO> getNearbyParkingSpots(double userLat, double userLng, double radiusKm) {
+        List<ParkingSpot> allSpots = parkingSpotRepository.findByStatus(ParkingSpot.ParkingStatus.ACTIVE);
         return allSpots.stream()
                 .filter(spot -> {
                     if (spot.getLatitude() == null || spot.getLongitude() == null)
@@ -97,8 +147,22 @@ public class ParkingSpotService {
                 .collect(Collectors.toList());
     }
 
+    public List<ParkingSpotResponseDTO> getAllParkingSpots() {
+        return parkingSpotRepository.findByStatus(ParkingSpot.ParkingStatus.ACTIVE).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ParkingSpotResponseDTO> searchParkingSpots(String state, String district) {
+        return parkingSpotRepository
+                .findByStateAndDistrictAndStatus(state, district, ParkingSpot.ParkingStatus.ACTIVE).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        final int R = 6371; // Radius of the earth in km
+        final int R = 6371; // Radius of Earth in kilometers
+
         double latDistance = Math.toRadians(lat2 - lat1);
         double lonDistance = Math.toRadians(lon2 - lon1);
         double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
@@ -108,64 +172,14 @@ public class ParkingSpotService {
         return R * c;
     }
 
-    public List<ParkingSpotDTO> getAllParkingSpots() {
-        return parkingSpotRepository.findByStatus(ParkingSpot.ParkingStatus.APPROVED).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public List<ParkingSpotDTO> searchParkingSpots(String state, String district) {
-        return parkingSpotRepository
-                .findByStateAndDistrictAndStatus(state, district, ParkingSpot.ParkingStatus.APPROVED).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-    }
-
-    // Admin Methods
-    public List<ParkingSpotDTO> getPendingParkingSpots() {
-        return parkingSpotRepository.findByStatus(ParkingSpot.ParkingStatus.PENDING).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public void updateSpotStatus(Long id, String status) {
-        ParkingSpot spot = parkingSpotRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Spot not found"));
-
-        ParkingSpot.ParkingStatus newStatus = ParkingSpot.ParkingStatus.valueOf(status);
-        spot.setStatus(newStatus);
-
-        if (newStatus == ParkingSpot.ParkingStatus.APPROVED) {
-            User owner = spot.getOwner();
-            if (owner.getRole() != com.smartparking.entity.Role.PROVIDER) {
-                owner.setRole(com.smartparking.entity.Role.PROVIDER);
-                userRepository.save(owner);
-            }
-        }
-
-        parkingSpotRepository.save(spot);
-    }
-
-    public List<ParkingSpotDTO> getParkingSpotsByOwner(Long ownerId) {
-        return parkingSpotRepository.findByOwnerId(ownerId).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public ParkingSpotDTO getParkingSpotById(Long id) {
-        ParkingSpot parkingSpot = parkingSpotRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Parking Spot not found"));
-        return mapToDTO(parkingSpot);
-    }
-
-    private ParkingSpotDTO mapToDTO(ParkingSpot parkingSpot) {
+    private ParkingSpotResponseDTO mapToDTO(ParkingSpot parkingSpot) {
         java.util.Set<String> vehicles = new java.util.HashSet<>();
         try {
             if (parkingSpot.getVehicleTypes() != null) {
                 vehicles.addAll(parkingSpot.getVehicleTypes());
             }
         } catch (Exception e) {
-            // Ignore lazy loading or data error
+            throw new RuntimeException("some error while adding the vehicles");
         }
 
         java.util.List<String> images = new java.util.ArrayList<>();
@@ -174,7 +188,7 @@ public class ParkingSpotService {
                 images.addAll(parkingSpot.getImageUrls());
             }
         } catch (Exception e) {
-            // Ignore
+            throw new RuntimeException("some error while adding the images");
         }
 
         Long ownerId = null;
@@ -182,17 +196,16 @@ public class ParkingSpotService {
         String phoneNumber = "N/A";
 
         try {
-            User owner = parkingSpot.getOwner();
-            if (owner != null) {
-                ownerId = owner.getId();
-                ownerName = owner.getName();
-                phoneNumber = owner.getPhoneNumber();
+            if (parkingSpot.getProvider() != null && parkingSpot.getProvider().getUser() != null) {
+                User u = parkingSpot.getProvider().getUser();
+                ownerId = u.getId();
+                ownerName = u.getName();
+                phoneNumber = u.getPhoneNumber();
             }
         } catch (Exception e) {
-            // Ignore bad owner reference
         }
 
-        return ParkingSpotDTO.builder()
+        return ParkingSpotResponseDTO.builder()
                 .id(parkingSpot.getId())
                 .name(parkingSpot.getName())
                 .description(parkingSpot.getDescription())
@@ -214,11 +227,11 @@ public class ParkingSpotService {
                 .monthlyPlan(parkingSpot.isMonthlyPlan())
                 .weekendPricing(parkingSpot.getWeekendPricing())
                 .imageUrls(images)
-                //
-                .status(parkingSpot.getStatus() != null ? parkingSpot.getStatus().name() : "PENDING")
+                .status(parkingSpot.getStatus() != null ? parkingSpot.getStatus() : ParkingSpot.ParkingStatus.BLOCKED)
                 .ownerId(ownerId)
                 .ownerName(ownerName)
                 .phoneNumber(phoneNumber)
                 .build();
     }
+
 }
