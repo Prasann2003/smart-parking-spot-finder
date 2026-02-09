@@ -1,8 +1,7 @@
 package com.smartparking.service;
 
-
-
 import com.smartparking.dto.ParkingProviderApplicationDto;
+import com.smartparking.util.GoogleMapsUtil;
 import com.smartparking.entity.*;
 import com.smartparking.repository.ParkingProviderApplicationRepository;
 import com.smartparking.repository.ParkingSpotRepository;
@@ -146,6 +145,15 @@ public class ProviderService {
                                                         dto.getSurroundingAreaImage(),
                                                         user.getId(),
                                                         ImageDirectoryType.APPLICATION));
+                }
+
+                // Extract coordinates from Google Maps Link if available
+                if (dto.getGoogleMapsLink() != null && !dto.getGoogleMapsLink().isEmpty()) {
+                        double[] coordinates = GoogleMapsUtil.getCoordinates(dto.getGoogleMapsLink());
+                        if (coordinates != null) {
+                                dto.setLatitude(coordinates[0]);
+                                dto.setLongitude(coordinates[1]);
+                        }
                 }
 
                 ProviderApplication application = ProviderApplication.builder()

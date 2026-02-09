@@ -1,6 +1,7 @@
 package com.smartparking.service;
 
 import com.smartparking.dto.ParkingSpotDTO;
+import com.smartparking.util.GoogleMapsUtil;
 import com.smartparking.dto.ParkingSpotResponseDTO;
 import com.smartparking.entity.ImageDirectoryType;
 import com.smartparking.entity.ParkingSpot;
@@ -54,8 +55,7 @@ public class ParkingSpotService {
 
         // 2️⃣ Get provider for user
         Provider provider = providerRepository.findByUser(user)
-                .orElseThrow(() ->
-                        new RuntimeException("Provider not found for user"));
+                .orElseThrow(() -> new RuntimeException("Provider not found for user"));
 
         // 3️⃣ Save images
         List<String> imageUrls = new ArrayList<>();
@@ -64,29 +64,33 @@ public class ParkingSpotService {
                 imageStorageService.saveFile(
                         dto.getParkingAreaImage(),
                         provider.getId(),
-                        ImageDirectoryType.PARKING_SPOT
-                )
-        );
+                        ImageDirectoryType.PARKING_SPOT));
 
         imageUrls.add(
                 imageStorageService.saveFile(
                         dto.getGateImage(),
                         provider.getId(),
-                        ImageDirectoryType.PARKING_SPOT
-                )
-        );
+                        ImageDirectoryType.PARKING_SPOT));
 
         if (dto.getSurroundingImage() != null) {
             imageUrls.add(
                     imageStorageService.saveFile(
                             dto.getSurroundingImage(),
                             provider.getId(),
-                            ImageDirectoryType.PARKING_SPOT
-                    )
-            );
+                            ImageDirectoryType.PARKING_SPOT));
         }
 
         // 4️⃣ Create ParkingSpot entity
+
+        // Extract coordinates from Google Maps Link if available
+        if (dto.getGoogleMapsLink() != null && !dto.getGoogleMapsLink().isEmpty()) {
+            double[] coordinates = GoogleMapsUtil.getCoordinates(dto.getGoogleMapsLink());
+            if (coordinates != null) {
+                dto.setLatitude(coordinates[0]);
+                dto.setLongitude(coordinates[1]);
+            }
+        }
+
         ParkingSpot spot = new ParkingSpot();
 
         spot.setProvider(provider);
