@@ -62,15 +62,6 @@ export default function BecomeProvider() {
     }))
   }
 
-  const uploadImage = async (file) => {
-    const formData = new FormData()
-    formData.append("file", file)
-    const res = await api.post("/parking/upload", formData, {
-      headers: { "Content-Type": "multipart/form-data" }
-    })
-    return res.data // returns url string
-  }
-
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -79,31 +70,72 @@ export default function BecomeProvider() {
       return
     }
 
+    if (!images.parkingArea || !images.entryGate) {
+      toast.error("Please upload required images (Parking Area & Entry Gate)")
+      return
+    }
+
     setLoading(true)
     try {
-      // 1. Upload Images
-      const imageUrls = []
-      if (images.parkingArea) imageUrls.push(await uploadImage(images.parkingArea))
-      if (images.entryGate) imageUrls.push(await uploadImage(images.entryGate))
-      if (images.surrounding) imageUrls.push(await uploadImage(images.surrounding))
+      const formData = new FormData()
 
-      // 2. Prepare Payload
-      const payload = {
-        ...form,
-        totalCapacity: Number(form.capacity),
-        pricePerHour: Number(form.pricePerHour),
-        weekendPricing: form.weekendPricing ? Number(form.weekendPricing) : 0,
-        address: `${form.address1}, ${form.address2}`,
-        imageUrls,
-        googleMapsLink: form.mapsLink
+      // 1. Owner & Basic Info
+      formData.append("ownerName", form.name)
+      formData.append("phoneNumber", form.phone)
+      formData.append("governmentId", form.governmentId)
+
+      // 2. Bank & Compliance
+      formData.append("bankAccount", form.bankAccount)
+      formData.append("upiId", form.upi)
+      formData.append("gstNumber", form.gst)
+      formData.append("panNumber", form.pan)
+
+      // 3. Location
+      formData.append("state", form.state)
+      formData.append("district", form.district)
+      formData.append("address", `${form.address1}${form.address2 ? ", " + form.address2 : ""}`)
+      formData.append("pincode", form.pincode)
+      formData.append("googleMapsLink", form.mapsLink)
+
+      // 4. Parking Details
+      formData.append("name", `${form.name}'s Parking`)
+      formData.append("description", "Safe and secure parking space.")
+      formData.append("totalCapacity", form.capacity)
+      formData.append("pricePerHour", form.pricePerHour)
+      formData.append("weekendPricing", form.weekendPricing || 0)
+      formData.append("monthlyPlan", form.monthlyPlan)
+
+      formData.append("parkingType", form.parkingType)
+      formData.append("covered", form.parkingType === "Covered")
+
+      formData.append("cctv", form.cctv)
+      formData.append("guard", form.guard)
+      formData.append("evCharging", form.evCharging)
+
+      // 5. Vehicle Types (Set<String>)
+      form.vehicleTypes.forEach(type => {
+        formData.append("vehicleTypes", type)
+      })
+
+      // 6. Images
+      if (images.parkingArea) formData.append("parkingAreaImage", images.parkingArea)
+      if (images.entryGate) formData.append("entryGateImage", images.entryGate)
+      if (images.surrounding) formData.append("surroundingAreaImage", images.surrounding)
+
+      // Submit
+      const res = await api.post("/provider/add", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      })
+
+      if (res.data?.message) {
+        toast.success(res.data.message)
+      } else {
+        toast.success("Application submitted successfully! 🚀")
       }
 
-      // 3. Submit
-      await api.post("/parking/add", payload)
-      toast.success("Parking provider application submitted! 🚀")
     } catch (error) {
-      console.error(error)
-      toast.error("Failed to submit application. Try again.")
+      console.error("Submission Error:", error)
+      toast.error(error.response?.data?.message || "Failed to submit application.")
     } finally {
       setLoading(false)
     }
@@ -182,8 +214,8 @@ export default function BecomeProvider() {
                       key={type}
                       onClick={() => handleVehicleChange(type)}
                       className={`px-4 py-2 rounded-lg border transition ${form.vehicleTypes.includes(type)
-                          ? "bg-indigo-600 text-white"
-                          : "bg-gray-100"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-gray-100"
                         }`}
                     >
                       {type}

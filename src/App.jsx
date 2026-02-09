@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard"
 import BecomeProvider from "./pages/BecomeProvider"
 import Payment from "./pages/Payment"
 import BookingDetails from "./pages/BookingDetails"
+import AddParking from "./pages/AddParking"
 
 import Profile from "./pages/Profile"
 import MyBookings from "./pages/MyBookings"
@@ -32,69 +33,16 @@ export default function App() {
            🔐 PROTECTED ROUTES
       ========================= */}
 
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/payment"
-        element={
-          <ProtectedRoute>
-            <Payment />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* ✅ IMPORTANT — BOOKING DETAILS ROUTE */}
-      <Route
-        path="/booking/:id"
-        element={
-          <ProtectedRoute>
-            <BookingDetails />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/bookings"
-        element={
-          <ProtectedRoute>
-            <MyBookings />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/notifications"
-        element={
-          <ProtectedRoute>
-            <Notifications />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        }
-      />
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/booking/:id" element={<BookingDetails />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/bookings" element={<MyBookings />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/add-parking" element={<AddParking />} />
+      </Route>
 
     </Routes>
   )

@@ -38,8 +38,13 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/api/public/**", "/actuator/**", "/api/images/**",
-                                "/api/provider/**")
+                                "/api/parking/search", "/api/parking/nearby")
                         .permitAll()
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/provider/application-status", "/api/provider/add")
+                        .hasAnyAuthority("USER", "PROVIDER")
+                        .requestMatchers("/api/provider/**").hasAuthority("PROVIDER")
+                        .requestMatchers("/api/parking/add", "/api/parking/upload").hasAnyAuthority("USER", "PROVIDER")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

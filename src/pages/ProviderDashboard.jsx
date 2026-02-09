@@ -23,16 +23,17 @@ export default function ProviderDashboard() {
 
   useEffect(() => {
     if (!user) return
+    const email = user.email
 
     const fetchProviderData = async () => {
       try {
-        const dashboardRes = await api.get(`/provider/dashboard?email=${user.email}`)
+        const dashboardRes = await api.get(`/provider/dashboard?email=${email}`)
         setStats(dashboardRes.data)
 
-        const parkingRes = await api.get(`/provider/parkings?email=${user.email}`)
+        const parkingRes = await api.get(`/provider/parkings?email=${email}`)
         setParkings(parkingRes.data)
 
-        const bookingRes = await api.get(`/provider/bookings?email=${user.email}`)
+        const bookingRes = await api.get(`/provider/bookings?email=${email}`)
         setRecentBookings(bookingRes.data)
       } catch (err) {
         console.error("Provider Dashboard Error:", err)
@@ -42,13 +43,12 @@ export default function ProviderDashboard() {
     }
 
     fetchProviderData()
-  }, [user])
+  }, []) // Empty dependency array to run only once on mount
 
   if (!user) return null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
-      <Navbar />
 
       <motion.div
         initial={{ opacity: 0 }}
@@ -102,7 +102,15 @@ export default function ProviderDashboard() {
                   whileHover={{ scale: 1.02 }}
                   className="bg-white p-6 rounded-2xl shadow-xl border"
                 >
-                  <h3 className="text-xl font-bold">{spot.name}</h3>
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-xl font-bold">{spot.name}</h3>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${spot.status === "APPROVED" ? "bg-green-100 text-green-700" :
+                      spot.status === "REJECTED" ? "bg-red-100 text-red-700" :
+                        "bg-yellow-100 text-yellow-700"
+                      }`}>
+                      {spot.status}
+                    </span>
+                  </div>
 
                   <p className="text-gray-600 mt-1">
                     {spot.address}

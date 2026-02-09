@@ -19,9 +19,13 @@ export default function Navbar() {
         px-8
         py-4
         bg-white/95
+        dark:bg-gray-900/95
         backdrop-blur-xl
         border-b
         border-gray-200
+        dark:border-gray-700
+        transition-colors
+        duration-300
       "
     >
       {/* 🅿️ LOGO / TITLE */}
@@ -31,9 +35,11 @@ export default function Navbar() {
           text-2xl
           font-extrabold
           text-gray-900
+          dark:text-white
           tracking-wide
           cursor-pointer
           hover:text-indigo-600
+          dark:hover:text-indigo-400
           transition
         "
       >
@@ -46,9 +52,9 @@ export default function Navbar() {
           onClick={() => setOpen(!open)}
           className="flex flex-col gap-1.5 focus:outline-none"
         >
-          <span className="w-7 h-0.5 bg-gray-900"></span>
-          <span className="w-7 h-0.5 bg-gray-900"></span>
-          <span className="w-7 h-0.5 bg-gray-900"></span>
+          <span className="w-7 h-0.5 bg-gray-900 dark:bg-white transition-colors duration-300"></span>
+          <span className="w-7 h-0.5 bg-gray-900 dark:bg-white transition-colors duration-300"></span>
+          <span className="w-7 h-0.5 bg-gray-900 dark:bg-white transition-colors duration-300"></span>
         </button>
 
         {open && <MenuDropdown close={() => setOpen(false)} />}

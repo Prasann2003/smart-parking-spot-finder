@@ -22,8 +22,11 @@ export default function AdminDashboard() {
         setStats(statsRes.data)
         setApplications(appsRes.data)
       } catch (err) {
-        console.error(err)
-        setError("Unable to load admin dashboard.")
+        console.error("Admin Dashboard Error:", err.response?.data)
+        const msg = err.response?.data?.message || "Unable to load admin dashboard."
+        toast.error(msg)
+        setError(msg)
+        setLoading(false)
       }
 
       setLoading(false)
@@ -118,16 +121,16 @@ export default function AdminDashboard() {
               >
                 <div>
                   <h3 className="text-xl font-semibold">
-                    {app.ownerName}
+                    {app.user.name}
                   </h3>
                   <p className="text-gray-600">
-                    📍 {app.address}
+                    📍 {app.parkingSpot.address}
                   </p>
                   <p className="text-gray-600">
-                    📞 {app.phone}
+                    📞 {app.user.phoneNumber || "N/A"}
                   </p>
                   <p className="text-gray-600">
-                    🅿 Capacity: {app.totalCapacity}
+                    🅿 Capacity: {app.parkingSpot.totalCapacity}
                   </p>
                 </div>
 

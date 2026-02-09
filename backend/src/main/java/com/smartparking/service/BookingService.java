@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@org.springframework.transaction.annotation.Transactional
 public class BookingService {
 
     private final BookingRepository bookingRepository;
@@ -65,7 +66,7 @@ public class BookingService {
     }
 
     public List<BookingDTO> getBookingsByOwner(Long ownerId) {
-        return bookingRepository.findByParkingSpot_Owner_Id(ownerId).stream()
+        return bookingRepository.findByParkingSpot_Provider_User_Id(ownerId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }

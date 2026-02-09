@@ -4,6 +4,8 @@ import toast from "react-hot-toast"
 // 🔹 REGISTER USER
 export async function register(data) {
   try {
+    // Don't send Authorization header for registration
+    delete api.defaults.headers.common["Authorization"]
     const response = await api.post("/auth/register", data)
     toast.success("Registration successful! Please login.")
     return true
