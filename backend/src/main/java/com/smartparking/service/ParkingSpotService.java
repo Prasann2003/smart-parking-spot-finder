@@ -88,6 +88,9 @@ public class ParkingSpotService {
             if (coordinates != null) {
                 dto.setLatitude(coordinates[0]);
                 dto.setLongitude(coordinates[1]);
+                System.out.println("✅ Extracted Coordinates: " + coordinates[0] + ", " + coordinates[1]);
+            } else {
+                System.out.println("❌ Failed to extract coordinates from link: " + dto.getGoogleMapsLink());
             }
         }
 
@@ -103,8 +106,7 @@ public class ParkingSpotService {
         spot.setAddress(dto.getAddress());
         spot.setPincode(dto.getPincode());
         spot.setGoogleMapsLink(dto.getGoogleMapsLink());
-        spot.setLatitude(dto.getLatitude());
-        spot.setLongitude(dto.getLongitude());
+        // Latitude and Longitude set above
 
         // Details
         spot.setTotalCapacity(dto.getTotalCapacity());
@@ -139,14 +141,12 @@ public class ParkingSpotService {
     }
 
     public List<ParkingSpotResponseDTO> getNearbyParkingSpots(double userLat, double userLng, double radiusKm) {
-        List<ParkingSpot> allSpots = parkingSpotRepository.findByStatus(ParkingSpot.ParkingStatus.ACTIVE);
-        return allSpots.stream()
-                .filter(spot -> {
-                    if (spot.getLatitude() == null || spot.getLongitude() == null)
-                        return false;
-                    double distance = calculateDistance(userLat, userLng, spot.getLatitude(), spot.getLongitude());
-                    return distance <= radiusKm;
-                })
+        System.out.println("🔍 Finding nearby spots (DB Query). User Lat: " + userLat + ", Lng: " + userLng
+                + ", Radius: " + radiusKm);
+        List<ParkingSpot> nearbySpots = parkingSpotRepository.findNearbySpots(userLat, userLng, radiusKm);
+
+        return nearbySpots.stream()
+                .filter(spot -> spot.getStatus() == ParkingSpot.ParkingStatus.ACTIVE)
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }

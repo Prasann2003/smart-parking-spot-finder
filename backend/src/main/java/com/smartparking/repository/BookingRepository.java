@@ -1,8 +1,10 @@
 package com.smartparking.repository;
 
 import com.smartparking.entity.Booking;
+import com.smartparking.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
+import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUserId(Long userId);
@@ -15,4 +17,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Double calculateTotalRevenue();
 
     long countByStatus(String status);
+    Optional<Booking> findByIdAndUser(Long id, User user);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(b) FROM Booking b WHERE b.parkingSpot.id = :spotId " +
+            "AND b.status = 'CONFIRMED' " +
+            "AND (b.startTime < :endTime AND b.endTime > :startTime)")
+    long countOverlappingBookings(@org.springframework.data.repository.query.Param("spotId") Long spotId,
+            @org.springframework.data.repository.query.Param("startTime") java.time.LocalDateTime startTime,
+            @org.springframework.data.repository.query.Param("endTime") java.time.LocalDateTime endTime);
 }

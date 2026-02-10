@@ -136,7 +136,7 @@ function DriverDashboard({ user, navigate }) {
           setUserLocation({ lat: latitude, lng: longitude })
 
           const res = await api.get(
-            `/parking/nearby?lat=${latitude}&lng=${longitude}&radius=7`
+            `/parking/nearby?lat=${latitude}&lng=${longitude}&radius=20`
           )
 
           setParkingSpots(res.data)

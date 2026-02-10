@@ -55,6 +55,38 @@ export function getCurrentUser() {
   return JSON.parse(localStorage.getItem("currentUser"))
 }
 
+// 🔹 GET USER PROFILE
+export async function getProfile() {
+  try {
+    const response = await api.get("/users/profile")
+    return response.data
+  } catch (error) {
+    console.error("Fetch profile error", error)
+    return null
+  }
+}
+
+// 🔹 UPDATE USER PROFILE
+export async function updateProfile(data) {
+  try {
+    const response = await api.put("/users/profile", data)
+    toast.success("Profile updated successfully ✅")
+
+    // Update local storage user if needed, but better to rely on API
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"))
+    if (currentUser) {
+      const updatedUser = { ...currentUser, ...response.data }
+      localStorage.setItem("currentUser", JSON.stringify(updatedUser))
+    }
+
+    return response.data
+  } catch (error) {
+    console.error("Update profile error", error)
+    toast.error(error.response?.data?.message || "Update failed")
+    return null
+  }
+}
+
 // Initialize Auth Header on Load
 const token = localStorage.getItem("token")
 if (token) {

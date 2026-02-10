@@ -40,12 +40,12 @@ export default function MyBookings() {
       setBookings((prev) =>
         prev.map((booking) =>
           (booking.id || booking._id) === id
-            ? { ...booking, status: "Cancelled" }
+            ? { ...booking, status: "CANCELLED" }
             : booking
         )
       )
     } catch (err) {
-      toast.error("Failed to cancel booking.")
+      toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to cancel booking.")
     }
   }
 
@@ -93,20 +93,26 @@ export default function MyBookings() {
                 >
                   <div>
                     <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                      {booking.place}
+                      {booking.parkingSpotName}
                     </h3>
 
                     <div className="text-gray-600 space-y-1">
-                      <p>📅 {new Date(booking.date).toLocaleDateString()}</p>
-                      <p>⏰ {booking.startTime} - {booking.endTime}</p>
-                      <p>🚗 {booking.vehicle}</p>
+                      <p>📅 Booked: {new Date(booking.createdAt).toLocaleString()}</p>
+                      <p>⏰ {new Date(booking.startTime).toLocaleString()} - {new Date(booking.endTime).toLocaleString()}</p>
+                      <p>💰 Price: ₹{booking.totalPrice} ({booking.paymentMethod})</p>
                     </div>
                   </div>
 
                   <div className="flex flex-col items-end justify-between">
                     <StatusBadge status={booking.status} />
 
-                    <div className="flex gap-4 mt-6">
+                    <div className="flex gap-4 mt-6 items-center">
+                      {booking.status === "CONFIRMED" && (
+                        <div className="text-xs text-gray-500 italic mr-2">
+                          Free cancellation up to 48h before start
+                        </div>
+                      )}
+
                       <button
                         onClick={() => navigate(`/booking/${bookingId}`)}
                         className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
@@ -114,7 +120,7 @@ export default function MyBookings() {
                         View
                       </button>
 
-                      {booking.status === "Active" && (
+                      {booking.status === "CONFIRMED" && (
                         <button
                           onClick={() => handleCancel(bookingId)}
                           className="px-5 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
