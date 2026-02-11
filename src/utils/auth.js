@@ -87,6 +87,48 @@ export async function updateProfile(data) {
   }
 }
 
+// 🔹 FORGOT PASSWORD - SEND OTP
+export async function forgotPassword(email) {
+  try {
+    delete api.defaults.headers.common["Authorization"]
+    await api.post("/auth/forgot-password", { email })
+    toast.success("OTP sent to your email 📧")
+    return true
+  } catch (error) {
+    console.error("Forgot password error", error)
+    toast.error(error.response?.data?.message || "Failed to send OTP")
+    return false
+  }
+}
+
+// 🔹 VERIFY OTP
+export async function verifyOtp(email, otp) {
+  try {
+    delete api.defaults.headers.common["Authorization"]
+    await api.post("/auth/verify-otp", { email, otp })
+    toast.success("OTP verified successfully ✅")
+    return true
+  } catch (error) {
+    console.error("Verify OTP error", error)
+    toast.error(error.response?.data?.message || "Invalid OTP")
+    return false
+  }
+}
+
+// 🔹 RESET PASSWORD
+export async function resetPassword(email, otp, newPassword) {
+  try {
+    delete api.defaults.headers.common["Authorization"]
+    await api.post("/auth/reset-password", { email, otp, newPassword })
+    toast.success("Password reset successfully 🎉")
+    return true
+  } catch (error) {
+    console.error("Reset password error", error)
+    toast.error(error.response?.data?.message || "Failed to reset password")
+    return false
+  }
+}
+
 // Initialize Auth Header on Load
 const token = localStorage.getItem("token")
 if (token) {
