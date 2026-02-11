@@ -43,19 +43,12 @@ public class ImageStorageService {
     }
 
     public String saveFile(MultipartFile file, Long ownerId, ImageDirectoryType type) {
-        if (file == null || file.getSize() == 0) {
+        if (file == null || file.isEmpty()) {
             return null;
         }
 
-        if (ownerId == null) {
-            throw new NotFoundException("owner id is required");
-        }
-
-        if (basePath == null || basePath.isBlank()) {
-            throw new IllegalStateException("basePath is not configured");
-        }
-
         try {
+            // Use local system path as requested by user
             Path path = Paths.get(
                     basePath,
                     type.getFolderName(),
@@ -65,12 +58,7 @@ public class ImageStorageService {
             Files.createDirectories(path);
 
             String originalFileName = file.getOriginalFilename();
-            if (originalFileName == null || originalFileName.isBlank()) {
-                throw new NotFoundException("file name is empty");
-            }
-
             String cleanFileName = Paths.get(originalFileName).getFileName().toString();
-
             String extension = "";
             int dotIndex = cleanFileName.lastIndexOf('.');
             if (dotIndex > 0) {
@@ -85,12 +73,12 @@ public class ImageStorageService {
                     filePath,
                     StandardCopyOption.REPLACE_EXISTING);
 
-            return filePath.toString();
+            // Return the static resource URL path
+            // Map /uploads/** to the local file system D:\\Infosys\\upload\\
+            return "/uploads/" + type.getFolderName() + "/" + ownerId + "/images/" + newFileName;
 
         } catch (IOException e) {
-            throw new NotFoundException(
-                    "Failed to save file for ownerId=" + ownerId +
-                            ", type=" + type.getFolderName());
+            throw new RuntimeException("Failed to store file " + file.getOriginalFilename(), e);
         }
     }
 
@@ -106,44 +94,5 @@ public class ImageStorageService {
         } catch (MalformedURLException e) {
             throw new RuntimeException("Could not read file: " + filename, e);
         }
-    }}
-
-    
-
-    
-            
-            
-            
-            
-
-    
-
-    
-    
-        
-    
-
-     
-
-    
-    
-    
-        
-    
-
-    
-    
-
-    
-
-    
-
-    
-    
-    
-        
-                
-                        
-    
-
-    
+    }
+}

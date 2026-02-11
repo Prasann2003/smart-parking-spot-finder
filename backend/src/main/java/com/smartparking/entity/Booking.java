@@ -39,4 +39,10 @@ public class Booking {
         CANCELLED,
         COMPLETED
     }
+
+    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Payment payment;
+
+    @org.hibernate.annotations.CreationTimestamp
+    private LocalDateTime createdAt;
 }

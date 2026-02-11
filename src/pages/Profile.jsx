@@ -2,7 +2,7 @@ import indiaData from "../utils/indiaData"
 import Navbar from "../components/Navbar"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
-import { getCurrentUser } from "../utils/auth"
+import { getCurrentUser, getProfile, updateProfile } from "../utils/auth"
 
 export default function Profile() {
   const user = getCurrentUser()
@@ -19,31 +19,36 @@ export default function Profile() {
     pincode: "",
   })
 
-  // 🔹 Load logged-in user data
+  // 🔹 Load logged-in user data from Backend
   useEffect(() => {
-    if (user) {
-      const savedProfile =
-        JSON.parse(localStorage.getItem(`profile_${user.email}`)) || {}
-
-      setProfile({
-        name: savedProfile.name || user.name || "",
-        email: user.email || "",
-        role: user.role || "driver",
-        phone: savedProfile.phone || "",
-        address1: savedProfile.address1 || "",
-        address2: savedProfile.address2 || "",
-        state: savedProfile.state || "",
-        district: savedProfile.district || "",
-        pincode: savedProfile.pincode || "",
-      })
+    const fetchUserData = async () => {
+      if (user?.email) {
+        const data = await getProfile()
+        if (data) {
+          setProfile({
+            name: data.name || "",
+            email: data.email || "",
+            role: data.role || "driver",
+            phone: data.phoneNumber || "", // Backend uses phoneNumber
+            address1: data.address1 || "",
+            address2: data.address2 || "",
+            state: data.state || "",
+            district: data.district || "",
+            pincode: data.pincode || "",
+          })
+        }
+      }
     }
-  }, [user])
+    fetchUserData()
+  }, [user?.email])
 
   const handleChange = (e) => {
     setProfile({ ...profile, [e.target.name]: e.target.value })
   }
 
   const handleStateChange = (e) => {
+    console.log("State selected:", e.target.value)
+    console.log("Districts available:", indiaData[e.target.value])
     setProfile({
       ...profile,
       state: e.target.value,
@@ -51,14 +56,8 @@ export default function Profile() {
     })
   }
 
-  const handleSave = () => {
-    // Save profile separately per user
-    localStorage.setItem(
-      `profile_${profile.email}`,
-      JSON.stringify(profile)
-    )
-
-    alert("Profile updated successfully ✅")
+  const handleSave = async () => {
+    await updateProfile(profile)
   }
 
   if (!user) return null
@@ -210,11 +209,10 @@ function Input({ label, name, value, onChange, placeholder, disabled }) {
         placeholder={placeholder}
         onChange={onChange}
         disabled={disabled}
-        className={`w-full px-4 py-3 rounded-lg border ${
-          disabled
-            ? "bg-gray-100 text-gray-500"
-            : "border-gray-300 focus:ring-2 focus:ring-indigo-500"
-        }`}
+        className={`w-full px-4 py-3 rounded-lg border ${disabled
+          ? "bg-gray-100 text-gray-500"
+          : "border-gray-300 focus:ring-2 focus:ring-indigo-500"
+          }`}
       />
     </div>
   )

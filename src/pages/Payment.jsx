@@ -15,8 +15,13 @@ export default function Payment() {
   const [endTime, setEndTime] = useState("")
   const [totalPrice, setTotalPrice] = useState(0)
   const [processing, setProcessing] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState(null)
+  const [paymentStatus, setPaymentStatus] = useState("PENDING") // PENDING, SUCCESS
 
-  // Calculate Price when dates change
+  const [availableSlots, setAvailableSlots] = useState(null)
+  const [checkingAvailability, setCheckingAvailability] = useState(false)
+
+  // Calculate Price & Check Availability
   useEffect(() => {
     if (startTime && endTime && spot) {
       const start = new Date(startTime)
@@ -25,8 +30,28 @@ export default function Payment() {
 
       if (hours > 0) {
         setTotalPrice(Math.round(hours * spot.pricePerHour))
+
+        // Check Availability
+        const checkAvailability = async () => {
+          setCheckingAvailability(true)
+          try {
+            const formattedStart = startTime.replace("T", " ") + ":00"
+            const formattedEnd = endTime.replace("T", " ") + ":00"
+
+            const res = await api.get(`/bookings/check-availability?parkingSpotId=${spot.id}&startTime=${formattedStart}&endTime=${formattedEnd}`)
+            setAvailableSlots(res.data)
+          } catch (err) {
+            console.error("Availability check failed", err)
+            setAvailableSlots(0) // Assume 0 on error to be safe
+          } finally {
+            setCheckingAvailability(false)
+          }
+        }
+        checkAvailability()
+
       } else {
         setTotalPrice(0)
+        setAvailableSlots(null)
       }
     }
   }, [startTime, endTime, spot])
@@ -56,7 +81,8 @@ export default function Payment() {
       const payload = {
         parkingSpotId: spot.id,
         startTime: formattedStart,
-        endTime: formattedEnd
+        endTime: formattedEnd,
+        paymentMethod: paymentMethod
       }
 
       await api.post("/bookings/create", payload)
@@ -97,7 +123,12 @@ export default function Payment() {
 
                 <div className="mt-4 space-y-2">
                   <p>💰 ₹{spot.pricePerHour}/hour</p>
-                  <p>🅿 Available Slots: {spot.totalCapacity}</p>
+                  <p>🅿 Total Capacity: {spot.totalCapacity}</p>
+                  {availableSlots !== null && (
+                    <p className={`font-bold ${availableSlots > 0 ? "text-green-600" : "text-red-500"}`}>
+                      Authorization Status: {availableSlots > 0 ? `✅ ${availableSlots} Slots Available` : "🔴 Fully Booked"}
+                    </p>
+                  )}
                   <p>⭐ Rating: {spot.rating || "N/A"}</p>
                 </div>
               </div>
@@ -140,20 +171,45 @@ export default function Payment() {
               </div>
 
               <div className="space-y-4 mt-8">
-                <button className="w-full py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">
-                  Pay via UPI
+                <button
+                  onClick={() => {
+                    setProcessing(true);
+                    setTimeout(() => {
+                      setPaymentStatus("SUCCESS");
+                      setPaymentMethod("UPI");
+                      setProcessing(false);
+                      toast.success("Payment Received via UPI");
+                    }, 2000);
+                  }}
+                  disabled={availableSlots === 0 || checkingAvailability || paymentStatus === "SUCCESS"}
+                  className={`w-full py-3 text-white rounded-xl hover:bg-opacity-90 disabled:bg-gray-400 ${paymentMethod === 'UPI' ? 'bg-green-600' : 'bg-indigo-600'}`}>
+                  {paymentMethod === 'UPI' ? 'Paid via UPI ✅' : 'Pay via UPI'}
                 </button>
 
-                <button className="w-full py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700">
-                  Pay via Card
+                <button
+                  onClick={() => {
+                    setProcessing(true);
+                    setTimeout(() => {
+                      setPaymentStatus("SUCCESS");
+                      setPaymentMethod("CARD");
+                      setProcessing(false);
+                      toast.success("Payment Received via Card");
+                    }, 2000);
+                  }}
+                  disabled={availableSlots === 0 || checkingAvailability || paymentStatus === "SUCCESS"}
+                  className={`w-full py-3 text-white rounded-xl hover:bg-opacity-90 disabled:bg-gray-400 ${paymentMethod === 'CARD' ? 'bg-green-600' : 'bg-emerald-600'}`}>
+                  {paymentMethod === 'CARD' ? 'Paid via Card ✅' : 'Pay via Card'}
                 </button>
 
                 <button
                   onClick={handlePayment}
-                  disabled={processing || totalPrice <= 0}
+                  disabled={processing || totalPrice <= 0 || availableSlots === 0 || checkingAvailability || paymentStatus !== "SUCCESS"}
                   className="mt-4 w-full py-4 bg-black text-white rounded-xl text-lg font-semibold hover:bg-gray-800 disabled:bg-gray-400"
                 >
-                  {processing ? "Processing..." : `Confirm Booking (₹${totalPrice})`}
+                  {checkingAvailability ? "Checking..." :
+                    availableSlots === 0 ? "Unavailable 🚫" :
+                      processing ? "Processing..." :
+                        paymentStatus === "SUCCESS" ? "Confirm Booking (Paid)" : "Completing Payment..."}
                 </button>
               </div>
             </div>

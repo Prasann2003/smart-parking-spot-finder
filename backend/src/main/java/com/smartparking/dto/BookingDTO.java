@@ -30,4 +30,12 @@ public class BookingDTO {
     private Double totalPrice;
     private String status;
     private String parkingSpotName;
+    private String paymentMethod;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createdAt;
+
+    // User Details for Provider
+    private String userName;
+    private String userEmail;
+    private String userPhone;
 }
