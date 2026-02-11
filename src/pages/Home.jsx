@@ -13,6 +13,14 @@ export default function Home() {
     }
   }
 
+  const handleBecomeProvider = () => {
+    if (isLoggedIn()) {
+      navigate("/become-provider")
+    } else {
+      navigate("/auth")
+    }
+  }
+
   return (
     <div className="w-full min-h-screen bg-[#0f172a] text-white overflow-hidden">
 
@@ -64,7 +72,7 @@ export default function Home() {
             {/* SECONDARY ACTIONS */}
             <div className="mt-6 flex gap-6 flex-wrap">
               <button
-                onClick={() => navigate("/become-provider")}
+                onClick={handleBecomeProvider}
                 className="px-6 py-3 bg-pink-500 hover:bg-pink-600 rounded-xl font-semibold transition shadow-lg shadow-pink-500/30"
               >
                 🏢 Become Provider

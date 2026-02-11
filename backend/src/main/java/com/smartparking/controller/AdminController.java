@@ -98,6 +98,22 @@ public class AdminController {
         map.put("totalCapacity", app.getTotalCapacity());
         map.put("pricePerHour", app.getPricePerHour());
         map.put("description", app.getDescription());
+
+        // Amenities
+        map.put("cctv", app.isCctv());
+        map.put("covered", app.isCovered());
+        map.put("guard", app.isGuard());
+        map.put("evCharging", app.isEvCharging());
+        map.put("vehicleTypes", app.getVehicleTypes());
+        map.put("parkingType", app.getParkingType());
+        map.put("monthlyPlan", app.isMonthlyPlan());
+        map.put("weekendPricing", app.getWeekendPricing());
+
+        // Bank (Admin only)
+        map.put("bankAccount", app.getBankAccount());
+        map.put("upiId", app.getUpiId());
+        map.put("gstNumber", app.getGstNumber());
+        map.put("panNumber", app.getPanNumber());
         // Sanitize image URLs for frontend
         List<String> sanitizedImages = app.getImageUrls().stream()
                 .map(url -> {
@@ -123,7 +139,8 @@ public class AdminController {
     @PostMapping("/provider/{id}/{action}")
     public ResponseEntity<?> updateApplicationStatus(
             @PathVariable Long id,
-            @PathVariable String action) {
+            @PathVariable String action,
+            @RequestBody(required = false) Map<String, String> payload) {
 
         ProviderApplication application = parkingProviderApplicationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Application not found"));
@@ -156,6 +173,9 @@ public class AdminController {
 
         } else if (action.equalsIgnoreCase("reject")) {
 
+            String reason = (payload != null) ? payload.get("reason") : "No reason provided";
+            application.setRejectionReason(reason);
+            application.setRejectionDate(java.time.LocalDateTime.now());
             application.setStatus(ProviderApplication.ApplicationStatus.REJECTED);
             parkingProviderApplicationRepository.save(application);
 

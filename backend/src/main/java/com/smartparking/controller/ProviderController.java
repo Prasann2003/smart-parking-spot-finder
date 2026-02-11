@@ -117,7 +117,7 @@ public class ProviderController {
         String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
                 .getUsername();
 
-        String status = providerService.getProviderStatus(email);
-        return ResponseEntity.ok(Map.of("status", status));
+        java.util.Map<String, String> statusMap = providerService.getProviderStatus(email);
+        return ResponseEntity.ok(statusMap);
     }
 }

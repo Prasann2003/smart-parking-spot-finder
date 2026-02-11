@@ -21,7 +21,6 @@ public class ProviderApplication {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @ManyToOne(optional = false)
     @JoinColumn(name = "user")
     private User user;
@@ -63,10 +62,7 @@ public class ProviderApplication {
 
     // Parking Configuration
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-            name = "parking_vehicle_types",
-            joinColumns = @JoinColumn(name = "parking_application_id")
-    )
+    @CollectionTable(name = "parking_vehicle_types", joinColumns = @JoinColumn(name = "parking_application_id"))
     @Column(name = "vehicle_type")
     private Set<String> vehicleTypes;
 
@@ -77,10 +73,7 @@ public class ProviderApplication {
 
     // Images
     @ElementCollection
-    @CollectionTable(
-            name = "parking_images",
-            joinColumns = @JoinColumn(name = "parking_application_id")
-    )
+    @CollectionTable(name = "parking_images", joinColumns = @JoinColumn(name = "parking_application_id"))
     @Column(name = "image_url")
     private List<String> imageUrls;
 
@@ -97,6 +90,11 @@ public class ProviderApplication {
     // Application Status
     @Enumerated(EnumType.STRING)
     private ApplicationStatus status; // PENDING, APPROVED, REJECTED
+
+    @Column(length = 1000)
+    private String rejectionReason;
+
+    private java.time.LocalDateTime rejectionDate;
 
     // Owner Info
     private Long ownerId;

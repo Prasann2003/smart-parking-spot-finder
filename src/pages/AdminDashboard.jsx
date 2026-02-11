@@ -7,6 +7,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [applications, setApplications] = useState([])
   const [selectedApp, setSelectedApp] = useState(null)
+  const [rejectId, setRejectId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -40,14 +41,27 @@ export default function AdminDashboard() {
      APPROVE / REJECT
   ============================ */
 
-  const handleAction = async (id, action) => {
+  /* ===========================
+     APPROVE / REJECT
+  ============================ */
+
+  const handleAction = async (id, action, reason = null) => {
+    // If action is reject and no reason provided (initial click), open modal
+    if (action === "reject" && !reason) {
+      setRejectId(id)
+      return
+    }
+
     try {
-      await api.post(`/admin/provider/${id}/${action}`)
+      await api.post(`/admin/provider/${id}/${action}`, { reason })
       toast.success(`Application ${action}ed`)
 
       setApplications(prev =>
         prev.filter(app => app.id !== id)
       )
+
+      // Close modal if it was open
+      setRejectId(null)
     } catch (err) {
       console.error("Action failed", err)
       toast.error("Action failed")
@@ -195,6 +209,17 @@ export default function AdminDashboard() {
         )}
       </div>
 
+      {/* =========================
+         REJECTION MODAL
+      ========================== */}
+      {rejectId && (
+        <RejectionModal
+          isOpen={!!rejectId}
+          onClose={() => setRejectId(null)}
+          onSubmit={(reason) => handleAction(rejectId, "reject", reason)}
+        />
+      )}
+
     </div>
   )
 }
@@ -215,6 +240,64 @@ function StatCard({ label, value }) {
         {value ?? 0}
       </h3>
     </motion.div>
+  )
+}
+
+/* =========================
+   REJECTION MODAL
+========================= */
+
+function RejectionModal({ isOpen, onClose, onSubmit }) {
+  const [reason, setReason] = useState("")
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!reason.trim()) return toast.error("Please enter a reason")
+    onSubmit(reason)
+    onClose()
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl"
+      >
+        <h2 className="text-2xl font-bold mb-4">Reject Application</h2>
+        <p className="text-gray-600 mb-6">
+          Please provide a reason for rejecting this application. The provider will be notified.
+        </p>
+
+        <form onSubmit={handleSubmit}>
+          <textarea
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="w-full border rounded-lg p-3 h-32 mb-6"
+            placeholder="Enter rejection reason..."
+            autoFocus
+          />
+
+          <div className="flex justify-end gap-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Reject Application
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
   )
 }
 
@@ -243,15 +326,15 @@ function ApplicationDetailsModal({ applicationId, onClose }) {
   if (loading) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-8 relative"
+        className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-8 relative shadow-2xl"
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl transition-colors"
         >
           &times;
         </button>
@@ -281,11 +364,47 @@ function ApplicationDetailsModal({ applicationId, onClose }) {
             <h3 className="font-semibold text-gray-500 mb-2">Parking Details</h3>
             <p>🅿 Capacity: <span className="font-medium">{details.totalCapacity}</span></p>
             <p>💰 Price: <span className="font-medium">₹{details.pricePerHour}/hr</span></p>
+            {details.weekendPricing > 0 && (
+              <p>📅 Weekend Price: <span className="font-medium">₹{details.weekendPricing}/hr</span></p>
+            )}
+            <p>🚗 Type: <span className="font-medium">{details.parkingType}</span></p>
+
+            <h3 className="font-semibold text-gray-500 mt-6 mb-2">Amenities</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <p>{details.cctv ? "✅" : "❌"} CCTV</p>
+              <p>{details.covered ? "✅" : "❌"} Covered</p>
+              <p>{details.guard ? "✅" : "❌"} Security Guard</p>
+              <p>{details.evCharging ? "✅" : "❌"} EV Charging</p>
+              <p>{details.monthlyPlan ? "✅" : "❌"} Monthly Plan</p>
+            </div>
 
             <h3 className="font-semibold text-gray-500 mt-6 mb-2">Description</h3>
             <p className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-lg text-sm">
               {details.description || "No description provided."}
             </p>
+          </div>
+        </div>
+
+        {/* BANK DETAILS */}
+        <div className="mt-8 bg-gray-50 p-6 rounded-xl border border-gray-100">
+          <h3 className="font-semibold text-gray-800 mb-4 text-lg">🏦 Provider Banking & Logic</h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-sm text-gray-500">Bank Account</p>
+              <p className="font-medium font-mono">{details.bankAccount || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">UPI ID</p>
+              <p className="font-medium font-mono">{details.upiId || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">GST Number</p>
+              <p className="font-medium font-mono">{details.gstNumber || "N/A"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500">PAN Number</p>
+              <p className="font-medium font-mono">{details.panNumber || "N/A"}</p>
+            </div>
           </div>
         </div>
 

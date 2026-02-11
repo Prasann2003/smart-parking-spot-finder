@@ -5,6 +5,20 @@ const api = axios.create({
   baseURL: "http://localhost:8080/api", // backend base URL
 })
 
+// Request interceptor to add the auth token header to every request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token")
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
 export default api
 
 // 🔹 TOGGLE SPOT STATUS
