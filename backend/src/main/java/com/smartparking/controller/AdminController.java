@@ -98,7 +98,24 @@ public class AdminController {
         map.put("totalCapacity", app.getTotalCapacity());
         map.put("pricePerHour", app.getPricePerHour());
         map.put("description", app.getDescription());
-        map.put("imageUrls", app.getImageUrls());
+        // Sanitize image URLs for frontend
+        List<String> sanitizedImages = app.getImageUrls().stream()
+                .map(url -> {
+                    if (url.startsWith("D:\\Infosys\\upload")) {
+                        // Convert absolute path to web path
+                        String relative = url.substring("D:\\Infosys\\upload".length());
+                        return "/uploads" + relative.replace("\\", "/");
+                    } else if (url.startsWith("/api/images")) {
+                        return url; // Keep existing API style if present
+                    } else if (!url.startsWith("/uploads") && !url.startsWith("http")) {
+                        // Assume it's a relative path from uploads root if not absolute
+                        return "/uploads/" + url;
+                    }
+                    return url;
+                })
+                .collect(java.util.stream.Collectors.toList());
+
+        map.put("imageUrls", sanitizedImages);
 
         return ResponseEntity.ok(map);
     }
@@ -155,7 +172,10 @@ public class AdminController {
         long totalUsers = userRepository.countByRole(com.smartparking.entity.Role.USER);
         long totalProviders = userRepository.countByRole(com.smartparking.entity.Role.PROVIDER);
         long totalSpots = parkingSpotRepository.count();
-        long activeBookings = bookingRepository.count();
+        long activeBookings = bookingRepository
+                .countByStatus(com.smartparking.entity.Booking.BookingStatus.CONFIRMED);
+        long cancelledBookings = bookingRepository
+                .countByStatus(com.smartparking.entity.Booking.BookingStatus.CANCELLED);
 
         Double revenue = bookingRepository.calculateTotalRevenue();
 
@@ -170,6 +190,7 @@ public class AdminController {
                 "totalProviders", totalProviders,
                 "totalSpots", totalSpots,
                 "activeBookings", activeBookings,
+                "cancelledBookings", cancelledBookings,
                 "totalRevenue", revenue != null ? revenue : 0.0,
                 "systemAlerts", alerts));
     }

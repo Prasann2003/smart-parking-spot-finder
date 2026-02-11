@@ -1,6 +1,7 @@
 import Navbar from "../components/Navbar"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
+import api from "../utils/api"
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([])
@@ -13,16 +14,8 @@ export default function Notifications() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await fetch(
-          "http://localhost:5000/api/notifications"
-        )
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch notifications")
-        }
-
-        const data = await res.json()
-        setNotifications(data)
+        const res = await api.get("/notifications")
+        setNotifications(res.data)
       } catch (err) {
         console.error(err)
         setError("Unable to load notifications.")
@@ -39,16 +32,7 @@ export default function Notifications() {
   =============================== */
   const markAsRead = async (id) => {
     try {
-      const res = await fetch(
-        `http://localhost:5000/api/notifications/${id}/read`,
-        {
-          method: "PATCH",
-        }
-      )
-
-      if (!res.ok) {
-        throw new Error("Failed to update")
-      }
+      await api.patch(`/notifications/${id}/read`)
 
       setNotifications((prev) =>
         prev.map((n) =>
@@ -65,10 +49,7 @@ export default function Notifications() {
   =============================== */
   const deleteNotification = async (id) => {
     try {
-      await fetch(
-        `http://localhost:5000/api/notifications/${id}`,
-        { method: "DELETE" }
-      )
+      await api.delete(`/notifications/${id}`)
 
       setNotifications((prev) =>
         prev.filter((n) => n.id !== id)
@@ -120,11 +101,10 @@ export default function Notifications() {
                 transition={{ delay: index * 0.08 }}
                 whileHover={{ scale: 1.02 }}
                 onClick={() => !n.read && markAsRead(n.id)}
-                className={`flex gap-6 p-6 rounded-3xl shadow-xl bg-white cursor-pointer ${
-                  !n.read
-                    ? "border-l-8 border-indigo-500"
-                    : ""
-                }`}
+                className={`flex gap-6 p-6 rounded-3xl shadow-xl bg-white cursor-pointer ${!n.read
+                  ? "border-l-8 border-indigo-500"
+                  : ""
+                  }`}
               >
                 {/* ICON */}
                 <div

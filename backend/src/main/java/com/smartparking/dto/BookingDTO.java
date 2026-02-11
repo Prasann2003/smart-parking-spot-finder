@@ -33,4 +33,9 @@ public class BookingDTO {
     private String paymentMethod;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
+
+    // User Details for Provider
+    private String userName;
+    private String userEmail;
+    private String userPhone;
 }

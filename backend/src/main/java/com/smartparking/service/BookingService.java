@@ -123,6 +123,11 @@ public class BookingService {
                                 .parkingSpotName(booking.getParkingSpot().getName())
                                 .paymentMethod(paymentMethod)
                                 .createdAt(booking.getCreatedAt())
+                                .userName(booking.getUser().getName())
+                                .userEmail(booking.getUser().getEmail())
+                                .userPhone(booking.getUser().getPhoneNumber() != null
+                                                ? booking.getUser().getPhoneNumber()
+                                                : "N/A")
                                 .build();
         }
 

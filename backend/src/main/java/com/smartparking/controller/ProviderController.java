@@ -50,6 +50,18 @@ public class ProviderController {
         return ResponseEntity.ok(parkingSpotService.getParkingSpotById(id));
     }
 
+    @PutMapping("/toggle-status/{id}")
+    public ResponseEntity<String> toggleStatus(@PathVariable Long id, @RequestParam String status) {
+        parkingSpotService.updateStatus(id, status);
+        return ResponseEntity.ok("Status updated successfully");
+    }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<ParkingSpotResponseDTO> updateParkingSpot(@PathVariable Long id,
+            @RequestBody UpdateParkingSpotDTO dto) {
+        return ResponseEntity.ok(parkingSpotService.updateParkingSpot(id, dto));
+    }
+
     @GetMapping("/bookings")
     public ResponseEntity<List<BookingDTO>> getMySpotBookings(@RequestParam String email) {
         User user = userRepository.findByEmail(email)

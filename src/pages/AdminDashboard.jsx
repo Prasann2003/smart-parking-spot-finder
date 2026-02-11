@@ -6,6 +6,7 @@ import toast from "react-hot-toast"
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
   const [applications, setApplications] = useState([])
+  const [selectedApp, setSelectedApp] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -136,6 +137,12 @@ export default function AdminDashboard() {
 
                 <div className="flex gap-4 items-center">
                   <button
+                    onClick={() => setSelectedApp(app.id)}
+                    className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  >
+                    View
+                  </button>
+                  <button
                     onClick={() =>
                       handleAction(app.id, "approve")
                     }
@@ -156,6 +163,13 @@ export default function AdminDashboard() {
               </motion.div>
             ))}
           </div>
+        )}
+
+        {selectedApp && (
+          <ApplicationDetailsModal
+            applicationId={selectedApp}
+            onClose={() => setSelectedApp(null)}
+          />
         )}
       </div>
 
@@ -185,6 +199,7 @@ export default function AdminDashboard() {
   )
 }
 
+
 /* =========================
    STAT CARD
 ========================= */
@@ -200,5 +215,93 @@ function StatCard({ label, value }) {
         {value ?? 0}
       </h3>
     </motion.div>
+  )
+}
+
+/* =========================
+   DETAILS MODAL
+========================= */
+
+function ApplicationDetailsModal({ applicationId, onClose }) {
+  const [details, setDetails] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchDetails = async () => {
+      try {
+        const res = await api.get(`/admin/view/${applicationId}`)
+        setDetails(res.data)
+      } catch (err) {
+        toast.error("Failed to load details")
+        onClose()
+      }
+      setLoading(false)
+    }
+    fetchDetails()
+  }, [applicationId, onClose])
+
+  if (loading) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-8 relative"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
+        >
+          &times;
+        </button>
+
+        <h2 className="text-3xl font-bold mb-6 text-gray-800">{details.name}</h2>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <h3 className="font-semibold text-gray-500 mb-2">Provider Details</h3>
+            <p className="text-lg">👤 {details.user.name}</p>
+            <p className="text-lg">📞 {details.user.phoneNumber}</p>
+            <p className="text-lg">📧 {details.user.email || "N/A"}</p>
+
+            <h3 className="font-semibold text-gray-500 mt-6 mb-2">Location</h3>
+            <p className="text-lg">📍 {details.address}</p>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${details.latitude},${details.longitude}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-indigo-600 hover:underline text-sm block mt-1"
+            >
+              View on Map
+            </a>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-gray-500 mb-2">Parking Details</h3>
+            <p>🅿 Capacity: <span className="font-medium">{details.totalCapacity}</span></p>
+            <p>💰 Price: <span className="font-medium">₹{details.pricePerHour}/hr</span></p>
+
+            <h3 className="font-semibold text-gray-500 mt-6 mb-2">Description</h3>
+            <p className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-lg text-sm">
+              {details.description || "No description provided."}
+            </p>
+          </div>
+        </div>
+
+        {/* IMAGES */}
+        <h3 className="font-semibold text-gray-500 mt-8 mb-4">Spot Images</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {details.imageUrls && details.imageUrls.map((url, i) => (
+            <img
+              key={i}
+              src={`http://localhost:8080${url}`}
+              alt="Parking Spot"
+              className="h-32 w-full object-cover rounded-xl border hover:scale-105 transition-transform"
+            />
+          ))}
+        </div>
+      </motion.div>
+    </div>
   )
 }

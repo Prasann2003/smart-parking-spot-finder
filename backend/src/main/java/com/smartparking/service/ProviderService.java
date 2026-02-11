@@ -149,10 +149,14 @@ public class ProviderService {
 
                 // Extract coordinates from Google Maps Link if available
                 if (dto.getGoogleMapsLink() != null && !dto.getGoogleMapsLink().isEmpty()) {
+                        System.out.println("Extracting coordinates from: " + dto.getGoogleMapsLink());
                         double[] coordinates = GoogleMapsUtil.getCoordinates(dto.getGoogleMapsLink());
                         if (coordinates != null) {
+                                System.out.println("Coordinates found: " + coordinates[0] + ", " + coordinates[1]);
                                 dto.setLatitude(coordinates[0]);
                                 dto.setLongitude(coordinates[1]);
+                        } else {
+                                System.out.println("Failed to extract coordinates.");
                         }
                 }
 
