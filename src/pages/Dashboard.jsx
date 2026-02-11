@@ -315,6 +315,14 @@ function DriverDashboard({ user, navigate }) {
                       whileHover={{ scale: 1.03 }}
                       className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl"
                     >
+                      <div className="h-48 w-full overflow-hidden rounded-xl mb-4">
+                        <img
+                          src={spot.imageUrls?.[0] ? `http://localhost:8080${spot.imageUrls[0]}` : "https://via.placeholder.com/400x300?text=No+Image"}
+                          alt={spot.name}
+                          className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                        />
+                      </div>
+
                       <h3 className="text-xl font-bold dark:text-white">
                         {spot.name}
                       </h3>
@@ -324,8 +332,32 @@ function DriverDashboard({ user, navigate }) {
 
                       <div className="mt-4 grid grid-cols-2 gap-4 text-sm dark:text-gray-300">
                         <p>💰 ₹{spot.pricePerHour}/hour</p>
-                        <p>🅿 {spot.totalSlots}</p>
+                        <p>🅿 {spot.totalSlots || spot.totalCapacity} Slots</p>
                         <p>⭐ {spot.rating || "N/A"}</p>
+                      </div>
+
+                      {/* AMENITIES */}
+                      <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400">
+                        {spot.cctv && (
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                            📹 CCTV
+                          </span>
+                        )}
+                        {spot.guard && (
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                            👮 Guard
+                          </span>
+                        )}
+                        {spot.evCharging && (
+                          <span className="flex items-center gap-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded">
+                            ⚡ EV Charge
+                          </span>
+                        )}
+                        {spot.covered && (
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                            ☂ Covered
+                          </span>
+                        )}
                       </div>
 
                       <button

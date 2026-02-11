@@ -48,10 +48,8 @@ export default function ParkingMap({ userLocation, parkingSpots }) {
               <div className="space-y-2">
                 <h3 className="font-bold">{spot.name}</h3>
                 <p>₹{spot.pricePerHour}/hour</p>
-                <p>
-                  {spot.availableSlots > 0
-                    ? "🟢 Available"
-                    : "🔴 Full"}
+                <p className="text-sm text-gray-600">
+                  🅿 {spot.totalSlots || spot.totalCapacity} Slots
                 </p>
 
                 <button
