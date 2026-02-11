@@ -1,6 +1,7 @@
 package com.smartparking.service;
 
 import com.smartparking.dto.ParkingSpotDTO;
+import com.smartparking.dto.UpdateParkingSpotDTO;
 import com.smartparking.util.GoogleMapsUtil;
 import com.smartparking.dto.ParkingSpotResponseDTO;
 import com.smartparking.entity.ImageDirectoryType;
@@ -10,6 +11,8 @@ import com.smartparking.entity.User;
 import com.smartparking.repository.ParkingSpotRepository;
 import com.smartparking.repository.ProviderRepository;
 import com.smartparking.repository.UserRepository;
+import com.smartparking.repository.NotificationRepository;
+import com.smartparking.repository.BookingRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,6 +32,8 @@ public class ParkingSpotService {
     private final UserRepository userRepository;
     private final ProviderRepository providerRepository;
     private final ImageStorageService imageStorageService;
+    private final BookingRepository bookingRepository;
+    private final NotificationRepository notificationRepository;
 
     // addParkingSpot logic moved to ProviderService.addProviderWithSpot
 
@@ -88,6 +93,9 @@ public class ParkingSpotService {
             if (coordinates != null) {
                 dto.setLatitude(coordinates[0]);
                 dto.setLongitude(coordinates[1]);
+                System.out.println("✅ Extracted Coordinates: " + coordinates[0] + ", " + coordinates[1]);
+            } else {
+                System.out.println("❌ Failed to extract coordinates from link: " + dto.getGoogleMapsLink());
             }
         }
 
@@ -103,8 +111,7 @@ public class ParkingSpotService {
         spot.setAddress(dto.getAddress());
         spot.setPincode(dto.getPincode());
         spot.setGoogleMapsLink(dto.getGoogleMapsLink());
-        spot.setLatitude(dto.getLatitude());
-        spot.setLongitude(dto.getLongitude());
+        // Latitude and Longitude set above
 
         // Details
         spot.setTotalCapacity(dto.getTotalCapacity());
@@ -138,15 +145,120 @@ public class ParkingSpotService {
         return mapToDTO(parkingSpot);
     }
 
+    @Transactional
+    public void updateStatus(Long id, String status) {
+        ParkingSpot spot = parkingSpotRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Parking Spot not found"));
+
+        try {
+            ParkingSpot.ParkingStatus newStatus = ParkingSpot.ParkingStatus.valueOf(status);
+            spot.setStatus(newStatus);
+            parkingSpotRepository.save(spot);
+
+            // If Deactivating (MAINTENANCE or BLOCKED), cancel future bookings
+            if (newStatus != ParkingSpot.ParkingStatus.ACTIVE) {
+                List<com.smartparking.entity.Booking> futureBookings = bookingRepository.findFutureConfirmedBookings(id,
+                        java.time.LocalDateTime.now());
+
+                for (com.smartparking.entity.Booking booking : futureBookings) {
+                    // 1. Cancel Booking
+                    booking.setStatus(com.smartparking.entity.Booking.BookingStatus.CANCELLED);
+
+                    // 2. Refund Payment
+                    if (booking.getPayment() != null) {
+                        booking.getPayment().setStatus(com.smartparking.entity.Payment.PaymentStatus.REFUNDED);
+                    }
+                    bookingRepository.save(booking);
+
+                    // 3. Notify User
+                    String message = "Your booking for " + spot.getName() + " on " +
+                            booking.getStartTime().toLocalDate() +
+                            " has been cancelled because the parking spot is now unavailable. Use a different spot.";
+
+                    com.smartparking.entity.Notification notification = com.smartparking.entity.Notification.builder()
+                            .user(booking.getUser())
+                            .title("Booking Cancelled ⚠️")
+                            .message(message)
+                            .type("danger")
+                            .isRead(false)
+                            .createdAt(java.time.LocalDateTime.now())
+                            .build();
+
+                    notificationRepository.save(notification);
+                }
+            }
+
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid status: " + status);
+        }
+    }
+
+    @Transactional
+    public ParkingSpotResponseDTO updateParkingSpot(Long id, UpdateParkingSpotDTO dto) {
+        ParkingSpot spot = parkingSpotRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Parking Spot not found"));
+
+        // Update basic details
+        spot.setName(dto.getName());
+        spot.setDescription(dto.getDescription());
+        spot.setPricePerHour(dto.getPricePerHour());
+        spot.setTotalCapacity(dto.getTotalCapacity());
+        spot.setWeekendPricing(dto.getWeekendPricing());
+        spot.setMonthlyPlan(dto.isMonthlyPlan());
+        spot.setParkingType(dto.getParkingType());
+
+        // Update Location Details
+        spot.setAddress(dto.getAddress());
+        spot.setState(dto.getState());
+        spot.setDistrict(dto.getDistrict());
+        spot.setPincode(dto.getPincode());
+        spot.setGoogleMapsLink(dto.getGoogleMapsLink());
+
+        // Only update lat/long if provided explicitly, otherwise keep existing or rely
+        // on link logic if implemented
+        // Only update lat/long if provided explicitly, otherwise try to extract from
+        // link
+        if (dto.getLatitude() != null && dto.getLatitude() != 0) {
+            spot.setLatitude(dto.getLatitude());
+        }
+        if (dto.getLongitude() != null && dto.getLongitude() != 0) {
+            spot.setLongitude(dto.getLongitude());
+        }
+
+        // Check if we need to extract from link (if lat/long are null/0 but link is
+        // provided)
+        if ((spot.getLatitude() == null || spot.getLatitude() == 0 || spot.getLongitude() == null
+                || spot.getLongitude() == 0)
+                && dto.getGoogleMapsLink() != null && !dto.getGoogleMapsLink().isEmpty()) {
+            double[] coordinates = GoogleMapsUtil.getCoordinates(dto.getGoogleMapsLink());
+            if (coordinates != null) {
+                spot.setLatitude(coordinates[0]);
+                spot.setLongitude(coordinates[1]);
+            }
+        }
+
+        // Update features
+        spot.setCovered(dto.isCovered());
+        spot.setCctv(dto.isCctv());
+        spot.setGuard(dto.isGuard());
+        spot.setEvCharging(dto.isEvCharging());
+
+        // Update vehicle types if provided
+        if (dto.getVehicleTypes() != null) {
+            spot.setVehicleTypes(dto.getVehicleTypes());
+        }
+
+        ParkingSpot updatedSpot = parkingSpotRepository.save(spot);
+        return mapToDTO(updatedSpot);
+    }
+
     public List<ParkingSpotResponseDTO> getNearbyParkingSpots(double userLat, double userLng, double radiusKm) {
-        List<ParkingSpot> allSpots = parkingSpotRepository.findByStatus(ParkingSpot.ParkingStatus.ACTIVE);
-        return allSpots.stream()
-                .filter(spot -> {
-                    if (spot.getLatitude() == null || spot.getLongitude() == null)
-                        return false;
-                    double distance = calculateDistance(userLat, userLng, spot.getLatitude(), spot.getLongitude());
-                    return distance <= radiusKm;
-                })
+        System.out.println("🔍 Finding nearby spots (DB Query). User Lat: " + userLat + ", Lng: " + userLng
+                + ", Radius: " + radiusKm);
+        List<ParkingSpot> nearbySpots = parkingSpotRepository.findNearbySpots(userLat, userLng, radiusKm);
+
+        return nearbySpots.stream()
+                .filter(spot -> spot.getStatus() == ParkingSpot.ParkingStatus.ACTIVE)
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -189,7 +301,19 @@ public class ParkingSpotService {
         java.util.List<String> images = new java.util.ArrayList<>();
         try {
             if (parkingSpot.getImageUrls() != null) {
-                images.addAll(parkingSpot.getImageUrls());
+                // Sanitize image URLs
+                for (String url : parkingSpot.getImageUrls()) {
+                    if (url.startsWith("D:\\Infosys\\upload")) {
+                        String relative = url.substring("D:\\Infosys\\upload".length());
+                        images.add("/uploads" + relative.replace("\\", "/"));
+                    } else if (url.startsWith("/api/images")) {
+                        images.add(url);
+                    } else if (!url.startsWith("/uploads") && !url.startsWith("http")) {
+                        images.add("/uploads/" + url);
+                    } else {
+                        images.add(url);
+                    }
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException("some error while adding the images");

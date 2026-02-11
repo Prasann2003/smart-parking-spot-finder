@@ -128,6 +128,18 @@ export default function AuthPage() {
             </span>
           </div>
 
+          {/* FORGOT PASSWORD LINK */}
+          {isLogin && (
+            <div className="flex justify-end mb-4">
+              <span
+                onClick={() => navigate("/forgot-password")}
+                className="text-sm text-indigo-600 cursor-pointer hover:underline"
+              >
+                Forgot Password?
+              </span>
+            </div>
+          )}
+
           {/* CONFIRM PASSWORD */}
           {!isLogin && (
             <div className="relative mb-6">

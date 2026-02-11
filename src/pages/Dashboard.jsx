@@ -58,6 +58,8 @@ function DriverDashboard({ user, navigate }) {
   })
 
   const [applicationStatus, setApplicationStatus] = useState("NONE")
+  const [rejectionReason, setRejectionReason] = useState("")
+  const [daysLeft, setDaysLeft] = useState(0)
 
   /* FETCH DASHBOARD DATA */
 
@@ -75,6 +77,12 @@ function DriverDashboard({ user, navigate }) {
               `/provider/application-status?email=${user.email}`
             )
             setApplicationStatus(statusRes.data.status)
+            if (statusRes.data.status === "REJECTED") {
+              setRejectionReason(statusRes.data.rejectionReason)
+              if (statusRes.data.daysLeft) {
+                setDaysLeft(parseInt(statusRes.data.daysLeft))
+              }
+            }
           } catch (e) {
             console.error("Application status fetch failed")
           }
@@ -136,7 +144,7 @@ function DriverDashboard({ user, navigate }) {
           setUserLocation({ lat: latitude, lng: longitude })
 
           const res = await api.get(
-            `/parking/nearby?lat=${latitude}&lng=${longitude}&radius=7`
+            `/parking/nearby?lat=${latitude}&lng=${longitude}&radius=20`
           )
 
           setParkingSpots(res.data)
@@ -179,19 +187,38 @@ function DriverDashboard({ user, navigate }) {
 
         {/* APPLICATION STATUS */}
         {applicationStatus === "PENDING" && (
-          <div className="bg-yellow-100 p-4 rounded">
-            Application under review
+          <div className="bg-yellow-100 p-4 rounded text-yellow-800 border border-yellow-200">
+            <strong>Application Status:</strong> Under Review ⏳
           </div>
         )}
 
         {applicationStatus === "REJECTED" && (
-          <div className="bg-red-100 p-4 rounded flex justify-between">
-            <span>Application rejected</span>
+          <div className="bg-red-50 border border-red-200 p-6 rounded-xl flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
+            <div>
+              <h3 className="text-red-800 font-bold text-lg mb-1">Application Rejected ❌</h3>
+              {rejectionReason && (
+                <p className="text-red-700 mt-1">
+                  <strong>Reason:</strong> {rejectionReason}
+                </p>
+              )}
+              {daysLeft > 0 && (
+                <p className="text-orange-700 mt-2 font-semibold">
+                  You can re-apply in {daysLeft} days. ⏳
+                </p>
+              )}
+              <p className="text-red-600 text-sm mt-2">
+                Please review the reason and submit a new application with corrected details.
+              </p>
+            </div>
             <button
               onClick={() => navigate("/become-provider")}
-              className="bg-red-600 text-white px-4 py-2 rounded"
+              disabled={daysLeft > 0}
+              className={`px-6 py-2 text-white rounded-lg shadow-md transition-colors ${daysLeft > 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700"
+                }`}
             >
-              Re-Apply
+              {daysLeft > 0 ? `Wait ${daysLeft} Days` : "Re-Apply Now"}
             </button>
           </div>
         )}
@@ -200,9 +227,9 @@ function DriverDashboard({ user, navigate }) {
           <div className="flex justify-end">
             <button
               onClick={() => navigate("/become-provider")}
-              className="px-6 py-3 bg-emerald-600 text-white rounded-xl"
+              className="px-6 py-3 bg-emerald-600 text-white rounded-xl shadow-lg hover:bg-emerald-700 transition-all transform hover:scale-105"
             >
-              Become Parking Provider
+              Become Parking Provider 🚀
             </button>
           </div>
         )}
@@ -288,6 +315,14 @@ function DriverDashboard({ user, navigate }) {
                       whileHover={{ scale: 1.03 }}
                       className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl"
                     >
+                      <div className="h-48 w-full overflow-hidden rounded-xl mb-4">
+                        <img
+                          src={spot.imageUrls?.[0] ? `http://localhost:8080${spot.imageUrls[0]}` : "https://via.placeholder.com/400x300?text=No+Image"}
+                          alt={spot.name}
+                          className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                        />
+                      </div>
+
                       <h3 className="text-xl font-bold dark:text-white">
                         {spot.name}
                       </h3>
@@ -297,8 +332,32 @@ function DriverDashboard({ user, navigate }) {
 
                       <div className="mt-4 grid grid-cols-2 gap-4 text-sm dark:text-gray-300">
                         <p>💰 ₹{spot.pricePerHour}/hour</p>
-                        <p>🅿 {spot.totalSlots}</p>
+                        <p>🅿 {spot.totalSlots || spot.totalCapacity} Slots</p>
                         <p>⭐ {spot.rating || "N/A"}</p>
+                      </div>
+
+                      {/* AMENITIES */}
+                      <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400">
+                        {spot.cctv && (
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                            📹 CCTV
+                          </span>
+                        )}
+                        {spot.guard && (
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                            👮 Guard
+                          </span>
+                        )}
+                        {spot.evCharging && (
+                          <span className="flex items-center gap-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded">
+                            ⚡ EV Charge
+                          </span>
+                        )}
+                        {spot.covered && (
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                            ☂ Covered
+                          </span>
+                        )}
                       </div>
 
                       <button

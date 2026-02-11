@@ -30,6 +30,7 @@ public class User implements UserDetails {
     private String email;
 
     @Column(nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -68,6 +69,13 @@ public class User implements UserDetails {
     // Provider Details
     private String phoneNumber;
     private String governmentId;
+
+    // Address Details
+    private String address1;
+    private String address2;
+    private String state;
+    private String district;
+    private String pincode;
 
     // Bank Details
     private String bankAccount;

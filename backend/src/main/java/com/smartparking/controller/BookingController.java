@@ -25,4 +25,30 @@ public class BookingController {
     public ResponseEntity<List<BookingDTO>> getUserBookings() {
         return ResponseEntity.ok(bookingService.getUserBookings());
     }
+
+    @GetMapping("/check-availability")
+    public ResponseEntity<Integer> checkAvailability(
+            @RequestParam Long parkingSpotId,
+            @RequestParam String startTime,
+            @RequestParam String endTime) {
+
+        // Frontend sends "yyyy-MM-dd HH:mm:ss"
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter
+                .ofPattern("yyyy-MM-dd HH:mm:ss");
+        java.time.LocalDateTime start = java.time.LocalDateTime.parse(startTime, formatter);
+        java.time.LocalDateTime end = java.time.LocalDateTime.parse(endTime, formatter);
+
+        return ResponseEntity.ok(bookingService.getAvailableSlots(parkingSpotId, start, end));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<BookingDTO> getBookingById(@PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.getBookingById(id));
+    }
+
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<String> cancelBooking(@PathVariable Long id) {
+        bookingService.cancelBooking(id);
+        return ResponseEntity.ok("Booking cancelled successfully. Payment refunded.");
+    }
 }

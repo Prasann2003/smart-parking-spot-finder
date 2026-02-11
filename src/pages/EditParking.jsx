@@ -1,18 +1,20 @@
 import Navbar from "../components/Navbar"
-import { motion } from "framer-motion"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useNavigate, useLocation, useParams } from "react-router-dom"
 import { getCurrentUser } from "../utils/auth"
-import api from "../utils/api"
+import api, { updateSpot } from "../utils/api"
 import toast from "react-hot-toast"
 import indiaData from "../utils/indiaData"
 
-export default function AddParking() {
+export default function EditParking() {
     const user = getCurrentUser()
     const navigate = useNavigate()
+    const location = useLocation()
+    const { id } = useParams()
 
     const [formData, setFormData] = useState({
         name: "",
+        description: "",
         state: "",
         district: "",
         address: "",
@@ -30,20 +32,68 @@ export default function AddParking() {
         parkingType: "Public",
         monthlyPlan: false,
         weekendPricing: "",
-        imageUrls: [],
     })
 
-    // Reusing file upload logic if needed, simplified for now
-
-    const [files, setFiles] = useState({
-        parkingAreaImage: null,
-        gateImage: null,
-        surroundingImage: null
-    })
-
-    const handleFileChange = (e) => {
-        setFiles({ ...files, [e.target.name]: e.target.files[0] })
-    }
+    useEffect(() => {
+        if (location.state?.spot) {
+            const spot = location.state.spot
+            setFormData({
+                name: spot.name || "",
+                description: spot.description || "",
+                state: spot.state || "",
+                district: spot.district || "",
+                address: spot.address || "",
+                pincode: spot.pincode || "",
+                googleMapsLink: spot.googleMapsLink || "",
+                latitude: spot.latitude || "",
+                longitude: spot.longitude || "",
+                totalCapacity: spot.totalCapacity || "",
+                pricePerHour: spot.pricePerHour || "",
+                covered: spot.covered || false,
+                cctv: spot.cctv || false,
+                guard: spot.guard || false,
+                evCharging: spot.evCharging || false,
+                vehicleTypes: spot.vehicleTypes || [],
+                parkingType: spot.parkingType || "Public",
+                monthlyPlan: spot.monthlyPlan || false,
+                weekendPricing: spot.weekendPricing || "",
+            })
+        } else {
+            // Fetch if not provided in state
+            const fetchSpot = async () => {
+                try {
+                    const res = await api.get(`/provider/view/${id}`)
+                    const spot = res.data
+                    setFormData({
+                        name: spot.name || "",
+                        description: spot.description || "",
+                        state: spot.state || "",
+                        district: spot.district || "",
+                        address: spot.address || "",
+                        pincode: spot.pincode || "",
+                        googleMapsLink: spot.googleMapsLink || "",
+                        latitude: spot.latitude || "",
+                        longitude: spot.longitude || "",
+                        totalCapacity: spot.totalCapacity || "",
+                        pricePerHour: spot.pricePerHour || "",
+                        covered: spot.covered || false,
+                        cctv: spot.cctv || false,
+                        guard: spot.guard || false,
+                        evCharging: spot.evCharging || false,
+                        vehicleTypes: spot.vehicleTypes || [],
+                        parkingType: spot.parkingType || "Public",
+                        monthlyPlan: spot.monthlyPlan || false,
+                        weekendPricing: spot.weekendPricing || "",
+                    })
+                } catch (err) {
+                    console.error("Failed to fetch spot", err)
+                    toast.error("Could not load parking spot details")
+                    navigate("/dashboard")
+                }
+            }
+            fetchSpot()
+        }
+    }, [id, location.state, navigate])
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target
@@ -53,53 +103,36 @@ export default function AddParking() {
         }))
     }
 
-    const handleVehicleTypeChange = (e) => {
-        const { value, checked } = e.target
-        setFormData((prev) => {
-            const currentTypes = prev.vehicleTypes || []
-            if (checked) return { ...prev, vehicleTypes: [...currentTypes, value] }
-            return { ...prev, vehicleTypes: currentTypes.filter(t => t !== value) }
-        })
-    }
-
-
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        // Validate
-        if (!formData.name || !formData.address || !formData.pricePerHour || !files.parkingAreaImage || !files.gateImage) {
-            toast.error("Please fill required fields and upload images")
+        // Validation
+        if (!formData.name || !formData.state || !formData.district || !formData.address || !formData.pincode || !formData.pricePerHour || !formData.totalCapacity) {
+            toast.error("Please fill all required fields")
             return
         }
 
-        const data = new FormData()
-        Object.keys(formData).forEach(key => {
-            if (key === "vehicleTypes") {
-                // Append each vehicle type separately or as comma separated if backend expects list
-                // DTO expects Set<String>, so appending multiple times with same key works for Spring
-                const types = formData.vehicleTypes.length > 0 ? formData.vehicleTypes : ["Car"]
-                types.forEach(t => data.append("vehicleTypes", t))
-            } else {
-                data.append(key, formData[key])
-            }
-        })
+        if (formData.vehicleTypes.length === 0) {
+            toast.error("Please select at least one vehicle type")
+            return
+        }
 
-        // Append files
-        data.append("parkingAreaImage", files.parkingAreaImage)
-        data.append("gateImage", files.gateImage)
-        if (files.surroundingImage) data.append("surroundingImage", files.surroundingImage)
+        const payload = {
+            ...formData,
+            // Ensure numbers are actually numbers
+            totalCapacity: Number(formData.totalCapacity),
+            pricePerHour: Number(formData.pricePerHour),
+            // Optional numerics
+            weekendPricing: formData.weekendPricing ? Number(formData.weekendPricing) : null,
+            latitude: formData.latitude ? Number(formData.latitude) : null,
+            longitude: formData.longitude ? Number(formData.longitude) : null,
+        }
 
-        // Ensure numeric types are appended as strings (FormData standard) but Spring converts them
+        console.log("Sending Payload:", JSON.stringify(payload, null, 2)) // Debug log
 
-        try {
-            await api.post("/parking/add", data, {
-                headers: { "Content-Type": "multipart/form-data" }
-            })
-            toast.success("Parking Spot Added! 🚗")
+        const res = await updateSpot(id, payload)
+        if (res) {
             navigate("/dashboard")
-        } catch (err) {
-            console.error(err)
-            toast.error("Failed to add parking spot.")
         }
     }
 
@@ -109,15 +142,15 @@ export default function AddParking() {
         <div className="min-h-screen bg-gray-50">
             <Navbar />
             <div className="max-w-3xl mx-auto pt-28 pb-12 px-6">
-                <h1 className="text-3xl font-bold mb-8">Add New Parking Spot 🅿</h1>
+                <h1 className="text-3xl font-bold mb-8">Edit Parking Spot ✏️</h1>
 
                 <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-xl space-y-6">
 
-                    {/* NO BANK DETAILS HERE - USER IS ALREADY PROVIDER */}
-
                     <div className="space-y-4">
                         <h3 className="text-xl font-semibold">Location Details</h3>
-                        <input name="name" placeholder="Parking Name (e.g. City Center Mall)" value={formData.name} onChange={handleInputChange} className="w-full p-3 border rounded-lg" required />
+                        <input name="name" placeholder="Parking Name" value={formData.name} onChange={handleInputChange} className="w-full p-3 border rounded-lg" required />
+
+                        <textarea name="description" placeholder="Description (Optional)" value={formData.description} onChange={handleInputChange} className="w-full p-3 border rounded-lg" />
 
                         <div className="grid md:grid-cols-2 gap-4">
                             <select name="state" value={formData.state} onChange={(e) => setFormData({ ...formData, state: e.target.value, district: "" })} className="w-full p-3 border rounded-lg" required>
@@ -135,29 +168,6 @@ export default function AddParking() {
                         <div className="grid md:grid-cols-2 gap-4">
                             <input name="pincode" placeholder="Pincode" value={formData.pincode} onChange={handleInputChange} className="w-full p-3 border rounded-lg" required />
                             <input name="googleMapsLink" placeholder="Google Maps Link" value={formData.googleMapsLink} onChange={handleInputChange} className="w-full p-3 border rounded-lg" />
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <input name="latitude" placeholder="Latitude (e.g. 12.9716)" value={formData.latitude} onChange={handleInputChange} className="w-full p-3 border rounded-lg" />
-                            <input name="longitude" placeholder="Longitude (e.g. 77.5946)" value={formData.longitude} onChange={handleInputChange} className="w-full p-3 border rounded-lg" />
-                        </div>
-                        <p className="text-xs text-gray-500">Provide Google Maps Link OR Latitude/Longitude for map pinpointing.</p>
-                    </div>
-
-                    <div className="space-y-4">
-                        <h3 className="text-xl font-semibold">Images</h3>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-1">Parking Area *</label>
-                                <input type="file" name="parkingAreaImage" onChange={handleFileChange} className="w-full p-2 border rounded" required accept="image/*" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-1">Entry Gate *</label>
-                                <input type="file" name="gateImage" onChange={handleFileChange} className="w-full p-2 border rounded" required accept="image/*" />
-                            </div>
-                            <div className="col-span-2">
-                                <label className="block text-sm font-medium mb-1">Surrounding Area (Optional)</label>
-                                <input type="file" name="surroundingImage" onChange={handleFileChange} className="w-full p-2 border rounded" accept="image/*" />
-                            </div>
                         </div>
                     </div>
 
@@ -219,8 +229,11 @@ export default function AddParking() {
                         </div>
                     </div>
 
-                    <button type="submit" className="w-full py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition">
-                        Add Parking Spot
+                    <button type="submit" className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">
+                        Update Parking Spot
+                    </button>
+                    <button type="button" onClick={() => navigate("/dashboard")} className="w-full py-3 text-gray-500 font-semibold hover:text-gray-700 transition">
+                        Cancel
                     </button>
                 </form>
             </div>

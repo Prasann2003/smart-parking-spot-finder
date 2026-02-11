@@ -3,11 +3,19 @@ import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { getCurrentUser } from "../utils/auth"
 import { useNavigate } from "react-router-dom"
-import api from "../utils/api"
+import api, { toggleStatus } from "../utils/api"
 
 export default function ProviderDashboard() {
   const user = getCurrentUser()
   const navigate = useNavigate()
+
+  const handleToggleStatus = async (id, newStatus) => {
+    const success = await toggleStatus(id, newStatus)
+    if (success) {
+      // Optimistic update
+      setParkings(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p))
+    }
+  }
 
   const [stats, setStats] = useState({
     totalParkings: 0,
@@ -127,13 +135,29 @@ export default function ProviderDashboard() {
                     <p>⭐ Rating: {spot.rating || "N/A"}</p>
                   </div>
 
-                  <div className="mt-6 flex gap-3">
-                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg">
-                      View Details
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <button
+                      onClick={() => navigate(`/edit-parking/${spot.id}`, { state: { spot } })}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                    >
+                      Edit ✏️
                     </button>
-                    <button className="px-4 py-2 border rounded-lg">
-                      Edit
-                    </button>
+
+                    {spot.status === "ACTIVE" ? (
+                      <button
+                        onClick={() => handleToggleStatus(spot.id, "MAINTENANCE")}
+                        className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
+                      >
+                        Deactivate ⛔
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleToggleStatus(spot.id, "ACTIVE")}
+                        className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition"
+                      >
+                        Activate ✅
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -156,21 +180,23 @@ export default function ProviderDashboard() {
               {recentBookings.map((booking) => (
                 <div
                   key={booking.id}
-                  className="bg-white p-6 rounded-2xl shadow-md flex justify-between items-center"
+                  className="bg-white p-6 rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
                 >
                   <div>
-                    <p className="font-semibold">
-                      {booking.parkingName}
+                    <p className="font-bold text-lg text-indigo-900">
+                      {booking.parkingSpotName}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      {booking.date} • {booking.vehicle}
-                    </p>
+                    <div className="text-sm text-gray-600 mt-1 space-y-1">
+                      <p>📅 {new Date(booking.startTime).toLocaleString()} - {new Date(booking.endTime).toLocaleString()}</p>
+                      <p>👤 <span className="font-semibold">{booking.userName || "Unknown User"}</span> ({booking.userPhone || "N/A"})</p>
+                      <p>💰 Total: ₹{booking.totalPrice}</p>
+                    </div>
                   </div>
 
                   <span
-                    className={`px-4 py-2 rounded-full text-sm font-semibold ${booking.status === "Active"
+                    className={`px-4 py-2 rounded-full text-sm font-semibold ${booking.status === "CONFIRMED"
                       ? "bg-emerald-100 text-emerald-700"
-                      : booking.status === "Completed"
+                      : booking.status === "COMPLETED"
                         ? "bg-sky-100 text-sky-700"
                         : "bg-red-100 text-red-700"
                       }`}

@@ -23,7 +23,7 @@ export default function ParkingMap({ userLocation, parkingSpots }) {
     <div className="rounded-3xl overflow-hidden shadow-2xl border">
       <MapContainer
         center={[userLocation.lat, userLocation.lng]}
-        zoom={13}
+        zoom={12}
         style={{ height: "500px", width: "100%" }}
       >
         <TileLayer
@@ -31,10 +31,10 @@ export default function ParkingMap({ userLocation, parkingSpots }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* 7KM Radius Circle */}
+        {/* 10KM Radius Circle */}
         <Circle
           center={[userLocation.lat, userLocation.lng]}
-          radius={7000}
+          radius={10000}
           pathOptions={{ color: "blue" }}
         />
 
@@ -48,10 +48,8 @@ export default function ParkingMap({ userLocation, parkingSpots }) {
               <div className="space-y-2">
                 <h3 className="font-bold">{spot.name}</h3>
                 <p>₹{spot.pricePerHour}/hour</p>
-                <p>
-                  {spot.availableSlots > 0
-                    ? "🟢 Available"
-                    : "🔴 Full"}
+                <p className="text-sm text-gray-600">
+                  🅿 {spot.totalSlots || spot.totalCapacity} Slots
                 </p>
 
                 <button

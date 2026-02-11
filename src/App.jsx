@@ -8,6 +8,8 @@ import BecomeProvider from "./pages/BecomeProvider"
 import Payment from "./pages/Payment"
 import BookingDetails from "./pages/BookingDetails"
 import AddParking from "./pages/AddParking"
+import EditParking from "./pages/EditParking"
+import ForgotPassword from "./pages/ForgotPassword"
 
 import Profile from "./pages/Profile"
 import MyBookings from "./pages/MyBookings"
@@ -26,6 +28,7 @@ export default function App() {
 
       <Route path="/" element={<Home />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/become-provider" element={<BecomeProvider />} />
       <Route path="/admin-login" element={<AdminLogin />} />
 
@@ -42,6 +45,7 @@ export default function App() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/add-parking" element={<AddParking />} />
+        <Route path="/edit-parking/:id" element={<EditParking />} />
       </Route>
 
     </Routes>
