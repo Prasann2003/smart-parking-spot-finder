@@ -1,6 +1,7 @@
 import { motion } from "framer-motion"
 import { logout } from "../utils/auth"
 import { useNavigate } from "react-router-dom"
+import { FaUser, FaListAlt, FaBell, FaCog, FaSignOutAlt } from "react-icons/fa"
 
 export default function MenuDropdown({ close }) {
   const navigate = useNavigate()
@@ -12,10 +13,10 @@ export default function MenuDropdown({ close }) {
   }
 
   const menuItems = [
-    { label: "Profile", path: "/profile" },
-    { label: "My Bookings", path: "/bookings" },
-    { label: "Notifications", path: "/notifications" },
-    { label: "Settings", path: "/settings" },
+    { label: "Profile", path: "/profile", icon: <FaUser /> },
+    { label: "My Bookings", path: "/bookings", icon: <FaListAlt /> },
+    { label: "Notifications", path: "/notifications", icon: <FaBell /> },
+    { label: "Settings", path: "/settings", icon: <FaCog /> },
   ]
 
   return (
@@ -31,17 +32,18 @@ export default function MenuDropdown({ close }) {
             navigate(item.path)
             close()
           }}
-          className="w-full text-left px-5 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+          className="w-full text-left px-5 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-3"
         >
+          <span className="text-gray-500 dark:text-gray-400">{item.icon}</span>
           {item.label}
         </button>
       ))}
 
       <button
         onClick={handleLogout}
-        className="w-full text-left px-5 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+        className="w-full text-left px-5 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition flex items-center gap-3"
       >
-        Logout
+        <FaSignOutAlt /> Logout
       </button>
     </motion.div>
   )

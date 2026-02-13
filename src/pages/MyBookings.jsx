@@ -4,6 +4,14 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import api from "../utils/api"
 import toast from "react-hot-toast"
+import {
+  FaCalendarAlt,
+  FaClock,
+  FaMoneyBillWave,
+  FaMapMarkerAlt,
+  FaCar,
+  FaInfoCircle
+} from "react-icons/fa"
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([])
@@ -59,8 +67,8 @@ export default function MyBookings() {
         className="max-w-6xl mx-auto mt-16 px-6"
       >
         <div className="mb-12">
-          <h2 className="text-4xl font-extrabold text-gray-800 mb-2">
-            My Bookings
+          <h2 className="text-4xl font-extrabold text-gray-800 mb-2 flex items-center gap-3">
+            My Bookings <FaCar className="text-indigo-600" />
           </h2>
           <p className="text-gray-600">
             Track your real-time parking reservations
@@ -73,8 +81,9 @@ export default function MyBookings() {
           <p className="text-red-500">{error}</p>
         ) : bookings.length === 0 ? (
           <div className="bg-white rounded-2xl p-10 text-center shadow-xl">
+            <FaCar className="text-6xl text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 text-lg">
-              You have no bookings yet 🚗
+              You have no bookings yet
             </p>
           </div>
         ) : (
@@ -92,14 +101,14 @@ export default function MyBookings() {
                   className="bg-white rounded-3xl shadow-xl p-8 flex flex-col md:flex-row justify-between gap-6"
                 >
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                      {booking.parkingSpotName}
+                    <h3 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                      <FaMapMarkerAlt className="text-red-500" /> {booking.parkingSpotName}
                     </h3>
 
                     <div className="text-gray-600 space-y-1">
-                      <p>📅 Booked: {new Date(booking.createdAt).toLocaleString()}</p>
-                      <p>⏰ {new Date(booking.startTime).toLocaleString()} - {new Date(booking.endTime).toLocaleString()}</p>
-                      <p>💰 Price: ₹{booking.totalPrice} ({booking.paymentMethod})</p>
+                      <p className="flex items-center gap-2"><FaCalendarAlt className="text-gray-400" /> Booked: {new Date(booking.createdAt).toLocaleString()}</p>
+                      <p className="flex items-center gap-2"><FaClock className="text-gray-400" /> {new Date(booking.startTime).toLocaleString()} - {new Date(booking.endTime).toLocaleString()}</p>
+                      <p className="flex items-center gap-2"><FaMoneyBillWave className="text-green-600" /> Price: ₹{booking.totalPrice} ({booking.paymentMethod})</p>
                     </div>
                   </div>
 

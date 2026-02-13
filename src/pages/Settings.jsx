@@ -4,6 +4,23 @@ import { useState } from "react"
 import { useTheme } from "../context/ThemeContext"
 import api from "../utils/api"
 import { toast } from "react-hot-toast"
+import {
+  FaUserShield,
+  FaPalette,
+  FaBell,
+  FaCar,
+  FaExclamationTriangle,
+  FaCog,
+  FaLock,
+  FaSignOutAlt,
+  FaMoon,
+  FaPaintBrush,
+  FaEnvelope,
+  FaSms,
+  FaMobileAlt,
+  FaDownload,
+  FaTrashAlt
+} from "react-icons/fa"
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme()
@@ -31,19 +48,19 @@ export default function Settings() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-5xl mx-auto pt-28 px-6 space-y-12 pb-12"
       >
-        {/* 🌈 PAGE HEADER */}
+        {/* PARKING PAGE HEADER */}
         <div>
-          <h2 className="text-4xl font-extrabold text-gray-800 dark:text-white mb-2">
-            Settings
+          <h2 className="text-4xl font-extrabold text-gray-800 dark:text-white mb-2 flex items-center gap-3">
+            <FaCog /> Settings
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
             Customize your account experience
           </p>
         </div>
 
-        {/* 🔐 ACCOUNT */}
-        <Section title="Account & Security">
-          <SettingRow label="Change Password">
+        {/* ACCOUNT */}
+        <Section title="Account & Security" icon={<FaUserShield className="text-indigo-500" />}>
+          <SettingRow label={<span className="flex items-center gap-2"><FaLock /> Change Password</span>}>
             <button
               onClick={() => setShowPasswordModal(true)}
               className="btn-outline dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -52,7 +69,7 @@ export default function Settings() {
             </button>
           </SettingRow>
 
-          <SettingRow label="Auto Logout After Inactivity">
+          <SettingRow label={<span className="flex items-center gap-2"><FaSignOutAlt /> Auto Logout After Inactivity</span>}>
             <Toggle
               enabled={settings.autoLogout}
               onClick={() => handleToggle("autoLogout")}
@@ -60,16 +77,16 @@ export default function Settings() {
           </SettingRow>
         </Section>
 
-        {/* 🎨 APPEARANCE */}
-        <Section title="Appearance">
-          <SettingRow label="Dark Mode">
+        {/* APPEARANCE */}
+        <Section title="Appearance" icon={<FaPalette className="text-purple-500" />}>
+          <SettingRow label={<span className="flex items-center gap-2"><FaMoon /> Dark Mode</span>}>
             <Toggle
               enabled={theme === "dark"}
               onClick={toggleTheme}
             />
           </SettingRow>
 
-          <SettingRow label="Accent Color">
+          <SettingRow label={<span className="flex items-center gap-2"><FaPaintBrush /> Accent Color</span>}>
             <select
               value={settings.accentColor}
               onChange={(e) =>
@@ -85,23 +102,23 @@ export default function Settings() {
           </SettingRow>
         </Section>
 
-        {/* 🔔 NOTIFICATIONS */}
-        <Section title="Notifications">
-          <SettingRow label="Email Notifications">
+        {/* NOTIFICATIONS */}
+        <Section title="Notifications" icon={<FaBell className="text-yellow-500" />}>
+          <SettingRow label={<span className="flex items-center gap-2"><FaEnvelope /> Email Notifications</span>}>
             <Toggle
               enabled={settings.emailNotif}
               onClick={() => handleToggle("emailNotif")}
             />
           </SettingRow>
 
-          <SettingRow label="SMS Alerts">
+          <SettingRow label={<span className="flex items-center gap-2"><FaSms /> SMS Alerts</span>}>
             <Toggle
               enabled={settings.smsNotif}
               onClick={() => handleToggle("smsNotif")}
             />
           </SettingRow>
 
-          <SettingRow label="Push Notifications">
+          <SettingRow label={<span className="flex items-center gap-2"><FaMobileAlt /> Push Notifications</span>}>
             <Toggle
               enabled={settings.pushNotif}
               onClick={() => handleToggle("pushNotif")}
@@ -109,8 +126,8 @@ export default function Settings() {
           </SettingRow>
         </Section>
 
-        {/* 🚗 PARKING */}
-        <Section title="Parking Preferences">
+        {/* PARKING */}
+        <Section title="Parking Preferences" icon={<FaCar className="text-blue-500" />}>
           <SettingRow label="Preferred Vehicle Type">
             <select
               value={settings.vehicleType}
@@ -136,13 +153,13 @@ export default function Settings() {
           </SettingRow>
         </Section>
 
-        {/* ⚠️ DANGER */}
-        <Section title="Danger Zone">
-          <SettingRow label="Download My Data">
+        {/* DANGER */}
+        <Section title="Danger Zone" icon={<FaExclamationTriangle className="text-red-500" />}>
+          <SettingRow label={<span className="flex items-center gap-2"><FaDownload /> Download My Data</span>}>
             <button className="btn-outline dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Download</button>
           </SettingRow>
 
-          <SettingRow label="Delete Account">
+          <SettingRow label={<span className="flex items-center gap-2"><FaTrashAlt /> Delete Account</span>}>
             <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
               Delete
             </button>
@@ -253,11 +270,11 @@ function ChangePasswordModal({ close }) {
 }
 
 /* 🔹 SECTION */
-function Section({ title, children }) {
+function Section({ title, icon, children }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 space-y-4 transition-colors duration-300">
-      <h3 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-        {title}
+      <h3 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+        {icon} {title}
       </h3>
       {children}
     </div>

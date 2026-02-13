@@ -2,6 +2,7 @@ import Navbar from "../components/Navbar"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import api from "../utils/api"
+import { FaBellSlash, FaCheckCircle, FaInfoCircle, FaFlagCheckered, FaExclamationCircle, FaBell } from "react-icons/fa"
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([])
@@ -86,9 +87,10 @@ export default function Notifications() {
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : notifications.length === 0 ? (
-          <div className="bg-white rounded-2xl p-10 text-center shadow-xl">
+          <div className="bg-white rounded-2xl p-10 text-center shadow-xl flex flex-col items-center gap-4">
+            <FaBellSlash className="text-6xl text-gray-300" />
             <p className="text-gray-500 text-lg">
-              No notifications yet 🔔
+              No notifications yet
             </p>
           </div>
         ) : (
@@ -161,15 +163,15 @@ export default function Notifications() {
 function getIcon(type) {
   switch (type) {
     case "success":
-      return "✅"
+      return <FaCheckCircle />
     case "info":
-      return "📢"
+      return <FaInfoCircle />
     case "completed":
-      return "🏁"
+      return <FaFlagCheckered />
     case "danger":
-      return "❌"
+      return <FaExclamationCircle />
     default:
-      return "🔔"
+      return <FaBell />
   }
 }
 

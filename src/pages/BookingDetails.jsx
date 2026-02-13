@@ -2,6 +2,14 @@ import { useParams } from "react-router-dom"
 import { useEffect, useState } from "react"
 import Navbar from "../components/Navbar"
 import api from "../utils/api"
+import {
+  FaMapMarkerAlt,
+  FaClock,
+  FaCalendarAlt,
+  FaMoneyBillWave,
+  FaCreditCard,
+  FaBolt
+} from "react-icons/fa"
 
 export default function BookingDetails() {
   const { id } = useParams()
@@ -44,14 +52,14 @@ export default function BookingDetails() {
           </h2>
 
           <div className="space-y-4 text-lg dark:text-gray-300">
-            <p><strong>📍 Parking:</strong> {booking.parkingSpotName}</p>
-            <p><strong>🕒 Booked At:</strong> {new Date(booking.createdAt).toLocaleString()}</p>
-            <p><strong>📅 Start Time:</strong> {new Date(booking.startTime).toLocaleString()}</p>
-            <p><strong>📅 End Time:</strong> {new Date(booking.endTime).toLocaleString()}</p>
-            <p><strong>💰 Amount Paid:</strong> ₹{booking.totalPrice}</p>
-            <p><strong>💳 Payment Method:</strong> {booking.paymentMethod || "N/A"}</p>
-            <p>
-              <strong>⚡ Status:</strong>
+            <p className="flex items-center gap-2"><strong><FaMapMarkerAlt className="text-red-500" /> Parking:</strong> {booking.parkingSpotName}</p>
+            <p className="flex items-center gap-2"><strong><FaClock className="text-gray-500" /> Booked At:</strong> {new Date(booking.createdAt).toLocaleString()}</p>
+            <p className="flex items-center gap-2"><strong><FaCalendarAlt className="text-indigo-500" /> Start Time:</strong> {new Date(booking.startTime).toLocaleString()}</p>
+            <p className="flex items-center gap-2"><strong><FaCalendarAlt className="text-indigo-500" /> End Time:</strong> {new Date(booking.endTime).toLocaleString()}</p>
+            <p className="flex items-center gap-2"><strong><FaMoneyBillWave className="text-green-500" /> Amount Paid:</strong> ₹{booking.totalPrice}</p>
+            <p className="flex items-center gap-2"><strong><FaCreditCard className="text-blue-500" /> Payment Method:</strong> {booking.paymentMethod || "N/A"}</p>
+            <p className="flex items-center gap-2">
+              <strong><FaBolt className="text-yellow-500" /> Status:</strong>
               <span className={`ml-2 px-3 py-1 rounded-full text-sm font-bold ${booking.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' :
                 booking.status === 'CANCELLED' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
                 }`}>

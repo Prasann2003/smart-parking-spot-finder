@@ -20,6 +20,11 @@ export async function register(data) {
 // 🔹 LOGIN USER
 export async function login(email, password) {
   try {
+    // Clear any existing (potentially expired) token before logging in
+    localStorage.removeItem("token")
+    localStorage.removeItem("currentUser")
+    delete api.defaults.headers.common["Authorization"]
+
     const response = await api.post("/auth/login", { email, password })
     const { token, ...user } = response.data
 

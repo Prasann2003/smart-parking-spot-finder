@@ -17,16 +17,16 @@ export default function AdminLogin() {
       // Check if user is actually admin
       const user = JSON.parse(localStorage.getItem("currentUser"))
       if (user.role === "ADMIN") {
-        toast.success("Welcome Admin! 🚀")
+        toast.success("Welcome Admin!")
         navigate("/dashboard")
       } else {
-        toast.error("Access Denied: Not an Admin ❌")
+        toast.error("Access Denied: Not an Admin")
         // Optional: Logout if not admin
         localStorage.removeItem("token")
         localStorage.removeItem("currentUser")
       }
     } else {
-      toast.error("Invalid Admin Credentials ❌")
+      toast.error("Invalid Admin Credentials")
     }
   }
 

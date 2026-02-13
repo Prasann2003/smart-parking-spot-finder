@@ -4,6 +4,17 @@ import Navbar from "../components/Navbar"
 import { useState, useEffect } from "react"
 import api from "../utils/api"
 import toast from "react-hot-toast"
+import {
+  FaCreditCard,
+  FaRupeeSign,
+  FaParking,
+  FaCheckCircle,
+  FaMinusCircle,
+  FaStar,
+  FaFileInvoiceDollar,
+  FaCalendarAlt,
+  FaClock
+} from "react-icons/fa"
 
 export default function Payment() {
   const navigate = useNavigate()
@@ -86,7 +97,7 @@ export default function Payment() {
       }
 
       await api.post("/bookings/create", payload)
-      toast.success("Booking Successful! 🎉")
+      toast.success("Booking Successful!")
       navigate("/dashboard")
     } catch (error) {
       console.error("Booking Error", error)
@@ -107,8 +118,8 @@ export default function Payment() {
       >
         <div className="bg-white p-10 rounded-3xl shadow-2xl">
 
-          <h2 className="text-3xl font-bold mb-8">
-            Complete Your Booking
+          <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+            <FaCreditCard className="text-indigo-600" /> Complete Your Booking
           </h2>
 
           <div className="grid md:grid-cols-2 gap-10">
@@ -122,21 +133,21 @@ export default function Payment() {
                 <p className="text-gray-600">{spot.address}</p>
 
                 <div className="mt-4 space-y-2">
-                  <p>💰 ₹{spot.pricePerHour}/hour</p>
-                  <p>🅿 Total Capacity: {spot.totalCapacity}</p>
+                  <p className="flex items-center gap-2"><FaRupeeSign className="text-green-600" /> {spot.pricePerHour}/hour</p>
+                  <p className="flex items-center gap-2"><FaParking className="text-blue-600" /> Total Capacity: {spot.totalCapacity}</p>
                   {availableSlots !== null && (
-                    <p className={`font-bold ${availableSlots > 0 ? "text-green-600" : "text-red-500"}`}>
-                      Authorization Status: {availableSlots > 0 ? `✅ ${availableSlots} Slots Available` : "🔴 Fully Booked"}
+                    <p className={`font-bold flex items-center gap-2 ${availableSlots > 0 ? "text-green-600" : "text-red-500"}`}>
+                      Authorization Status: {availableSlots > 0 ? <><FaCheckCircle /> {availableSlots} Slots Available</> : <><FaMinusCircle /> Fully Booked</>}
                     </p>
                   )}
-                  <p>⭐ Rating: {spot.rating || "N/A"}</p>
+                  <p className="flex items-center gap-2"><FaStar className="text-yellow-400" /> Rating: {spot.rating || "N/A"}</p>
                 </div>
               </div>
 
               {/* TIME SELECTION */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-1">Start Time</label>
+                  <label className="block text-sm font-semibold mb-1 flex items-center gap-2"><FaCalendarAlt /> Start Time</label>
                   <input
                     type="datetime-local"
                     className="w-full border p-3 rounded-lg"
@@ -145,7 +156,7 @@ export default function Payment() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1">End Time</label>
+                  <label className="block text-sm font-semibold mb-1 flex items-center gap-2"><FaClock /> End Time</label>
                   <input
                     type="datetime-local"
                     className="w-full border p-3 rounded-lg"
@@ -159,7 +170,7 @@ export default function Payment() {
             {/* RIGHT: PAYMENT */}
             <div className="flex flex-col justify-between">
               <div>
-                <h3 className="text-xl font-bold mb-4">Payment Summary</h3>
+                <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><FaFileInvoiceDollar /> Payment Summary</h3>
                 <div className="flex justify-between text-lg mb-2">
                   <span>Rate</span>
                   <span>₹{spot.pricePerHour}/hr</span>
@@ -182,8 +193,8 @@ export default function Payment() {
                     }, 2000);
                   }}
                   disabled={availableSlots === 0 || checkingAvailability || paymentStatus === "SUCCESS"}
-                  className={`w-full py-3 text-white rounded-xl hover:bg-opacity-90 disabled:bg-gray-400 ${paymentMethod === 'UPI' ? 'bg-green-600' : 'bg-indigo-600'}`}>
-                  {paymentMethod === 'UPI' ? 'Paid via UPI ✅' : 'Pay via UPI'}
+                  className={`w-full py-3 text-white rounded-xl hover:bg-opacity-90 disabled:bg-gray-400 flex items-center justify-center gap-2 ${paymentMethod === 'UPI' ? 'bg-green-600' : 'bg-indigo-600'}`}>
+                  {paymentMethod === 'UPI' ? <><FaCheckCircle /> Paid via UPI</> : 'Pay via UPI'}
                 </button>
 
                 <button
@@ -197,8 +208,8 @@ export default function Payment() {
                     }, 2000);
                   }}
                   disabled={availableSlots === 0 || checkingAvailability || paymentStatus === "SUCCESS"}
-                  className={`w-full py-3 text-white rounded-xl hover:bg-opacity-90 disabled:bg-gray-400 ${paymentMethod === 'CARD' ? 'bg-green-600' : 'bg-emerald-600'}`}>
-                  {paymentMethod === 'CARD' ? 'Paid via Card ✅' : 'Pay via Card'}
+                  className={`w-full py-3 text-white rounded-xl hover:bg-opacity-90 disabled:bg-gray-400 flex items-center justify-center gap-2 ${paymentMethod === 'CARD' ? 'bg-green-600' : 'bg-emerald-600'}`}>
+                  {paymentMethod === 'CARD' ? <><FaCheckCircle /> Paid via Card</> : 'Pay via Card'}
                 </button>
 
                 <button

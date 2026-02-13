@@ -25,7 +25,7 @@ export default function AuthPage() {
     // ✅ SIGNUP FLOW
     if (!isLogin) {
       if (form.password !== form.confirmPassword) {
-        toast.error("Passwords do not match ❌")
+        toast.error("Passwords do not match")
         return
       }
 
@@ -40,10 +40,10 @@ export default function AuthPage() {
     const success = await login(form.email, form.password)
 
     if (success) {
-      toast.success("Login successful 🎉")
+      toast.success("Login successful")
       setTimeout(() => navigate("/dashboard"), 700)
     } else {
-      toast.error("Invalid credentials ❌")
+      toast.error("Invalid credentials")
     }
   }
 

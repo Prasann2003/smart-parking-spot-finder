@@ -8,6 +8,21 @@ import { useNavigate } from "react-router-dom"
 import ProviderDashboard from "./ProviderDashboard"
 import AdminDashboard from "./AdminDashboard"
 import ParkingMap from "../components/ParkingMap"
+import {
+  FaCar,
+  FaRocket,
+  FaMapMarkerAlt,
+  FaSearch,
+  FaClock,
+  FaTimesCircle,
+  FaMoneyBillWave,
+  FaParking,
+  FaStar,
+  FaVideo,
+  FaShieldAlt,
+  FaBolt,
+  FaUmbrella
+} from "react-icons/fa"
 
 export default function Dashboard() {
   const user = getCurrentUser()
@@ -180,30 +195,30 @@ function DriverDashboard({ user, navigate }) {
           <h1 className="text-4xl font-bold dark:text-white">
             Welcome, {user.name}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Find smart parking in seconds 🚗
+          <p className="text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-2">
+            Find smart parking in seconds <FaCar className="text-indigo-600" />
           </p>
         </div>
 
         {/* APPLICATION STATUS */}
         {applicationStatus === "PENDING" && (
-          <div className="bg-yellow-100 p-4 rounded text-yellow-800 border border-yellow-200">
-            <strong>Application Status:</strong> Under Review ⏳
+          <div className="bg-yellow-100 p-4 rounded text-yellow-800 border border-yellow-200 flex items-center gap-2">
+            <strong>Application Status:</strong> Under Review <FaClock />
           </div>
         )}
 
         {applicationStatus === "REJECTED" && (
           <div className="bg-red-50 border border-red-200 p-6 rounded-xl flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
             <div>
-              <h3 className="text-red-800 font-bold text-lg mb-1">Application Rejected ❌</h3>
+              <h3 className="text-red-800 font-bold text-lg mb-1 flex items-center gap-2">Application Rejected <FaTimesCircle /></h3>
               {rejectionReason && (
                 <p className="text-red-700 mt-1">
                   <strong>Reason:</strong> {rejectionReason}
                 </p>
               )}
               {daysLeft > 0 && (
-                <p className="text-orange-700 mt-2 font-semibold">
-                  You can re-apply in {daysLeft} days. ⏳
+                <p className="text-orange-700 mt-2 font-semibold flex items-center gap-2">
+                  You can re-apply in {daysLeft} days. <FaClock />
                 </p>
               )}
               <p className="text-red-600 text-sm mt-2">
@@ -227,9 +242,9 @@ function DriverDashboard({ user, navigate }) {
           <div className="flex justify-end">
             <button
               onClick={() => navigate("/become-provider")}
-              className="px-6 py-3 bg-emerald-600 text-white rounded-xl shadow-lg hover:bg-emerald-700 transition-all transform hover:scale-105"
+              className="px-6 py-3 bg-emerald-600 text-white rounded-xl shadow-lg hover:bg-emerald-700 transition-all transform hover:scale-105 flex items-center gap-2"
             >
-              Become Parking Provider 🚀
+              Become Parking Provider <FaRocket />
             </button>
           </div>
         )}
@@ -245,9 +260,9 @@ function DriverDashboard({ user, navigate }) {
         {/* FIND NEAR ME */}
         <button
           onClick={handleFindNearMe}
-          className="px-8 py-3 bg-emerald-600 text-white rounded-xl"
+          className="px-8 py-3 bg-emerald-600 text-white rounded-xl flex items-center gap-2"
         >
-          📍 Find Parking Near Me
+          <FaMapMarkerAlt /> Find Parking Near Me
         </button>
 
         {/* SEARCH */}
@@ -290,9 +305,9 @@ function DriverDashboard({ user, navigate }) {
 
             <button
               onClick={handleSearch}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg"
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg flex items-center justify-center gap-2"
             >
-              🔍 Search
+              <FaSearch /> Search
             </button>
           </div>
         </div>
@@ -331,31 +346,31 @@ function DriverDashboard({ user, navigate }) {
                       </p>
 
                       <div className="mt-4 grid grid-cols-2 gap-4 text-sm dark:text-gray-300">
-                        <p>💰 ₹{spot.pricePerHour}/hour</p>
-                        <p>🅿 {spot.totalSlots || spot.totalCapacity} Slots</p>
-                        <p>⭐ {spot.rating || "N/A"}</p>
+                        <p className="flex items-center gap-1"><FaMoneyBillWave className="text-green-600" /> ₹{spot.pricePerHour}/hour</p>
+                        <p className="flex items-center gap-1"><FaParking className="text-blue-600" /> {spot.totalSlots || spot.totalCapacity} Slots</p>
+                        <p className="flex items-center gap-1"><FaStar className="text-yellow-500" /> {spot.rating || "N/A"}</p>
                       </div>
 
                       {/* AMENITIES */}
                       <div className="mt-4 flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-400">
                         {spot.cctv && (
                           <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                            📹 CCTV
+                            <FaVideo /> CCTV
                           </span>
                         )}
                         {spot.guard && (
                           <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                            👮 Guard
+                            <FaShieldAlt /> Guard
                           </span>
                         )}
                         {spot.evCharging && (
                           <span className="flex items-center gap-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded">
-                            ⚡ EV Charge
+                            <FaBolt /> EV Charge
                           </span>
                         )}
                         {spot.covered && (
                           <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                            ☂ Covered
+                            <FaUmbrella /> Covered
                           </span>
                         )}
                       </div>

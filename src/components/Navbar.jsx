@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import MenuDropdown from "./MenuDropdown"
+import { FaBars } from "react-icons/fa"
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
@@ -28,33 +29,39 @@ export default function Navbar() {
         duration-300
       "
     >
-      {/* 🅿️ LOGO / TITLE */}
-      <h1
+      {/* LOGO / TITLE */}
+      <div
         onClick={() => navigate("/dashboard")}
         className="
-          text-2xl
-          font-extrabold
-          text-gray-900
-          dark:text-white
-          tracking-wide
+          flex 
+          items-center 
+          gap-2 
           cursor-pointer
           hover:text-indigo-600
           dark:hover:text-indigo-400
           transition
         "
       >
-        Smart Parking
-      </h1>
+        <h1
+          className="
+            text-2xl
+            font-extrabold
+            text-gray-900
+            dark:text-white
+            tracking-wide
+          "
+        >
+          Smart Parking
+        </h1>
+      </div>
 
-      {/* ☰ HAMBURGER MENU */}
+      {/* HAMBURGER MENU */}
       <div className="relative">
         <button
           onClick={() => setOpen(!open)}
-          className="flex flex-col gap-1.5 focus:outline-none"
+          className="text-2xl text-gray-900 dark:text-white focus:outline-none"
         >
-          <span className="w-7 h-0.5 bg-gray-900 dark:bg-white transition-colors duration-300"></span>
-          <span className="w-7 h-0.5 bg-gray-900 dark:bg-white transition-colors duration-300"></span>
-          <span className="w-7 h-0.5 bg-gray-900 dark:bg-white transition-colors duration-300"></span>
+          <FaBars />
         </button>
 
         {open && <MenuDropdown close={() => setOpen(false)} />}

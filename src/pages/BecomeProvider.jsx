@@ -4,6 +4,16 @@ import Navbar from "../components/Navbar"
 import indiaData from "../utils/indiaData"
 import api from "../utils/api"
 import toast from "react-hot-toast"
+import {
+  FaUser,
+  FaMapMarkedAlt,
+  FaCar,
+  FaMoneyBillWave,
+  FaImages,
+  FaUniversity,
+  FaCheckCircle,
+  FaRocket
+} from "react-icons/fa"
 
 export default function BecomeProvider() {
   const [form, setForm] = useState({
@@ -130,7 +140,7 @@ export default function BecomeProvider() {
       if (res.data?.message) {
         toast.success(res.data.message)
       } else {
-        toast.success("Application submitted successfully! 🚀")
+        toast.success("Application submitted successfully!")
       }
 
     } catch (error) {
@@ -154,8 +164,8 @@ export default function BecomeProvider() {
 
           {/* HEADER */}
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-10 text-white">
-            <h2 className="text-4xl font-extrabold">
-              Become a Parking Provider
+            <h2 className="text-4xl font-extrabold flex items-center gap-3">
+              <FaRocket /> Become a Parking Provider
             </h2>
             <p className="text-white/90 mt-2">
               Fill the form below to apply for listing your parking space
@@ -165,7 +175,7 @@ export default function BecomeProvider() {
           <form onSubmit={handleSubmit} className="p-10 space-y-12">
 
             {/* =================== PERSONAL INFO =================== */}
-            <Section title="👤 Owner Information">
+            <Section title="Owner Information" icon={<FaUser />}>
               <Input label="Full Name" name="name" onChange={handleChange} />
               <Input label="Phone Number" name="phone" onChange={handleChange} />
               <Input label="Email" name="email" onChange={handleChange} />
@@ -173,7 +183,7 @@ export default function BecomeProvider() {
             </Section>
 
             {/* =================== LOCATION =================== */}
-            <Section title="📍 Parking Location Details">
+            <Section title="Parking Location Details" icon={<FaMapMarkedAlt />}>
               <Select
                 label="State"
                 value={form.state}
@@ -200,7 +210,7 @@ export default function BecomeProvider() {
             </Section>
 
             {/* =================== PARKING DETAILS =================== */}
-            <Section title="🚗 Parking Space Details">
+            <Section title="Parking Space Details" icon={<FaCar />}>
               <Input label="Total Parking Capacity" name="capacity" type="number" onChange={handleChange} />
 
               <div>
@@ -239,21 +249,21 @@ export default function BecomeProvider() {
             </Section>
 
             {/* =================== PRICING =================== */}
-            <Section title="💰 Pricing Details">
+            <Section title="Pricing Details" icon={<FaMoneyBillWave />}>
               <Input label="Price Per Hour (₹)" name="pricePerHour" type="number" onChange={handleChange} />
               <Checkbox label="Monthly Plan Available" name="monthlyPlan" onChange={handleChange} />
               <Input label="Special Weekend Pricing (optional)" name="weekendPricing" type="number" onChange={handleChange} />
             </Section>
 
             {/* =================== IMAGES =================== */}
-            <Section title="🖼️ Parking Area Images">
+            <Section title="Parking Area Images" icon={<FaImages />}>
               <FileInput label="Upload Parking Area Image" onChange={(e) => handleFileChange(e, "parkingArea")} />
               <FileInput label="Upload Entry Gate Image" onChange={(e) => handleFileChange(e, "entryGate")} />
               <FileInput label="Upload Surrounding Area (optional)" onChange={(e) => handleFileChange(e, "surrounding")} />
             </Section>
 
             {/* =================== PAYMENT =================== */}
-            <Section title="🏦 Payment & Legal Details">
+            <Section title="Payment & Legal Details" icon={<FaUniversity />}>
               <Input label="Bank Account Number" name="bankAccount" onChange={handleChange} />
               <Input label="UPI ID" name="upi" onChange={handleChange} />
               <Input label="GST Number (optional)" name="gst" onChange={handleChange} />
@@ -290,15 +300,15 @@ export default function BecomeProvider() {
 
 /* ================= COMPONENTS ================= */
 
-function Section({ title, children }) {
+function Section({ title, icon, children }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="space-y-6"
     >
-      <h3 className="text-2xl font-bold text-indigo-700">
-        {title}
+      <h3 className="text-2xl font-bold text-indigo-700 flex items-center gap-2">
+        {icon} {title}
       </h3>
       <div className="grid md:grid-cols-2 gap-6">
         {children}

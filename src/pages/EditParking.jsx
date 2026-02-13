@@ -5,6 +5,21 @@ import { getCurrentUser } from "../utils/auth"
 import api, { updateSpot } from "../utils/api"
 import toast from "react-hot-toast"
 import indiaData from "../utils/indiaData"
+import {
+    FaEdit,
+    FaMapMarkedAlt,
+    FaLayerGroup,
+    FaCar,
+    FaMotorcycle,
+    FaBus,
+    FaBolt,
+    FaCalendarAlt,
+    FaUmbrella,
+    FaVideo,
+    FaUserShield,
+    FaTimes,
+    FaSave
+} from "react-icons/fa"
 
 export default function EditParking() {
     const user = getCurrentUser()
@@ -142,12 +157,16 @@ export default function EditParking() {
         <div className="min-h-screen bg-gray-50">
             <Navbar />
             <div className="max-w-3xl mx-auto pt-28 pb-12 px-6">
-                <h1 className="text-3xl font-bold mb-8">Edit Parking Spot ✏️</h1>
+                <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
+                    <FaEdit className="text-indigo-600" /> Edit Parking Spot
+                </h1>
 
                 <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-xl space-y-6">
 
                     <div className="space-y-4">
-                        <h3 className="text-xl font-semibold">Location Details</h3>
+                        <h3 className="text-xl font-semibold flex items-center gap-2">
+                            <FaMapMarkedAlt className="text-gray-500" /> Location Details
+                        </h3>
                         <input name="name" placeholder="Parking Name" value={formData.name} onChange={handleInputChange} className="w-full p-3 border rounded-lg" required />
 
                         <textarea name="description" placeholder="Description (Optional)" value={formData.description} onChange={handleInputChange} className="w-full p-3 border rounded-lg" />
@@ -172,7 +191,9 @@ export default function EditParking() {
                     </div>
 
                     <div className="space-y-4">
-                        <h3 className="text-xl font-semibold">Parking Features</h3>
+                        <h3 className="text-xl font-semibold flex items-center gap-2">
+                            <FaLayerGroup className="text-gray-500" /> Parking Features
+                        </h3>
 
                         <div>
                             <label className="block text-sm font-semibold mb-2">Vehicle Types Allowed</label>
@@ -187,8 +208,12 @@ export default function EditParking() {
                                                 ? prev.vehicleTypes.filter(t => t !== type)
                                                 : [...prev.vehicleTypes, type]
                                         }))}
-                                        className={`px-4 py-2 rounded-lg border transition ${formData.vehicleTypes.includes(type) ? "bg-emerald-600 text-white" : "bg-gray-100"}`}
+                                        className={`px-4 py-2 rounded-lg border transition flex items-center gap-2 ${formData.vehicleTypes.includes(type) ? "bg-emerald-600 text-white" : "bg-gray-100"}`}
                                     >
+                                        {type === "Car" && <FaCar />}
+                                        {type === "Bike" && <FaMotorcycle />}
+                                        {type === "Bus" && <FaBus />}
+                                        {type === "EV" && <FaBolt />}
                                         {type}
                                     </button>
                                 ))}
@@ -211,29 +236,34 @@ export default function EditParking() {
 
                         {/* Checkboxes */}
                         <div className="grid grid-cols-2 gap-4">
-                            <label className="flex items-center gap-2">
-                                <input type="checkbox" name="monthlyPlan" checked={formData.monthlyPlan} onChange={handleInputChange} /> Monthly Plan Available
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="monthlyPlan" checked={formData.monthlyPlan} onChange={handleInputChange} className="w-5 h-5 rounded text-indigo-600" />
+                                <FaCalendarAlt className="text-gray-500" /> Monthly Plan Available
                             </label>
-                            <label className="flex items-center gap-2">
-                                <input type="checkbox" name="covered" checked={formData.covered} onChange={handleInputChange} /> Covered Parking
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="covered" checked={formData.covered} onChange={handleInputChange} className="w-5 h-5 rounded text-indigo-600" />
+                                <FaUmbrella className="text-gray-500" /> Covered Parking
                             </label>
-                            <label className="flex items-center gap-2">
-                                <input type="checkbox" name="cctv" checked={formData.cctv} onChange={handleInputChange} /> CCTV Surveillance
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="cctv" checked={formData.cctv} onChange={handleInputChange} className="w-5 h-5 rounded text-indigo-600" />
+                                <FaVideo className="text-gray-500" /> CCTV Surveillance
                             </label>
-                            <label className="flex items-center gap-2">
-                                <input type="checkbox" name="guard" checked={formData.guard} onChange={handleInputChange} /> Security Guard
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="guard" checked={formData.guard} onChange={handleInputChange} className="w-5 h-5 rounded text-indigo-600" />
+                                <FaUserShield className="text-gray-500" /> Security Guard
                             </label>
-                            <label className="flex items-center gap-2">
-                                <input type="checkbox" name="evCharging" checked={formData.evCharging} onChange={handleInputChange} /> EV Charging
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="evCharging" checked={formData.evCharging} onChange={handleInputChange} className="w-5 h-5 rounded text-indigo-600" />
+                                <FaBolt className="text-gray-500" /> EV Charging
                             </label>
                         </div>
                     </div>
 
-                    <button type="submit" className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">
-                        Update Parking Spot
+                    <button type="submit" className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition flex items-center justify-center gap-2">
+                        <FaSave /> Update Parking Spot
                     </button>
-                    <button type="button" onClick={() => navigate("/dashboard")} className="w-full py-3 text-gray-500 font-semibold hover:text-gray-700 transition">
-                        Cancel
+                    <button type="button" onClick={() => navigate("/dashboard")} className="w-full py-3 text-gray-500 font-semibold hover:text-gray-700 transition flex items-center justify-center gap-2">
+                        <FaTimes /> Cancel
                     </button>
                 </form>
             </div>

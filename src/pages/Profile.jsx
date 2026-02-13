@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { getCurrentUser, getProfile, updateProfile } from "../utils/auth"
+import { FaBuilding, FaUserShield, FaCar, FaUserCircle } from "react-icons/fa"
 
 export default function Profile() {
   const user = getCurrentUser()
@@ -74,8 +75,8 @@ export default function Profile() {
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
           {/* HEADER */}
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-10 text-white">
-            <h2 className="text-4xl font-extrabold mb-2">
-              My Profile
+            <h2 className="text-4xl font-extrabold mb-2 flex items-center gap-3">
+              <FaUserCircle /> My Profile
             </h2>
             <p className="text-white/90">
               Manage your personal and address details
@@ -94,16 +95,16 @@ export default function Profile() {
               {/* ✅ ROLE DISPLAY */}
               <p className="mt-4 text-sm font-semibold">
                 {profile.role === "provider" ? (
-                  <span className="text-emerald-600">
-                    🏢 Parking Provider
+                  <span className="text-emerald-600 flex items-center gap-2">
+                    <FaBuilding /> Parking Provider
                   </span>
                 ) : profile.role === "admin" ? (
-                  <span className="text-red-600">
-                    🛠 Admin
+                  <span className="text-red-600 flex items-center gap-2">
+                    <FaUserShield /> Admin
                   </span>
                 ) : (
-                  <span className="text-indigo-600">
-                    🚗 Driver
+                  <span className="text-indigo-600 flex items-center gap-2">
+                    <FaCar /> Driver
                   </span>
                 )}
               </p>

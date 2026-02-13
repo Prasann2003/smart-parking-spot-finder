@@ -1,6 +1,15 @@
 import { useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
 import { isLoggedIn } from "../utils/auth"
+import {
+  FaSearch,
+  FaSignInAlt,
+  FaBuilding,
+  FaUserShield,
+  FaStar,
+  FaCheckCircle,
+  FaArrowRight
+} from "react-icons/fa"
 
 export default function Home() {
   const navigate = useNavigate()
@@ -56,16 +65,16 @@ export default function Home() {
             <div className="mt-10 flex gap-6 flex-wrap">
               <button
                 onClick={handleFindParking}
-                className="px-8 py-4 bg-cyan-500 hover:bg-cyan-600 rounded-xl font-semibold transition shadow-lg shadow-cyan-500/30"
+                className="px-8 py-4 bg-cyan-500 hover:bg-cyan-600 rounded-xl font-semibold transition shadow-lg shadow-cyan-500/30 flex items-center gap-2"
               >
-                🚗 Find Parking
+                <FaSearch /> Find Parking
               </button>
 
               <button
                 onClick={() => navigate("/auth")}
-                className="px-8 py-4 border border-white/30 hover:bg-white/10 rounded-xl font-semibold transition"
+                className="px-8 py-4 border border-white/30 hover:bg-white/10 rounded-xl font-semibold transition flex items-center gap-2"
               >
-                🔐 User Login
+                <FaSignInAlt /> User Login
               </button>
             </div>
 
@@ -73,16 +82,16 @@ export default function Home() {
             <div className="mt-6 flex gap-6 flex-wrap">
               <button
                 onClick={handleBecomeProvider}
-                className="px-6 py-3 bg-pink-500 hover:bg-pink-600 rounded-xl font-semibold transition shadow-lg shadow-pink-500/30"
+                className="px-6 py-3 bg-pink-500 hover:bg-pink-600 rounded-xl font-semibold transition shadow-lg shadow-pink-500/30 flex items-center gap-2"
               >
-                🏢 Become Provider
+                <FaBuilding /> Become Provider
               </button>
 
               <button
                 onClick={() => navigate("/admin-login")}
-                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-white/20 rounded-xl font-semibold transition"
+                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-white/20 rounded-xl font-semibold transition flex items-center gap-2"
               >
-                🛡 Admin Login
+                <FaUserShield /> Admin Login
               </button>
             </div>
           </motion.div>
@@ -96,16 +105,16 @@ export default function Home() {
           >
             <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl">
 
-              <h3 className="text-2xl font-bold mb-6">
-                🚗 Smart Features
+              <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                <FaStar className="text-yellow-400" /> Smart Features
               </h3>
 
               <ul className="space-y-4 text-gray-300">
-                <li>✔ Live Slot Tracking</li>
-                <li>✔ AI Powered Search</li>
-                <li>✔ Secure Payments</li>
-                <li>✔ EV Charging Support</li>
-                <li>✔ CCTV Verified Locations</li>
+                <li className="flex items-center gap-2"><FaCheckCircle className="text-cyan-400" /> Live Slot Tracking</li>
+                <li className="flex items-center gap-2"><FaCheckCircle className="text-cyan-400" /> AI Powered Search</li>
+                <li className="flex items-center gap-2"><FaCheckCircle className="text-cyan-400" /> Secure Payments</li>
+                <li className="flex items-center gap-2"><FaCheckCircle className="text-cyan-400" /> EV Charging Support</li>
+                <li className="flex items-center gap-2"><FaCheckCircle className="text-cyan-400" /> CCTV Verified Locations</li>
               </ul>
 
             </div>
@@ -133,8 +142,8 @@ export default function Home() {
               whileHover={{ scale: 1.05 }}
               className="bg-white/5 backdrop-blur-lg border border-white/10 p-8 rounded-2xl shadow-xl"
             >
-              <h3 className="text-xl font-semibold mb-3 text-cyan-400">
-                {feature}
+              <h3 className="text-xl font-semibold mb-3 text-cyan-400 flex items-center gap-2">
+                <FaCheckCircle /> {feature}
               </h3>
               <p className="text-gray-400 text-sm">
                 Experience seamless smart parking with
@@ -157,9 +166,9 @@ export default function Home() {
 
         <button
           onClick={handleFindParking}
-          className="px-10 py-4 bg-black text-white rounded-xl text-lg font-semibold hover:bg-gray-900 transition"
+          className="px-10 py-4 bg-black text-white rounded-xl text-lg font-semibold hover:bg-gray-900 transition flex items-center justify-center gap-2 mx-auto"
         >
-          Start Now
+          Start Now <FaArrowRight />
         </button>
       </section>
 
