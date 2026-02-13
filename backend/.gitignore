@@ -70,7 +70,5 @@ jacoco*.exec
 *.swp
 *.bak
 *.orig
-# Maven
-
 # Java
 *.class
