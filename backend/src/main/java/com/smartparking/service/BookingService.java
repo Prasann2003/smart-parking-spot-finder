@@ -37,25 +37,35 @@ public class BookingService {
                 ParkingSpot parkingSpot = parkingSpotRepository.findById(dto.getParkingSpotId())
                                 .orElseThrow(() -> new RuntimeException("Parking Spot not found"));
 
-                // Calculate total price
+                // FIND VEHICLE CONFIG
+                com.smartparking.entity.SpotVehicleConfig config = parkingSpot.getVehicleConfigs().stream()
+                                .filter(c -> c.getVehicleType() == dto.getVehicleType())
+                                .findFirst()
+                                .orElseThrow(() -> new RuntimeException("Vehicle type " + dto.getVehicleType()
+                                                + " not supported by this spot"));
+
+                // Calculate total price using CONFIG price
                 long hours = Duration.between(dto.getStartTime(), dto.getEndTime()).toHours();
                 if (hours < 1)
                         hours = 1; // Minimum 1 hour
-                double totalPrice = hours * parkingSpot.getPricePerHour();
+                double totalPrice = hours * config.getPricePerHour();
 
-                // CHECK AVAILABILITY
+                // CHECK AVAILABILITY FOR VEHICLE TYPE
                 long overlappingBookings = bookingRepository.countOverlappingBookings(
                                 parkingSpot.getId(),
+                                dto.getVehicleType(),
                                 dto.getStartTime(),
                                 dto.getEndTime());
 
-                if (overlappingBookings >= parkingSpot.getTotalCapacity()) {
-                        throw new RuntimeException("Parking spot is fully booked for the selected time.");
+                if (overlappingBookings >= config.getCapacity()) {
+                        throw new RuntimeException(
+                                        "No " + dto.getVehicleType() + " slots available for the selected time.");
                 }
 
                 Booking booking = Booking.builder()
                                 .user(user)
                                 .parkingSpot(parkingSpot)
+                                .vehicleType(config.getVehicleType()) // Ensure consistency
                                 .startTime(dto.getStartTime())
                                 .endTime(dto.getEndTime())
                                 .totalPrice(totalPrice)
@@ -99,13 +109,20 @@ public class BookingService {
                                 .collect(Collectors.toList());
         }
 
-        public int getAvailableSlots(Long spotId, java.time.LocalDateTime startTime, java.time.LocalDateTime endTime) {
+        public int getAvailableSlots(Long spotId, com.smartparking.entity.VehicleType vehicleType,
+                        java.time.LocalDateTime startTime,
+                        java.time.LocalDateTime endTime) {
                 ParkingSpot spot = parkingSpotRepository.findById(spotId)
                                 .orElseThrow(() -> new RuntimeException("Parking Spot not found"));
 
-                long bookedCount = bookingRepository.countOverlappingBookings(spotId, startTime, endTime);
+                com.smartparking.entity.SpotVehicleConfig config = spot.getVehicleConfigs().stream()
+                                .filter(c -> c.getVehicleType() == vehicleType)
+                                .findFirst()
+                                .orElseThrow(() -> new RuntimeException("Vehicle type not supported"));
 
-                int available = spot.getTotalCapacity() - (int) bookedCount;
+                long bookedCount = bookingRepository.countOverlappingBookings(spotId, vehicleType, startTime, endTime);
+
+                int available = config.getCapacity() - (int) bookedCount;
                 return Math.max(0, available);
         }
 
@@ -123,6 +140,7 @@ public class BookingService {
                                 .parkingSpotName(booking.getParkingSpot().getName())
                                 .paymentMethod(paymentMethod)
                                 .createdAt(booking.getCreatedAt())
+                                .vehicleType(booking.getVehicleType()) // Map vehicle type
                                 .userName(booking.getUser().getName())
                                 .userEmail(booking.getUser().getEmail())
                                 .userPhone(booking.getUser().getPhoneNumber() != null

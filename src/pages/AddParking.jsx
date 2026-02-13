@@ -35,13 +35,12 @@ export default function AddParking() {
         googleMapsLink: "",
         latitude: "",
         longitude: "",
-        totalCapacity: "",
-        pricePerHour: "",
         covered: false,
         cctv: false,
         guard: false,
         evCharging: false,
         vehicleTypes: [],
+        vehicleConfigs: {}, // { Car: { capacity: "", price: "" } }
         parkingType: "Public",
         monthlyPlan: false,
         weekendPricing: "",
@@ -68,13 +67,41 @@ export default function AddParking() {
         }))
     }
 
-    const handleVehicleTypeChange = (e) => {
-        const { value, checked } = e.target
+    const handleVehicleTypeChange = (e, type) => {
+        // e might be virtual if called from button click directly
         setFormData((prev) => {
-            const currentTypes = prev.vehicleTypes || []
-            if (checked) return { ...prev, vehicleTypes: [...currentTypes, value] }
-            return { ...prev, vehicleTypes: currentTypes.filter(t => t !== value) }
+            const isSelected = prev.vehicleTypes.includes(type)
+            const newTypes = isSelected
+                ? prev.vehicleTypes.filter(t => t !== type)
+                : [...prev.vehicleTypes, type]
+
+            const newConfigs = { ...prev.vehicleConfigs }
+            if (!isSelected) {
+                // Initialize default config if selecting
+                let defaultCap = ""
+                let defaultPrice = ""
+                // Optional defaults
+                // if (type === "BIKE") { defaultCap = "20"; defaultPrice = "20"; }
+                newConfigs[type] = { capacity: defaultCap, price: defaultPrice }
+            } else {
+                delete newConfigs[type]
+            }
+
+            return { ...prev, vehicleTypes: newTypes, vehicleConfigs: newConfigs }
         })
+    }
+
+    const handleConfigChange = (type, field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            vehicleConfigs: {
+                ...prev.vehicleConfigs,
+                [type]: {
+                    ...prev.vehicleConfigs[type],
+                    [field]: value
+                }
+            }
+        }))
     }
 
 
@@ -82,21 +109,40 @@ export default function AddParking() {
         e.preventDefault()
 
         // Validate
-        if (!formData.name || !formData.address || !formData.pricePerHour || !files.parkingAreaImage || !files.gateImage) {
+        if (!formData.name || !formData.address || !files.parkingAreaImage || !files.gateImage) {
             toast.error("Please fill required fields and upload images")
             return
         }
 
+        if (formData.vehicleTypes.length === 0) {
+            toast.error("Please select at least one vehicle type")
+            return
+        }
+
+        // Validate config details
+        for (const type of formData.vehicleTypes) {
+            const config = formData.vehicleConfigs[type]
+            if (!config || !config.capacity || !config.price) {
+                toast.error(`Please enter capacity and price for ${type}`)
+                return
+            }
+        }
+
         const data = new FormData()
         Object.keys(formData).forEach(key => {
-            if (key === "vehicleTypes") {
-                // Append each vehicle type separately or as comma separated if backend expects list
-                // DTO expects Set<String>, so appending multiple times with same key works for Spring
-                const types = formData.vehicleTypes.length > 0 ? formData.vehicleTypes : ["Car"]
-                types.forEach(t => data.append("vehicleTypes", t))
+            if (key === "vehicleTypes" || key === "vehicleConfigs") {
+                // Skip direct append
             } else {
                 data.append(key, formData[key])
             }
+        })
+
+        // Append vehicleConfigs with indexed keys
+        formData.vehicleTypes.forEach((type, index) => {
+            const config = formData.vehicleConfigs[type]
+            data.append(`vehicleConfigs[${index}].vehicleType`, type)
+            data.append(`vehicleConfigs[${index}].capacity`, config.capacity)
+            data.append(`vehicleConfigs[${index}].pricePerHour`, config.price)
         })
 
         // Append files
@@ -104,17 +150,15 @@ export default function AddParking() {
         data.append("gateImage", files.gateImage)
         if (files.surroundingImage) data.append("surroundingImage", files.surroundingImage)
 
-        // Ensure numeric types are appended as strings (FormData standard) but Spring converts them
-
         try {
-            await api.post("/parking/add", data, {
+            await api.post("/provider/add", data, {
                 headers: { "Content-Type": "multipart/form-data" }
             })
-            toast.success("Parking Spot Added!")
+            toast.success("Application Submitted Successfully!")
             navigate("/dashboard")
         } catch (err) {
             console.error(err)
-            toast.error("Failed to add parking spot.")
+            toast.error("Failed to submit application.")
         }
     }
 
@@ -188,23 +232,18 @@ export default function AddParking() {
                         </h3>
 
                         <div>
-                            <label className="block text-sm font-semibold mb-2">Vehicle Types Allowed</label>
-                            <div className="flex gap-3 flex-wrap">
-                                {["Car", "Bike", "Bus", "EV"].map(type => (
+                            <label className="block text-sm font-semibold mb-2">Select Vehicle Types Allowed</label>
+                            <div className="flex gap-3 flex-wrap mb-4">
+                                {["CAR", "BIKE", "BUS", "EV"].map(type => (
                                     <button
                                         type="button"
                                         key={type}
-                                        onClick={() => setFormData(prev => ({
-                                            ...prev,
-                                            vehicleTypes: prev.vehicleTypes.includes(type)
-                                                ? prev.vehicleTypes.filter(t => t !== type)
-                                                : [...prev.vehicleTypes, type]
-                                        }))}
+                                        onClick={(e) => handleVehicleTypeChange(e, type)}
                                         className={`px-4 py-2 rounded-lg border transition flex items-center gap-2 ${formData.vehicleTypes.includes(type) ? "bg-emerald-600 text-white" : "bg-gray-100"}`}
                                     >
-                                        {type === "Car" && <FaCar />}
-                                        {type === "Bike" && <FaMotorcycle />}
-                                        {type === "Bus" && <FaBus />}
+                                        {type === "CAR" && <FaCar />}
+                                        {type === "BIKE" && <FaMotorcycle />}
+                                        {type === "BUS" && <FaBus />}
                                         {type === "EV" && <FaBolt />}
                                         {type}
                                     </button>
@@ -212,18 +251,49 @@ export default function AddParking() {
                             </div>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-4">
+                        {/* Dynamic Inputs per Vehicle Type */}
+                        {formData.vehicleTypes.length > 0 && (
+                            <div className="bg-gray-50 p-4 rounded-xl space-y-4 border">
+                                <h4 className="font-medium text-gray-700">Capacity & Pricing details</h4>
+                                {formData.vehicleTypes.map(type => (
+                                    <div key={type} className="grid md:grid-cols-3 gap-4 items-end bg-white p-3 rounded shadow-sm">
+                                        <div className="font-bold text-emerald-700 flex items-center gap-2 min-w-[80px]">
+                                            {type}
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Capacity</label>
+                                            <input
+                                                type="number"
+                                                placeholder="Slots"
+                                                value={formData.vehicleConfigs[type]?.capacity || ""}
+                                                onChange={(e) => handleConfigChange(type, "capacity", e.target.value)}
+                                                className="w-full p-2 border rounded"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Price/Hr (₹)</label>
+                                            <input
+                                                type="number"
+                                                placeholder="₹"
+                                                value={formData.vehicleConfigs[type]?.price || ""}
+                                                onChange={(e) => handleConfigChange(type, "price", e.target.value)}
+                                                className="w-full p-2 border rounded"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="grid md:grid-cols-2 gap-4 mt-4">
                             <select name="parkingType" value={formData.parkingType} onChange={handleInputChange} className="w-full p-3 border rounded-lg">
                                 <option value="Public">Public</option>
                                 <option value="Private">Private</option>
                                 <option value="Commercial">Commercial</option>
                             </select>
-                            <input type="number" name="totalCapacity" placeholder="Total Capacity" value={formData.totalCapacity} onChange={handleInputChange} className="w-full p-3 border rounded-lg" required />
-                        </div>
-
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <input type="number" name="pricePerHour" placeholder="Price Per Hour (₹)" value={formData.pricePerHour} onChange={handleInputChange} className="w-full p-3 border rounded-lg" required />
-                            <input type="number" name="weekendPricing" placeholder="Special Weekend Price (₹)" value={formData.weekendPricing} onChange={handleInputChange} className="w-full p-3 border rounded-lg" />
+                            <input type="number" name="weekendPricing" placeholder="Special Weekend Price (Optional Base)" value={formData.weekendPricing} onChange={handleInputChange} className="w-full p-3 border rounded-lg" />
                         </div>
 
                         {/* Checkboxes */}

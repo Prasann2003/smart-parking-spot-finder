@@ -37,21 +37,44 @@ export default function EditParking() {
         googleMapsLink: "",
         latitude: "",
         longitude: "",
-        totalCapacity: "",
-        pricePerHour: "",
+        // totalCapacity: "", // Removed
+        // pricePerHour: "", // Removed
         covered: false,
         cctv: false,
         guard: false,
         evCharging: false,
         vehicleTypes: [],
+        vehicleConfigs: {}, // { Car: { capacity: 10, price: 50 }, ... }
         parkingType: "Public",
         monthlyPlan: false,
         weekendPricing: "",
     })
 
     useEffect(() => {
-        if (location.state?.spot) {
-            const spot = location.state.spot
+        const populateData = (spot) => {
+            // Map list of configs to object for UI state
+            const configsMap = {};
+            const types = [];
+
+            if (spot.vehicleConfigs) {
+                spot.vehicleConfigs.forEach(c => {
+                    types.push(c.vehicleType);
+                    configsMap[c.vehicleType] = {
+                        capacity: c.capacity,
+                        price: c.pricePerHour
+                    };
+                });
+            } else if (spot.vehicleTypes) {
+                // Fallback for old data if any
+                spot.vehicleTypes.forEach(t => {
+                    types.push(t);
+                    configsMap[t] = {
+                        capacity: spot.totalCapacity || "",
+                        price: spot.pricePerHour || ""
+                    };
+                });
+            }
+
             setFormData({
                 name: spot.name || "",
                 description: spot.description || "",
@@ -62,44 +85,28 @@ export default function EditParking() {
                 googleMapsLink: spot.googleMapsLink || "",
                 latitude: spot.latitude || "",
                 longitude: spot.longitude || "",
-                totalCapacity: spot.totalCapacity || "",
-                pricePerHour: spot.pricePerHour || "",
+                // totalCapacity: spot.totalCapacity || "",
+                // pricePerHour: spot.pricePerHour || "",
                 covered: spot.covered || false,
                 cctv: spot.cctv || false,
                 guard: spot.guard || false,
                 evCharging: spot.evCharging || false,
-                vehicleTypes: spot.vehicleTypes || [],
+                vehicleTypes: types,
+                vehicleConfigs: configsMap,
                 parkingType: spot.parkingType || "Public",
                 monthlyPlan: spot.monthlyPlan || false,
                 weekendPricing: spot.weekendPricing || "",
             })
+        }
+
+        if (location.state?.spot) {
+            populateData(location.state.spot)
         } else {
             // Fetch if not provided in state
             const fetchSpot = async () => {
                 try {
                     const res = await api.get(`/provider/view/${id}`)
-                    const spot = res.data
-                    setFormData({
-                        name: spot.name || "",
-                        description: spot.description || "",
-                        state: spot.state || "",
-                        district: spot.district || "",
-                        address: spot.address || "",
-                        pincode: spot.pincode || "",
-                        googleMapsLink: spot.googleMapsLink || "",
-                        latitude: spot.latitude || "",
-                        longitude: spot.longitude || "",
-                        totalCapacity: spot.totalCapacity || "",
-                        pricePerHour: spot.pricePerHour || "",
-                        covered: spot.covered || false,
-                        cctv: spot.cctv || false,
-                        guard: spot.guard || false,
-                        evCharging: spot.evCharging || false,
-                        vehicleTypes: spot.vehicleTypes || [],
-                        parkingType: spot.parkingType || "Public",
-                        monthlyPlan: spot.monthlyPlan || false,
-                        weekendPricing: spot.weekendPricing || "",
-                    })
+                    populateData(res.data)
                 } catch (err) {
                     console.error("Failed to fetch spot", err)
                     toast.error("Could not load parking spot details")
@@ -118,11 +125,43 @@ export default function EditParking() {
         }))
     }
 
+    const handleVehicleTypeChange = (e, type) => {
+        setFormData((prev) => {
+            const isSelected = prev.vehicleTypes.includes(type)
+            const newTypes = isSelected
+                ? prev.vehicleTypes.filter(t => t !== type)
+                : [...prev.vehicleTypes, type]
+
+            const newConfigs = { ...prev.vehicleConfigs }
+            if (!isSelected) {
+                // Initialize default
+                newConfigs[type] = { capacity: "", price: "" }
+            } else {
+                delete newConfigs[type]
+            }
+
+            return { ...prev, vehicleTypes: newTypes, vehicleConfigs: newConfigs }
+        })
+    }
+
+    const handleConfigChange = (type, field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            vehicleConfigs: {
+                ...prev.vehicleConfigs,
+                [type]: {
+                    ...prev.vehicleConfigs[type],
+                    [field]: value
+                }
+            }
+        }))
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
 
         // Validation
-        if (!formData.name || !formData.state || !formData.district || !formData.address || !formData.pincode || !formData.pricePerHour || !formData.totalCapacity) {
+        if (!formData.name || !formData.state || !formData.district || !formData.address || !formData.pincode) {
             toast.error("Please fill all required fields")
             return
         }
@@ -132,16 +171,38 @@ export default function EditParking() {
             return
         }
 
+        // Validate Configs
+        for (const type of formData.vehicleTypes) {
+            const config = formData.vehicleConfigs[type];
+            if (!config || !config.capacity || !config.price) {
+                toast.error(`Please enter capacity and price for ${type}`);
+                return;
+            }
+        }
+
+        // Map configs map back to list
+        const vehicleConfigsList = formData.vehicleTypes.map(type => ({
+            vehicleType: type,
+            capacity: Number(formData.vehicleConfigs[type].capacity),
+            pricePerHour: Number(formData.vehicleConfigs[type].price)
+        }));
+
         const payload = {
             ...formData,
-            // Ensure numbers are actually numbers
-            totalCapacity: Number(formData.totalCapacity),
-            pricePerHour: Number(formData.pricePerHour),
-            // Optional numerics
+            // Remove flat fields
+            totalCapacity: undefined,
+            pricePerHour: undefined,
+            // Add list
+            vehicleConfigs: vehicleConfigsList,
+
+            // Ensure numbers
             weekendPricing: formData.weekendPricing ? Number(formData.weekendPricing) : null,
             latitude: formData.latitude ? Number(formData.latitude) : null,
             longitude: formData.longitude ? Number(formData.longitude) : null,
         }
+
+        // Remove the internal map from payload if not needed by backend (it is ignored if unknown property usually, but cleaner to remove)
+        delete payload.vehicleConfigsMap;
 
         console.log("Sending Payload:", JSON.stringify(payload, null, 2)) // Debug log
 
@@ -196,23 +257,18 @@ export default function EditParking() {
                         </h3>
 
                         <div>
-                            <label className="block text-sm font-semibold mb-2">Vehicle Types Allowed</label>
-                            <div className="flex gap-3 flex-wrap">
-                                {["Car", "Bike", "Bus", "EV"].map(type => (
+                            <label className="block text-sm font-semibold mb-2">Select Vehicle Types Allowed</label>
+                            <div className="flex gap-3 flex-wrap mb-4">
+                                {["CAR", "BIKE", "BUS", "EV"].map(type => (
                                     <button
                                         type="button"
                                         key={type}
-                                        onClick={() => setFormData(prev => ({
-                                            ...prev,
-                                            vehicleTypes: prev.vehicleTypes.includes(type)
-                                                ? prev.vehicleTypes.filter(t => t !== type)
-                                                : [...prev.vehicleTypes, type]
-                                        }))}
-                                        className={`px-4 py-2 rounded-lg border transition flex items-center gap-2 ${formData.vehicleTypes.includes(type) ? "bg-emerald-600 text-white" : "bg-gray-100"}`}
+                                        onClick={(e) => handleVehicleTypeChange(e, type)}
+                                        className={`px-4 py-2 rounded-lg border transition flex items-center gap-2 ${formData.vehicleTypes.includes(type) ? "bg-indigo-600 text-white" : "bg-gray-100"}`}
                                     >
-                                        {type === "Car" && <FaCar />}
-                                        {type === "Bike" && <FaMotorcycle />}
-                                        {type === "Bus" && <FaBus />}
+                                        {type === "CAR" && <FaCar />}
+                                        {type === "BIKE" && <FaMotorcycle />}
+                                        {type === "BUS" && <FaBus />}
                                         {type === "EV" && <FaBolt />}
                                         {type}
                                     </button>
@@ -220,18 +276,49 @@ export default function EditParking() {
                             </div>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-4">
+                        {/* Dynamic Inputs per Vehicle Type */}
+                        {formData.vehicleTypes.length > 0 && (
+                            <div className="bg-gray-50 p-4 rounded-xl space-y-4 border">
+                                <h4 className="font-medium text-gray-700">Capacity & Pricing details</h4>
+                                {formData.vehicleTypes.map(type => (
+                                    <div key={type} className="grid md:grid-cols-3 gap-4 items-end bg-white p-3 rounded shadow-sm">
+                                        <div className="font-bold text-indigo-700 flex items-center gap-2 min-w-[80px]">
+                                            {type}
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Capacity</label>
+                                            <input
+                                                type="number"
+                                                placeholder="Slots"
+                                                value={formData.vehicleConfigs[type]?.capacity || ""}
+                                                onChange={(e) => handleConfigChange(type, "capacity", e.target.value)}
+                                                className="w-full p-2 border rounded"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Price/Hr (₹)</label>
+                                            <input
+                                                type="number"
+                                                placeholder="₹"
+                                                value={formData.vehicleConfigs[type]?.price || ""}
+                                                onChange={(e) => handleConfigChange(type, "price", e.target.value)}
+                                                className="w-full p-2 border rounded"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="grid md:grid-cols-2 gap-4 mt-4">
                             <select name="parkingType" value={formData.parkingType} onChange={handleInputChange} className="w-full p-3 border rounded-lg">
                                 <option value="Public">Public</option>
                                 <option value="Private">Private</option>
                                 <option value="Commercial">Commercial</option>
                             </select>
-                            <input type="number" name="totalCapacity" placeholder="Total Capacity" value={formData.totalCapacity} onChange={handleInputChange} className="w-full p-3 border rounded-lg" required />
-                        </div>
-
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <input type="number" name="pricePerHour" placeholder="Price Per Hour (₹)" value={formData.pricePerHour} onChange={handleInputChange} className="w-full p-3 border rounded-lg" required />
-                            <input type="number" name="weekendPricing" placeholder="Special Weekend Price (₹)" value={formData.weekendPricing} onChange={handleInputChange} className="w-full p-3 border rounded-lg" />
+                            <input type="number" name="weekendPricing" placeholder="Special Weekend Price (Optional Base)" value={formData.weekendPricing} onChange={handleInputChange} className="w-full p-3 border rounded-lg" />
                         </div>
 
                         {/* Checkboxes */}

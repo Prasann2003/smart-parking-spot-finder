@@ -28,31 +28,41 @@ public class GoogleMapsUtil {
     }
 
     private static String expandUrl(String shortUrl) {
+        String currentUrl = shortUrl;
         try {
-            logger.info("Expanding URL: {}", shortUrl);
-            URL url = new URL(shortUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setInstanceFollowRedirects(false);
-            connection.setRequestMethod("HEAD");
-            // Add User-Agent to behave like a browser, sometimes helps with Google
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+            for (int i = 0; i < 5; i++) { // Max 5 redirects
+                logger.info("Accessing URL to expand: {}", currentUrl);
+                URL url = new URL(currentUrl);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
-            int responseCode = connection.getResponseCode();
-            logger.info("Response Code: {}", responseCode);
+                // Disable automatic redirects to inspect headers manually
+                connection.setInstanceFollowRedirects(false);
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(5000);
+                // Use a generic wget/curl user agent to encourage raw redirects instead of JS
+                // pages
+                connection.setRequestProperty("User-Agent", "curl/7.64.1");
 
-            if (responseCode >= 300 && responseCode < 400) {
-                String location = connection.getHeaderField("Location");
-                if (location != null) {
-                    logger.info("Redirected to: {}", location);
-                    // If it's still a shortened URL (double redirect), recurse.
-                    // Otherwise, we might have the full Google Maps link.
-                    if (location.contains("goo.gl") || location.contains("maps.app.goo.gl")) {
-                        return expandUrl(location);
+                connection.connect();
+
+                int responseCode = connection.getResponseCode();
+                logger.info("Response Code: {}", responseCode);
+
+                if (responseCode >= 300 && responseCode < 400) {
+                    String newUrl = connection.getHeaderField("Location");
+                    if (newUrl == null) {
+                        logger.warn("Redirect response missing Location header");
+                        break;
                     }
-                    return location;
+                    logger.info("Redirected to: {}", newUrl);
+                    currentUrl = newUrl;
+                } else {
+                    // Reached final destination (200 OK or error)
+                    break;
                 }
             }
-            return shortUrl;
+            return currentUrl;
         } catch (IOException e) {
             logger.error("Failed to expand URL: {}", shortUrl, e);
             return shortUrl;
@@ -62,8 +72,20 @@ public class GoogleMapsUtil {
     private static double[] extractCoordinates(String url) {
         logger.info("Extracting coordinates from: {}", url);
 
+        // Pattern 0: !3d and !4d (Pin coordinates in data param) - Highest Priority
+        // Example: data=!3m1!4b1!4m6!3m5!1s0x...!8m2!3d13.0552404!4d80.2785923
+        Pattern p0 = Pattern.compile("!3d(-?\\d+\\.\\d+)!4d(-?\\d+\\.\\d+)");
+        Matcher m0 = p0.matcher(url);
+        if (m0.find()) {
+            try {
+                logger.info("Found pin coordinates in data param");
+                return new double[] { Double.parseDouble(m0.group(1)), Double.parseDouble(m0.group(2)) };
+            } catch (NumberFormatException e) {
+                logger.error("Error parsing coordinates from pattern 0", e);
+            }
+        }
+
         // Pattern 1: @lat,lng (most common in desktop/expanded links)
-        // Example: .../place/PlaceName/@12.345,67.890,17z/...
         Pattern p1 = Pattern.compile("@(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)");
         Matcher m1 = p1.matcher(url);
         if (m1.find()) {
@@ -73,7 +95,6 @@ public class GoogleMapsUtil {
                 logger.error("Error parsing coordinates from pattern 1", e);
             }
         }
-
         // Pattern 2: ?q=lat,lng or &q=lat,lng or ?ll=lat,lng
         // Example: maps.google.com/?q=12.345,67.890
         Pattern p2 = Pattern.compile("[?&](?:q|ll)=(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)");

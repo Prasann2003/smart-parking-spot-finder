@@ -32,6 +32,10 @@ public class Booking {
     private Double totalPrice;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private VehicleType vehicleType;
+
+    @Enumerated(EnumType.STRING)
     private BookingStatus status;
 
     public enum BookingStatus {

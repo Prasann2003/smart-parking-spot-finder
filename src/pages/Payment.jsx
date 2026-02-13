@@ -29,18 +29,36 @@ export default function Payment() {
   const [paymentMethod, setPaymentMethod] = useState(null)
   const [paymentStatus, setPaymentStatus] = useState("PENDING") // PENDING, SUCCESS
 
+  const [selectedVehicleType, setSelectedVehicleType] = useState(null)
+
   const [availableSlots, setAvailableSlots] = useState(null)
   const [checkingAvailability, setCheckingAvailability] = useState(false)
 
+  // Initialize selected vehicle type if configs exist
+  useEffect(() => {
+    if (spot && spot.vehicleConfigs && spot.vehicleConfigs.length > 0 && !selectedVehicleType) {
+      setSelectedVehicleType(spot.vehicleConfigs[0].vehicleType)
+    }
+  }, [spot, selectedVehicleType])
+
   // Calculate Price & Check Availability
   useEffect(() => {
-    if (startTime && endTime && spot) {
+    if (startTime && endTime && spot && selectedVehicleType) {
       const start = new Date(startTime)
       const end = new Date(endTime)
       const hours = (end - start) / (1000 * 60 * 60)
 
+      // Find config for price
+      let pricePerHour = 0;
+      if (spot.vehicleConfigs) {
+        const config = spot.vehicleConfigs.find(c => c.vehicleType === selectedVehicleType);
+        pricePerHour = config ? config.pricePerHour : 0;
+      } else {
+        pricePerHour = spot.pricePerHour || 0;
+      }
+
       if (hours > 0) {
-        setTotalPrice(Math.round(hours * spot.pricePerHour))
+        setTotalPrice(Math.round(hours * pricePerHour))
 
         // Check Availability
         const checkAvailability = async () => {
@@ -49,11 +67,11 @@ export default function Payment() {
             const formattedStart = startTime.replace("T", " ") + ":00"
             const formattedEnd = endTime.replace("T", " ") + ":00"
 
-            const res = await api.get(`/bookings/check-availability?parkingSpotId=${spot.id}&startTime=${formattedStart}&endTime=${formattedEnd}`)
+            const res = await api.get(`/bookings/check-availability?parkingSpotId=${spot.id}&startTime=${formattedStart}&endTime=${formattedEnd}&vehicleType=${selectedVehicleType}`)
             setAvailableSlots(res.data)
           } catch (err) {
             console.error("Availability check failed", err)
-            setAvailableSlots(0) // Assume 0 on error to be safe
+            setAvailableSlots(0) // Assume 0 on error
           } finally {
             setCheckingAvailability(false)
           }
@@ -65,7 +83,7 @@ export default function Payment() {
         setAvailableSlots(null)
       }
     }
-  }, [startTime, endTime, spot])
+  }, [startTime, endTime, spot, selectedVehicleType])
 
   if (!spot) {
     return (
@@ -93,7 +111,8 @@ export default function Payment() {
         parkingSpotId: spot.id,
         startTime: formattedStart,
         endTime: formattedEnd,
-        paymentMethod: paymentMethod
+        paymentMethod: paymentMethod,
+        vehicleType: selectedVehicleType
       }
 
       await api.post("/bookings/create", payload)
@@ -132,9 +151,30 @@ export default function Payment() {
                 </h3>
                 <p className="text-gray-600">{spot.address}</p>
 
+                {/* Vehicle Selector */}
+                <div className="mt-4">
+                  <label className="block text-sm font-semibold mb-2">Select Vehicle Type</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {spot.vehicleConfigs && spot.vehicleConfigs.map(config => (
+                      <button
+                        key={config.vehicleType}
+                        onClick={() => setSelectedVehicleType(config.vehicleType)}
+                        className={`px-3 py-1 rounded border text-sm ${selectedVehicleType === config.vehicleType ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                      >
+                        {config.vehicleType} (₹{config.pricePerHour}/hr)
+                      </button>
+                    ))}
+                    {(!spot.vehicleConfigs || spot.vehicleConfigs.length === 0) && (
+                      <span className="text-sm text-gray-500">Standard (₹{spot.pricePerHour}/hr)</span>
+                    )}
+                  </div>
+                </div>
+
                 <div className="mt-4 space-y-2">
-                  <p className="flex items-center gap-2"><FaRupeeSign className="text-green-600" /> {spot.pricePerHour}/hour</p>
-                  <p className="flex items-center gap-2"><FaParking className="text-blue-600" /> Total Capacity: {spot.totalCapacity}</p>
+                  <p className="flex items-center gap-2">
+                    {/* Price is shown in selector or calculated below */}
+                  </p>
+                  {/* <p className="flex items-center gap-2"><FaParking className="text-blue-600" /> Total Capacity: {spot.totalCapacity}</p> */}
                   {availableSlots !== null && (
                     <p className={`font-bold flex items-center gap-2 ${availableSlots > 0 ? "text-green-600" : "text-red-500"}`}>
                       Authorization Status: {availableSlots > 0 ? <><FaCheckCircle /> {availableSlots} Slots Available</> : <><FaMinusCircle /> Fully Booked</>}
@@ -173,7 +213,12 @@ export default function Payment() {
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><FaFileInvoiceDollar /> Payment Summary</h3>
                 <div className="flex justify-between text-lg mb-2">
                   <span>Rate</span>
-                  <span>₹{spot.pricePerHour}/hr</span>
+                  <span>
+                    {selectedVehicleType && spot.vehicleConfigs
+                      ? `₹${spot.vehicleConfigs.find(c => c.vehicleType === selectedVehicleType)?.pricePerHour}/hr`
+                      : `₹${spot.pricePerHour || 0}/hr`
+                    }
+                  </span>
                 </div>
                 <div className="flex justify-between text-xl font-extrabold border-t pt-4">
                   <span>Total Amount</span>

@@ -16,7 +16,8 @@ import {
   FaBan,
   FaCalendarAlt,
   FaUser,
-  FaClipboardList
+  FaClipboardList,
+  FaCar
 } from "react-icons/fa"
 
 export default function ProviderDashboard() {
@@ -139,8 +140,14 @@ export default function ProviderDashboard() {
                   </p>
 
                   <div className="mt-4 text-sm space-y-2">
-                    <p className="flex items-center gap-2"><FaMoneyBillWave className="text-green-600" /> ₹{spot.pricePerHour}/hour</p>
-                    <p className="flex items-center gap-2"><FaParking className="text-blue-600" /> Total Slots: {spot.totalSlots}</p>
+                    <p className="flex items-center gap-2">
+                      <FaMoneyBillWave className="text-green-600" />
+                      {spot.vehicleConfigs && spot.vehicleConfigs.length > 0
+                        ? `Starts ₹${Math.min(...spot.vehicleConfigs.map(c => c.pricePerHour))}/hr`
+                        : "Price not set"
+                      }
+                    </p>
+                    <p className="flex items-center gap-2"><FaParking className="text-blue-600" /> Total Slots: {spot.totalSlots || 0}</p>
                     <p className="flex items-center gap-2">
                       {spot.availableSlots > 0
                         ? <><FaCheckCircle className="text-green-500" /> Available</>
@@ -202,6 +209,7 @@ export default function ProviderDashboard() {
                     </p>
                     <div className="text-sm text-gray-600 mt-1 space-y-1">
                       <p className="flex items-center gap-2"><FaCalendarAlt className="text-indigo-500" /> {new Date(booking.startTime).toLocaleString()} - {new Date(booking.endTime).toLocaleString()}</p>
+                      <p className="flex items-center gap-2"><FaCar className="text-blue-500" /> {booking.vehicleType || "Standard"}</p>
                       <p className="flex items-center gap-2"><FaUser className="text-gray-500" /> <span className="font-semibold">{booking.userName || "Unknown User"}</span> ({booking.userPhone || "N/A"})</p>
                       <p className="flex items-center gap-2"><FaMoneyBillWave className="text-green-600" /> Total: ₹{booking.totalPrice}</p>
                     </div>

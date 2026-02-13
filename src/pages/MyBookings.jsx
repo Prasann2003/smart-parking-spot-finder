@@ -108,6 +108,7 @@ export default function MyBookings() {
                     <div className="text-gray-600 space-y-1">
                       <p className="flex items-center gap-2"><FaCalendarAlt className="text-gray-400" /> Booked: {new Date(booking.createdAt).toLocaleString()}</p>
                       <p className="flex items-center gap-2"><FaClock className="text-gray-400" /> {new Date(booking.startTime).toLocaleString()} - {new Date(booking.endTime).toLocaleString()}</p>
+                      <p className="flex items-center gap-2"><FaCar className="text-blue-500" /> Vehicle: {booking.vehicleType || "Standard"}</p>
                       <p className="flex items-center gap-2"><FaMoneyBillWave className="text-green-600" /> Price: ₹{booking.totalPrice} ({booking.paymentMethod})</p>
                     </div>
                   </div>

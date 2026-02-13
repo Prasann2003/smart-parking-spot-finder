@@ -346,7 +346,13 @@ function DriverDashboard({ user, navigate }) {
                       </p>
 
                       <div className="mt-4 grid grid-cols-2 gap-4 text-sm dark:text-gray-300">
-                        <p className="flex items-center gap-1"><FaMoneyBillWave className="text-green-600" /> ₹{spot.pricePerHour}/hour</p>
+                        <p className="flex items-center gap-1">
+                          <FaMoneyBillWave className="text-green-600" />
+                          {spot.vehicleConfigs && spot.vehicleConfigs.length > 0
+                            ? `₹${Math.min(...spot.vehicleConfigs.map(c => c.pricePerHour))}/hr`
+                            : `₹${spot.pricePerHour || 0}/hr`
+                          }
+                        </p>
                         <p className="flex items-center gap-1"><FaParking className="text-blue-600" /> {spot.totalSlots || spot.totalCapacity} Slots</p>
                         <p className="flex items-center gap-1"><FaStar className="text-yellow-500" /> {spot.rating || "N/A"}</p>
                       </div>

@@ -104,7 +104,7 @@ public class AdminController {
         map.put("covered", app.isCovered());
         map.put("guard", app.isGuard());
         map.put("evCharging", app.isEvCharging());
-        map.put("vehicleTypes", app.getVehicleTypes());
+        map.put("vehicleConfigs", app.getVehicleConfigs());
         map.put("parkingType", app.getParkingType());
         map.put("monthlyPlan", app.isMonthlyPlan());
         map.put("weekendPricing", app.getWeekendPricing());

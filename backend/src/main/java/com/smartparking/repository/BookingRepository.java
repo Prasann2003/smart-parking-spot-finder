@@ -22,9 +22,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
         @org.springframework.data.jpa.repository.Query("SELECT COUNT(b) FROM Booking b WHERE b.parkingSpot.id = :spotId "
                         +
+                        "AND b.vehicleType = :vehicleType " +
                         "AND b.status = 'CONFIRMED' " +
                         "AND (b.startTime < :endTime AND b.endTime > :startTime)")
         long countOverlappingBookings(@org.springframework.data.repository.query.Param("spotId") Long spotId,
+                        @org.springframework.data.repository.query.Param("vehicleType") com.smartparking.entity.VehicleType vehicleType,
                         @org.springframework.data.repository.query.Param("startTime") java.time.LocalDateTime startTime,
                         @org.springframework.data.repository.query.Param("endTime") java.time.LocalDateTime endTime);
 

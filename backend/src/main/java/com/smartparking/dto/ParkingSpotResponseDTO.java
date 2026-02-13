@@ -30,7 +30,7 @@ public class ParkingSpotResponseDTO {
     private Double longitude;
 
     // ===== Parking Features =====
-    private Set<String> vehicleTypes;
+    private List<SpotVehicleConfigDTO> vehicleConfigs;
     private Integer totalCapacity;
     private Double pricePerHour;
     private Double weekendPricing;

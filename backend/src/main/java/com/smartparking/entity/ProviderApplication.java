@@ -45,13 +45,7 @@ public class ProviderApplication {
 
     private String googleMapsLink;
 
-    // Capacity & Pricing
-    @Column(nullable = false)
-    private Integer totalCapacity;
-
-    @Column(nullable = false)
-    private Double pricePerHour;
-
+    // Capacity & Pricing - Now inside vehicleConfigs
     private Double weekendPricing;
 
     // Facilities
@@ -62,9 +56,10 @@ public class ProviderApplication {
 
     // Parking Configuration
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "parking_vehicle_types", joinColumns = @JoinColumn(name = "parking_application_id"))
-    @Column(name = "vehicle_type")
-    private Set<String> vehicleTypes;
+    @CollectionTable(name = "application_vehicle_configs", joinColumns = @JoinColumn(name = "application_id"))
+    private java.util.List<ApplicationVehicleConfig> vehicleConfigs;
+
+    // private Set<String> vehicleTypes; // REMOVED
 
     @Column(nullable = false)
     private String parkingType;
@@ -100,6 +95,22 @@ public class ProviderApplication {
     private Long ownerId;
     private String ownerName;
     private String phoneNumber;
+
+    // Helper methods for legacy support / Admin View
+    public Integer getTotalCapacity() {
+        if (vehicleConfigs == null || vehicleConfigs.isEmpty())
+            return 0;
+        return vehicleConfigs.stream().mapToInt(ApplicationVehicleConfig::getCapacity).sum();
+    }
+
+    public Double getPricePerHour() {
+        if (vehicleConfigs == null || vehicleConfigs.isEmpty())
+            return 0.0;
+        return vehicleConfigs.stream()
+                .mapToDouble(ApplicationVehicleConfig::getPricePerHour)
+                .min()
+                .orElse(0.0);
+    }
 
     public enum ApplicationStatus {
         PENDING,

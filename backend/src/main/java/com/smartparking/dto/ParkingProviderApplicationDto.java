@@ -39,13 +39,9 @@ public class ParkingProviderApplicationDto {
 
     private String googleMapsLink;
 
-    @NotNull(message = "Capacity is required")
-    @Min(value = 1, message = "Capacity must be at least 1")
-    private Integer totalCapacity;
-
-    @NotNull(message = "Price is required")
-    @Min(value = 0, message = "Price cannot be negative")
-    private Double pricePerHour;
+    // Capacity & Pricing - REMOVING GLOBAL
+    // private Integer totalCapacity;
+    // private Double pricePerHour;
 
     private boolean covered;
     private boolean cctv;
@@ -53,8 +49,10 @@ public class ParkingProviderApplicationDto {
     private boolean evCharging;
 
     // New Fields
-    @NotNull(message = "Vehicle types are required")
-    private java.util.Set<String> vehicleTypes;
+    @NotNull(message = "Vehicle configurations are required")
+    private java.util.List<SpotVehicleConfigDTO> vehicleConfigs;
+
+    // private java.util.Set<String> vehicleTypes; // REMOVED
 
     @NotBlank(message = "Parking type is required")
     private String parkingType;

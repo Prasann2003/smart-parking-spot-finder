@@ -30,7 +30,8 @@ public class BookingController {
     public ResponseEntity<Integer> checkAvailability(
             @RequestParam Long parkingSpotId,
             @RequestParam String startTime,
-            @RequestParam String endTime) {
+            @RequestParam String endTime,
+            @RequestParam(required = false) com.smartparking.entity.VehicleType vehicleType) {
 
         // Frontend sends "yyyy-MM-dd HH:mm:ss"
         java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter
@@ -38,7 +39,7 @@ public class BookingController {
         java.time.LocalDateTime start = java.time.LocalDateTime.parse(startTime, formatter);
         java.time.LocalDateTime end = java.time.LocalDateTime.parse(endTime, formatter);
 
-        return ResponseEntity.ok(bookingService.getAvailableSlots(parkingSpotId, start, end));
+        return ResponseEntity.ok(bookingService.getAvailableSlots(parkingSpotId, vehicleType,start, end));
     }
 
     @GetMapping("/{id}")

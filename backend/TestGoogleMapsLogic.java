@@ -15,8 +15,29 @@ public class TestGoogleMapsLogic {
         test("https://maps.google.com/?ll=12.3456,78.9101&z=15", 12.3456, 78.9101);
         test("https://www.google.com/maps/@-33.8688,-151.2093,15z", -33.8688, -151.2093);
 
-        // Shortened URL test (requires network, might fail if no internet)
-        // test("https://goo.gl/maps/...", ...);
+        // Test 4: URL with data param (Pin moves away from viewport)
+        // Viewport is @10.0,20.0 but Pin is at 13.055, 80.278
+        String dataUrl = "https://www.google.com/maps/place/SomePlace/@10.0000000,20.0000000,17z/data=!3m1!4b1!4m6!3m5!1s0x...!8m2!3d13.0552404!4d80.2785923";
+        double[] coords4 = extractCoordinates(dataUrl);
+        if (coords4 != null) {
+            System.out.println("Test 4 (Data Param): " + coords4[0] + ", " + coords4[1]);
+            if (Math.abs(coords4[0] - 13.0552404) < 0.0001 && Math.abs(coords4[1] - 80.2785923) < 0.0001) {
+                System.out.println("✅ Test 4 Passed: Correctly prioritized Pin over Viewport");
+            } else {
+                System.out.println("❌ Test 4 Failed: Got " + coords4[0] + ", " + coords4[1]);
+            }
+        } else {
+            System.out.println("❌ Test 4 Failed: Could not extract");
+        }
+
+        // Test 5: Standard URL with @lat,lng
+        String url5 = "https://www.google.com/maps/place/12.9716,77.5946/@12.9716,77.5946,15z";
+        double[] coords5 = extractCoordinates(url5);
+        if (coords5 != null && Math.abs(coords5[0] - 12.9716) < 0.0001 && Math.abs(coords5[1] - 77.5946) < 0.0001) {
+            System.out.println("✅ Test 5 Passed: " + coords5[0] + ", " + coords5[1]);
+        } else {
+            System.out.println("❌ Test 5 Failed");
+        }
     }
 
     private static void test(String url, double expectedLat, double expectedLng) {
@@ -48,28 +69,34 @@ public class TestGoogleMapsLogic {
         try {
             URL url = new URL(shortUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setInstanceFollowRedirects(false);
-            connection.setRequestMethod("HEAD");
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
 
-            int responseCode = connection.getResponseCode();
+            // Allow automatic redirects
+            connection.setInstanceFollowRedirects(true);
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+            connection.setRequestProperty("User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
 
-            if (responseCode >= 300 && responseCode < 400) {
-                String location = connection.getHeaderField("Location");
-                if (location != null) {
-                    if (location.contains("goo.gl") || location.contains("maps.app.goo.gl")) {
-                        return expandUrl(location);
-                    }
-                    return location;
-                }
-            }
-            return shortUrl;
+            // Connect to follow redirects
+            connection.connect();
+
+            // Get the final URL after redirects
+            String expandedUrl = connection.getURL().toString();
+            return expandedUrl;
         } catch (IOException e) {
             return shortUrl;
         }
     }
 
     private static double[] extractCoordinates(String url) {
+        // Pattern 0: !3d and !4d (Pin coordinates in data param) - Highest Priority
+        Pattern p0 = Pattern.compile("!3d(-?\\d+\\.\\d+)!4d(-?\\d+\\.\\d+)");
+        Matcher m0 = p0.matcher(url);
+        if (m0.find()) {
+            return new double[] { Double.parseDouble(m0.group(1)), Double.parseDouble(m0.group(2)) };
+        }
+
         Pattern p1 = Pattern.compile("@(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)");
         Matcher m1 = p1.matcher(url);
         if (m1.find()) {

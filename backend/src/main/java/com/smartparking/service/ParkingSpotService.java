@@ -114,8 +114,8 @@ public class ParkingSpotService {
         // Latitude and Longitude set above
 
         // Details
-        spot.setTotalCapacity(dto.getTotalCapacity());
-        spot.setPricePerHour(dto.getPricePerHour());
+        // spot.setTotalCapacity(dto.getTotalCapacity()); // Calculated
+        // spot.setPricePerHour(dto.getPricePerHour()); // Removed
         spot.setWeekendPricing(dto.getWeekendPricing());
         spot.setMonthlyPlan(dto.isMonthlyPlan());
 
@@ -126,8 +126,24 @@ public class ParkingSpotService {
         spot.setEvCharging(dto.isEvCharging());
 
         // Config
-        spot.setVehicleTypes(dto.getVehicleTypes());
+        // spot.setVehicleTypes(dto.getVehicleTypes()); // Removed
         spot.setParkingType(dto.getParkingType());
+
+        // Map Vehicle Configs
+        if (dto.getVehicleConfigs() != null) {
+            List<com.smartparking.entity.SpotVehicleConfig> configs = new ArrayList<>();
+            for (com.smartparking.dto.SpotVehicleConfigDTO configDto : dto.getVehicleConfigs()) {
+                com.smartparking.entity.SpotVehicleConfig config = com.smartparking.entity.SpotVehicleConfig.builder()
+                        .vehicleType(configDto.getVehicleType())
+                        .capacity(configDto.getCapacity())
+                        .pricePerHour(configDto.getPricePerHour())
+                        .parkingSpot(spot)
+                        .build();
+                configs.add(config);
+            }
+            spot.setVehicleConfigs(configs);
+            spot.calculateTotalCapacity();
+        }
 
         // Images
         spot.setImageUrls(imageUrls);
@@ -201,8 +217,8 @@ public class ParkingSpotService {
         // Update basic details
         spot.setName(dto.getName());
         spot.setDescription(dto.getDescription());
-        spot.setPricePerHour(dto.getPricePerHour());
-        spot.setTotalCapacity(dto.getTotalCapacity());
+        // spot.setPricePerHour(dto.getPricePerHour()); // Removed
+        // spot.setTotalCapacity(dto.getTotalCapacity()); // Calculated
         spot.setWeekendPricing(dto.getWeekendPricing());
         spot.setMonthlyPlan(dto.isMonthlyPlan());
         spot.setParkingType(dto.getParkingType());
@@ -218,22 +234,26 @@ public class ParkingSpotService {
         // on link logic if implemented
         // Only update lat/long if provided explicitly, otherwise try to extract from
         // link
-        if (dto.getLatitude() != null && dto.getLatitude() != 0) {
-            spot.setLatitude(dto.getLatitude());
-        }
-        if (dto.getLongitude() != null && dto.getLongitude() != 0) {
-            spot.setLongitude(dto.getLongitude());
-        }
-
-        // Check if we need to extract from link (if lat/long are null/0 but link is
-        // provided)
-        if ((spot.getLatitude() == null || spot.getLatitude() == 0 || spot.getLongitude() == null
-                || spot.getLongitude() == 0)
-                && dto.getGoogleMapsLink() != null && !dto.getGoogleMapsLink().isEmpty()) {
+        // 1. Try to extract from Google Maps Link FIRST
+        boolean coordinatesUpdatedFromLink = false;
+        if (dto.getGoogleMapsLink() != null && !dto.getGoogleMapsLink().isEmpty()) {
             double[] coordinates = GoogleMapsUtil.getCoordinates(dto.getGoogleMapsLink());
             if (coordinates != null) {
                 spot.setLatitude(coordinates[0]);
                 spot.setLongitude(coordinates[1]);
+                coordinatesUpdatedFromLink = true;
+                System.out.println(
+                        "✅ Updated coordinates from link in update: " + coordinates[0] + ", " + coordinates[1]);
+            }
+        }
+
+        // 2. If link didn't provide coords, allow manual override from DTO
+        if (!coordinatesUpdatedFromLink) {
+            if (dto.getLatitude() != null && dto.getLatitude() != 0) {
+                spot.setLatitude(dto.getLatitude());
+            }
+            if (dto.getLongitude() != null && dto.getLongitude() != 0) {
+                spot.setLongitude(dto.getLongitude());
             }
         }
 
@@ -244,8 +264,21 @@ public class ParkingSpotService {
         spot.setEvCharging(dto.isEvCharging());
 
         // Update vehicle types if provided
-        if (dto.getVehicleTypes() != null) {
-            spot.setVehicleTypes(dto.getVehicleTypes());
+        if (dto.getVehicleConfigs() != null && !dto.getVehicleConfigs().isEmpty()) {
+            // Clear existing configs (Orphan removal handles deletion)
+            spot.getVehicleConfigs().clear();
+
+            // Add new configs
+            for (com.smartparking.dto.SpotVehicleConfigDTO configDto : dto.getVehicleConfigs()) {
+                com.smartparking.entity.SpotVehicleConfig config = com.smartparking.entity.SpotVehicleConfig.builder()
+                        .vehicleType(configDto.getVehicleType())
+                        .capacity(configDto.getCapacity())
+                        .pricePerHour(configDto.getPricePerHour())
+                        .parkingSpot(spot)
+                        .build();
+                spot.getVehicleConfigs().add(config);
+            }
+            spot.calculateTotalCapacity();
         }
 
         ParkingSpot updatedSpot = parkingSpotRepository.save(spot);
@@ -256,6 +289,7 @@ public class ParkingSpotService {
         System.out.println("🔍 Finding nearby spots (DB Query). User Lat: " + userLat + ", Lng: " + userLng
                 + ", Radius: " + radiusKm);
         List<ParkingSpot> nearbySpots = parkingSpotRepository.findNearbySpots(userLat, userLng, radiusKm);
+        System.out.println("✅ Found " + nearbySpots.size() + " spots within radius.");
 
         return nearbySpots.stream()
                 .filter(spot -> spot.getStatus() == ParkingSpot.ParkingStatus.ACTIVE)
@@ -289,14 +323,6 @@ public class ParkingSpotService {
     }
 
     private ParkingSpotResponseDTO mapToDTO(ParkingSpot parkingSpot) {
-        java.util.Set<String> vehicles = new java.util.HashSet<>();
-        try {
-            if (parkingSpot.getVehicleTypes() != null) {
-                vehicles.addAll(parkingSpot.getVehicleTypes());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("some error while adding the vehicles");
-        }
 
         java.util.List<String> images = new java.util.ArrayList<>();
         try {
@@ -345,12 +371,33 @@ public class ParkingSpotService {
                 .latitude(parkingSpot.getLatitude())
                 .longitude(parkingSpot.getLongitude())
                 .totalCapacity(parkingSpot.getTotalCapacity())
-                .pricePerHour(parkingSpot.getPricePerHour())
+                .longitude(parkingSpot.getLongitude())
+                .totalCapacity(parkingSpot.getTotalCapacity())
+                // .pricePerHour(parkingSpot.getPricePerHour()) // Removed from entity, use
+                // config or min?
+                // Let's return the lowest price for display or create a helper?
+                // For DTO compatibility, if frontend expects a single price, we might need a
+                // placeholder or update frontend.
+                // Updating frontend to use vehicleConfigs list.
+                .pricePerHour(parkingSpot.getVehicleConfigs().stream()
+                        .mapToDouble(com.smartparking.entity.SpotVehicleConfig::getPricePerHour)
+                        .min().orElse(0.0)) // Return min price for display listing
                 .covered(parkingSpot.isCovered())
                 .cctv(parkingSpot.isCctv())
                 .guard(parkingSpot.isGuard())
                 .evCharging(parkingSpot.isEvCharging())
-                .vehicleTypes(vehicles)
+
+                // Map Configs
+                .vehicleConfigs(parkingSpot.getVehicleConfigs().stream()
+                        .map(c -> com.smartparking.dto.SpotVehicleConfigDTO.builder()
+                                .id(c.getId())
+                                .vehicleType(c.getVehicleType())
+                                .capacity(c.getCapacity())
+                                .pricePerHour(c.getPricePerHour())
+                                .build())
+                        .collect(Collectors.toList()))
+
+                // .vehicleTypes(vehicles) // Removed
                 .parkingType(parkingSpot.getParkingType())
                 .monthlyPlan(parkingSpot.isMonthlyPlan())
                 .weekendPricing(parkingSpot.getWeekendPricing())

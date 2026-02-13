@@ -8,6 +8,9 @@ import {
   FaUser,
   FaMapMarkedAlt,
   FaCar,
+  FaMotorcycle,
+  FaBus,
+  FaBolt,
   FaMoneyBillWave,
   FaImages,
   FaUniversity,
@@ -27,13 +30,12 @@ export default function BecomeProvider() {
     address2: "",
     pincode: "",
     mapsLink: "",
-    capacity: "",
     vehicleTypes: [],
+    vehicleConfigs: {}, // { CAR: { capacity: "", price: "" } }
     parkingType: "Covered",
     cctv: false,
     guard: false,
     evCharging: false,
-    pricePerHour: "",
     monthlyPlan: false,
     weekendPricing: "",
     bankAccount: "",
@@ -63,12 +65,34 @@ export default function BecomeProvider() {
     setImages(prev => ({ ...prev, [key]: e.target.files[0] }))
   }
 
-  const handleVehicleChange = (type) => {
-    setForm((prev) => ({
+  const handleVehicleTypeChange = (type) => {
+    setForm((prev) => {
+      const isSelected = prev.vehicleTypes.includes(type)
+      const newTypes = isSelected
+        ? prev.vehicleTypes.filter(t => t !== type)
+        : [...prev.vehicleTypes, type]
+
+      const newConfigs = { ...prev.vehicleConfigs }
+      if (!isSelected) {
+        newConfigs[type] = { capacity: "", price: "" }
+      } else {
+        delete newConfigs[type]
+      }
+
+      return { ...prev, vehicleTypes: newTypes, vehicleConfigs: newConfigs }
+    })
+  }
+
+  const handleConfigChange = (type, field, value) => {
+    setForm(prev => ({
       ...prev,
-      vehicleTypes: prev.vehicleTypes.includes(type)
-        ? prev.vehicleTypes.filter((v) => v !== type)
-        : [...prev.vehicleTypes, type],
+      vehicleConfigs: {
+        ...prev.vehicleConfigs,
+        [type]: {
+          ...prev.vehicleConfigs[type],
+          [field]: value
+        }
+      }
     }))
   }
 
@@ -83,6 +107,20 @@ export default function BecomeProvider() {
     if (!images.parkingArea || !images.entryGate) {
       toast.error("Please upload required images (Parking Area & Entry Gate)")
       return
+    }
+
+    if (form.vehicleTypes.length === 0) {
+      toast.error("Please select at least one vehicle type")
+      return
+    }
+
+    // Validate config details
+    for (const type of form.vehicleTypes) {
+      const config = form.vehicleConfigs[type]
+      if (!config || !config.capacity || !config.price) {
+        toast.error(`Please enter capacity and price for ${type}`)
+        return
+      }
     }
 
     setLoading(true)
@@ -110,8 +148,7 @@ export default function BecomeProvider() {
       // 4. Parking Details
       formData.append("name", `${form.name}'s Parking`)
       formData.append("description", "Safe and secure parking space.")
-      formData.append("totalCapacity", form.capacity)
-      formData.append("pricePerHour", form.pricePerHour)
+
       formData.append("weekendPricing", form.weekendPricing || 0)
       formData.append("monthlyPlan", form.monthlyPlan)
 
@@ -122,9 +159,12 @@ export default function BecomeProvider() {
       formData.append("guard", form.guard)
       formData.append("evCharging", form.evCharging)
 
-      // 5. Vehicle Types (Set<String>)
-      form.vehicleTypes.forEach(type => {
-        formData.append("vehicleTypes", type)
+      // 5. Vehicle Configs (List)
+      form.vehicleTypes.forEach((type, index) => {
+        const config = form.vehicleConfigs[type]
+        formData.append(`vehicleConfigs[${index}].vehicleType`, type)
+        formData.append(`vehicleConfigs[${index}].capacity`, config.capacity)
+        formData.append(`vehicleConfigs[${index}].pricePerHour`, config.price)
       })
 
       // 6. Images
@@ -211,28 +251,67 @@ export default function BecomeProvider() {
 
             {/* =================== PARKING DETAILS =================== */}
             <Section title="Parking Space Details" icon={<FaCar />}>
-              <Input label="Total Parking Capacity" name="capacity" type="number" onChange={handleChange} />
 
               <div>
                 <label className="block text-sm font-semibold mb-2">
                   Vehicle Types Allowed
                 </label>
                 <div className="flex gap-4 flex-wrap">
-                  {["Car", "Bike", "Bus", "EV"].map((type) => (
+                  {["CAR", "BIKE", "BUS", "EV"].map((type) => (
                     <button
                       type="button"
                       key={type}
-                      onClick={() => handleVehicleChange(type)}
-                      className={`px-4 py-2 rounded-lg border transition ${form.vehicleTypes.includes(type)
+                      onClick={() => handleVehicleTypeChange(type)}
+                      className={`px-4 py-2 rounded-lg border transition flex items-center gap-2 ${form.vehicleTypes.includes(type)
                         ? "bg-indigo-600 text-white"
                         : "bg-gray-100"
                         }`}
                     >
+                      {type === "CAR" && <FaCar />}
+                      {type === "BIKE" && <FaMotorcycle />}
+                      {type === "BUS" && <FaBus />}
+                      {type === "EV" && <FaBolt />}
                       {type}
                     </button>
                   ))}
                 </div>
               </div>
+
+              {/* Dynamic Inputs per Vehicle Type */}
+              {form.vehicleTypes.length > 0 && (
+                <div className="bg-gray-50 p-4 rounded-xl space-y-4 border mt-4 col-span-2">
+                  <h4 className="font-medium text-gray-700">Capacity & Pricing details</h4>
+                  {form.vehicleTypes.map(type => (
+                    <div key={type} className="grid md:grid-cols-3 gap-4 items-end bg-white p-3 rounded shadow-sm">
+                      <div className="font-bold text-indigo-700 flex items-center gap-2 min-w-[80px]">
+                        {type}
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Capacity</label>
+                        <input
+                          type="number"
+                          placeholder="Slots"
+                          value={form.vehicleConfigs[type]?.capacity || ""}
+                          onChange={(e) => handleConfigChange(type, "capacity", e.target.value)}
+                          className="w-full p-2 border rounded"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Price/Hr (₹)</label>
+                        <input
+                          type="number"
+                          placeholder="₹"
+                          value={form.vehicleConfigs[type]?.price || ""}
+                          onChange={(e) => handleConfigChange(type, "price", e.target.value)}
+                          className="w-full p-2 border rounded"
+                          required
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <Select
                 label="Parking Type"
@@ -249,8 +328,7 @@ export default function BecomeProvider() {
             </Section>
 
             {/* =================== PRICING =================== */}
-            <Section title="Pricing Details" icon={<FaMoneyBillWave />}>
-              <Input label="Price Per Hour (₹)" name="pricePerHour" type="number" onChange={handleChange} />
+            <Section title="Additional Pricing" icon={<FaMoneyBillWave />}>
               <Checkbox label="Monthly Plan Available" name="monthlyPlan" onChange={handleChange} />
               <Input label="Special Weekend Pricing (optional)" name="weekendPricing" type="number" onChange={handleChange} />
             </Section>

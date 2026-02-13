@@ -160,6 +160,13 @@ public class ProviderService {
                         }
                 }
 
+                // Check if user is already a provider
+                Optional<Provider> existingProvider = providerRepository.findByUser(user);
+                if (existingProvider.isPresent()) {
+                        createActiveSpot(existingProvider.get(), dto, imageUrls);
+                        return null; // Controller ignores return value
+                }
+
                 Optional<ProviderApplication> existingApp = parkingProviderApplicationRepository.findByUser(user);
 
                 ProviderApplication application;
@@ -187,13 +194,22 @@ public class ProviderService {
                         application.setAddress(dto.getAddress());
                         application.setPincode(dto.getPincode());
                         application.setGoogleMapsLink(dto.getGoogleMapsLink());
-                        application.setTotalCapacity(dto.getTotalCapacity());
-                        application.setPricePerHour(dto.getPricePerHour());
+                        application.setGoogleMapsLink(dto.getGoogleMapsLink());
+
+                        // Map vehicle configs
+                        List<ApplicationVehicleConfig> appConfigs = dto.getVehicleConfigs().stream()
+                                        .map(c -> ApplicationVehicleConfig.builder()
+                                                        .vehicleType(c.getVehicleType())
+                                                        .capacity(c.getCapacity())
+                                                        .pricePerHour(c.getPricePerHour())
+                                                        .build())
+                                        .collect(java.util.stream.Collectors.toList());
+                        application.setVehicleConfigs(appConfigs);
+
                         application.setCovered(dto.isCovered());
                         application.setCctv(dto.isCctv());
                         application.setGuard(dto.isGuard());
                         application.setEvCharging(dto.isEvCharging());
-                        application.setVehicleTypes(dto.getVehicleTypes());
                         application.setParkingType(dto.getParkingType());
                         application.setMonthlyPlan(dto.isMonthlyPlan());
                         application.setWeekendPricing(dto.getWeekendPricing());
@@ -208,18 +224,8 @@ public class ProviderService {
                         application.setStatus(ProviderApplication.ApplicationStatus.PENDING);
                         application.setRejectionReason(null);
 
-                        // Append new images or replace? For simplicity, we append or user should
-                        // manage.
-                        // Current logic just adds to list. Ideally we might want to clear old images if
-                        // they are re-uploading everything,
-                        // but since the DTO comes with specific image files, we just add them.
-                        // Note: If user re-submits without uploading new files (if frontend supports
-                        // it), this might be tricky.
-                        // Assuming frontend sends files again.
+                        // Images
                         if (!imageUrls.isEmpty()) {
-                                // application.getImageUrls().clear(); // Uncommon to clear all if just fixing
-                                // details, but for simplicity let's assume replacement if new ones provided?
-                                // Actually, let's add them.
                                 application.getImageUrls().addAll(imageUrls);
                         }
 
@@ -230,13 +236,21 @@ public class ProviderService {
                                         application.setLatitude(coordinates[0]);
                                         application.setLongitude(coordinates[1]);
                                 }
-                        } else if (dto.getLatitude() != 0) {
+                        } else if (dto.getLatitude() != null && dto.getLatitude() != 0) {
                                 application.setLatitude(dto.getLatitude());
                                 application.setLongitude(dto.getLongitude());
                         }
 
                 } else {
                         // Create new application
+                        List<ApplicationVehicleConfig> appConfigs = dto.getVehicleConfigs().stream()
+                                        .map(c -> ApplicationVehicleConfig.builder()
+                                                        .vehicleType(c.getVehicleType())
+                                                        .capacity(c.getCapacity())
+                                                        .pricePerHour(c.getPricePerHour())
+                                                        .build())
+                                        .collect(java.util.stream.Collectors.toList());
+
                         application = ProviderApplication.builder()
                                         .name(dto.getName())
                                         .description(dto.getDescription())
@@ -245,13 +259,11 @@ public class ProviderService {
                                         .address(dto.getAddress())
                                         .pincode(dto.getPincode())
                                         .googleMapsLink(dto.getGoogleMapsLink())
-                                        .totalCapacity(dto.getTotalCapacity())
-                                        .pricePerHour(dto.getPricePerHour())
+                                        .vehicleConfigs(appConfigs)
                                         .covered(dto.isCovered())
                                         .cctv(dto.isCctv())
                                         .guard(dto.isGuard())
                                         .evCharging(dto.isEvCharging())
-                                        .vehicleTypes(dto.getVehicleTypes())
                                         .parkingType(dto.getParkingType())
                                         .monthlyPlan(dto.isMonthlyPlan())
                                         .weekendPricing(dto.getWeekendPricing())
@@ -273,6 +285,52 @@ public class ProviderService {
                 }
 
                 return parkingProviderApplicationRepository.save(application);
+        }
+
+        private void createActiveSpot(Provider provider, ParkingProviderApplicationDto dto, List<String> imageUrls) {
+                ParkingSpot spot = new ParkingSpot();
+                spot.setProvider(provider);
+                spot.setName(dto.getName());
+                spot.setDescription(dto.getDescription());
+                spot.setState(dto.getState());
+                spot.setDistrict(dto.getDistrict());
+                spot.setAddress(dto.getAddress());
+                spot.setPincode(dto.getPincode());
+                spot.setGoogleMapsLink(dto.getGoogleMapsLink());
+                spot.setLatitude(dto.getLatitude());
+                spot.setLongitude(dto.getLongitude());
+
+                spot.setCovered(dto.isCovered());
+                spot.setCctv(dto.isCctv());
+                spot.setGuard(dto.isGuard());
+                spot.setEvCharging(dto.isEvCharging());
+
+                spot.setParkingType(dto.getParkingType());
+                spot.setMonthlyPlan(dto.isMonthlyPlan());
+                spot.setWeekendPricing(dto.getWeekendPricing());
+
+                if (dto.getVehicleConfigs() != null) {
+                        List<SpotVehicleConfig> spotConfigs = dto.getVehicleConfigs().stream()
+                                        .map(c -> SpotVehicleConfig.builder()
+                                                        .vehicleType(c.getVehicleType())
+                                                        .capacity(c.getCapacity())
+                                                        .pricePerHour(c.getPricePerHour())
+                                                        .parkingSpot(spot)
+                                                        .build())
+                                        .collect(java.util.stream.Collectors.toList());
+                        spot.setVehicleConfigs(spotConfigs);
+                        spot.calculateTotalCapacity();
+                }
+
+                if (!imageUrls.isEmpty()) {
+                        spot.setImageUrls(new ArrayList<>(imageUrls));
+                } else {
+                        spot.setImageUrls(new ArrayList<>());
+                }
+
+                spot.setStatus(ParkingSpot.ParkingStatus.ACTIVE);
+
+                parkingSpotRepository.save(spot);
         }
 
         public java.util.Map<String, String> getProviderStatus(String email) {

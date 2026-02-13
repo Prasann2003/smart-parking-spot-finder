@@ -37,17 +37,13 @@ public class UpdateParkingSpotDTO {
 
     // ===== Parking Features =====
 
-    @NotNull(message = "Vehicle types are required")
-    @Size(min = 1, message = "Select at least one vehicle type")
-    private Set<String> vehicleTypes; // Car, Bike, Bus, EV
+    @NotNull(message = "Vehicle configurations are required")
+    @Size(min = 1, message = "Select at least one vehicle configuration")
+    private java.util.List<SpotVehicleConfigDTO> vehicleConfigs;
 
-    @NotNull(message = "Total capacity is required")
-    @Min(value = 1, message = "Capacity must be at least 1")
-    private Integer totalCapacity;
-
-    @NotNull(message = "Price per hour is required")
-    @Min(value = 0, message = "Price per hour cannot be negative")
-    private Double pricePerHour;
+    // private Set<String> vehicleTypes; // REMOVED
+    // private Integer totalCapacity; // REMOVED
+    // private Double pricePerHour; // REMOVED
 
     private Double weekendPricing;
 

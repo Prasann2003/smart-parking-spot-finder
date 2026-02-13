@@ -28,6 +28,8 @@ public class BookingDTO {
     private LocalDateTime endTime;
 
     private Double totalPrice;
+    @NotNull(message = "Vehicle type is required")
+    private com.smartparking.entity.VehicleType vehicleType;
     private String status;
     private String parkingSpotName;
     private String paymentMethod;
