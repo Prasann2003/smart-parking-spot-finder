@@ -47,7 +47,8 @@ export default function EditParking() {
         vehicleConfigs: {}, // { Car: { capacity: 10, price: 50 }, ... }
         parkingType: "Public",
         monthlyPlan: false,
-        weekendPricing: "",
+        weekendSurcharge: "",
+        monthlyDiscountPercent: "",
     })
 
     useEffect(() => {
@@ -95,7 +96,8 @@ export default function EditParking() {
                 vehicleConfigs: configsMap,
                 parkingType: spot.parkingType || "Public",
                 monthlyPlan: spot.monthlyPlan || false,
-                weekendPricing: spot.weekendPricing || "",
+                weekendSurcharge: spot.weekendSurcharge || "",
+                monthlyDiscountPercent: spot.monthlyDiscountPercent || "",
             })
         }
 
@@ -196,7 +198,8 @@ export default function EditParking() {
             vehicleConfigs: vehicleConfigsList,
 
             // Ensure numbers
-            weekendPricing: formData.weekendPricing ? Number(formData.weekendPricing) : null,
+            weekendSurcharge: formData.weekendSurcharge ? Number(formData.weekendSurcharge) : null,
+            monthlyDiscountPercent: formData.monthlyDiscountPercent ? Number(formData.monthlyDiscountPercent) : null,
             latitude: formData.latitude ? Number(formData.latitude) : null,
             longitude: formData.longitude ? Number(formData.longitude) : null,
         }
@@ -318,8 +321,16 @@ export default function EditParking() {
                                 <option value="Private">Private</option>
                                 <option value="Commercial">Commercial</option>
                             </select>
-                            <input type="number" name="weekendPricing" placeholder="Special Weekend Price (Optional Base)" value={formData.weekendPricing} onChange={handleInputChange} className="w-full p-3 border rounded-lg" />
+                            <input type="number" name="weekendSurcharge" placeholder="Weekend Surcharge (₹/Hr)" value={formData.weekendSurcharge} onChange={handleInputChange} className="w-full p-3 border rounded-lg" />
                         </div>
+
+                        {formData.monthlyPlan && (
+                            <div className="mt-4">
+                                <label className="block text-sm font-semibold mb-2">Monthly Plan Settings</label>
+                                <input type="number" name="monthlyDiscountPercent" placeholder="Monthly Discount (%)" value={formData.monthlyDiscountPercent} onChange={handleInputChange} className="w-full p-3 border rounded-lg" max="100" />
+                                <p className="text-xs text-gray-500 mt-1">Percentage discount applied to the 30-day total price.</p>
+                            </div>
+                        )}
 
                         {/* Checkboxes */}
                         <div className="grid grid-cols-2 gap-4">

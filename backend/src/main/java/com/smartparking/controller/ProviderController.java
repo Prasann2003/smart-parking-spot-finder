@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,7 +91,7 @@ public class ProviderController {
         List<ParkingSpotResponseDTO> spots = parkingSpotService.getParkingSpotsByOwner(provider.get().getId());
         List<BookingDTO> bookings = bookingService.getBookingsByOwner(user.getId()); // This might need fix
 
-        double todayEarnings = 0; // consistent with frontend placeholder
+        double todayEarnings = calculateTodayEarnings(bookings); // consistent with frontend placeholder
         double monthlyEarnings = calculateTotalEarnings(bookings);
 
         Map<String, Object> stats = new HashMap<>();
@@ -105,6 +106,17 @@ public class ProviderController {
     private double calculateTotalEarnings(List<BookingDTO> bookings) {
         return bookings.stream().mapToDouble(BookingDTO::getTotalPrice).sum();
     }
+    private double calculateTodayEarnings(List<BookingDTO> bookings) {
+
+        LocalDate today = LocalDate.now();
+
+        return bookings.stream()
+                .filter(booking -> booking.getCreatedAt() != null)
+                .filter(booking -> booking.getCreatedAt().toLocalDate().equals(today))
+                .mapToDouble(BookingDTO::getTotalPrice)
+                .sum();
+    }
+
 
     @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> addProviderWithSpot(@ModelAttribute ParkingProviderApplicationDto dto) {

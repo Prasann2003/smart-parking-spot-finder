@@ -42,9 +42,8 @@ public class ParkingSpot {
 
         // Details
         private Integer totalCapacity; // Aggregate sum of all vehicle capacities
-        private Double weekendPricing; // Can stay global or move to config? Keeping global for now as per
-                                       // plan/instruction or maybe it should be per vehicle. Plan didn't specify,
-                                       // assuming global weekend multiplier or surcharge.
+        private Double weekendSurcharge; // Global weekend surcharge
+        private Double monthlyDiscountPercent; // Global monthly discount percentage
 
         @Column(name = "is_covered")
         private boolean covered;
@@ -129,7 +128,8 @@ public class ParkingSpot {
                         spot.calculateTotalCapacity();
                 }
 
-                spot.setWeekendPricing(application.getWeekendPricing());
+                spot.setWeekendSurcharge(application.getWeekendSurcharge());
+                spot.setMonthlyDiscountPercent(application.getMonthlyDiscountPercent());
 
                 // Facilities
                 spot.setCovered(application.isCovered());

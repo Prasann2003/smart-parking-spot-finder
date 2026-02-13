@@ -46,7 +46,8 @@ public class ParkingSpotDTO {
     private Integer totalCapacity; // Calculated/Aggregate
 
     // private Double pricePerHour; // REMOVED - now in config
-    private Double weekendPricing;
+    private Double weekendSurcharge;
+    private Double monthlyDiscountPercent;
 
     private boolean monthlyPlan;
 

@@ -45,7 +45,8 @@ public class UpdateParkingSpotDTO {
     // private Integer totalCapacity; // REMOVED
     // private Double pricePerHour; // REMOVED
 
-    private Double weekendPricing;
+    private Double weekendSurcharge;
+    private Double monthlyDiscountPercent;
 
     private boolean monthlyPlan;
 

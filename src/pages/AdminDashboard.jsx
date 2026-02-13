@@ -104,94 +104,141 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 pt-28 px-8 space-y-16">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 pt-24 px-6 space-y-10 pb-12">
 
       {/* =========================
          HEADER
       ========================== */}
 
-      <div>
-        <h1 className="text-4xl font-bold">
-          Admin Dashboard
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Monitor and control the entire parking system
-        </p>
+      <div className="flex justify-between items-end border-b border-gray-300 pb-6">
+        <div>
+          <h1 className="text-4xl font-bold text-gray-800">
+            Admin Dashboard
+          </h1>
+          <p className="text-gray-600 mt-2 flex items-center gap-2">
+            Monitor and control the entire parking system <FaUniversity className="text-indigo-600" />
+          </p>
+        </div>
+        <div className="bg-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium text-gray-500">
+          System Status: <span className="text-emerald-600 flex items-center gap-1 inline-flex"><FaCheckCircle /> Operational</span>
+        </div>
       </div>
 
       {/* =========================
          STATS CARDS
       ========================== */}
 
-      <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-6">
-        <StatCard label="Total Users" value={stats.totalUsers} icon={<FaUsers />} />
-        <StatCard label="Providers" value={stats.totalProviders} icon={<FaUser />} />
-        <StatCard label="Parking Spots" value={stats.totalSpots} icon={<FaParking />} />
-        <StatCard label="Active Bookings" value={stats.activeBookings} icon={<FaClipboardList />} />
-        <StatCard label="Cancelled" value={stats.cancelledBookings} icon={<FaBan />} />
-        <StatCard label="Revenue" value={`₹${stats.totalRevenue}`} icon={<FaMoneyBillWave />} />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        <StatCard label="Total Users" value={stats.totalUsers} icon={<FaUsers />} color="bg-blue-600" />
+        <StatCard label="Providers" value={stats.totalProviders} icon={<FaUser />} color="bg-indigo-600" />
+        <StatCard label="Parking Spots" value={stats.totalSpots} icon={<FaParking />} color="bg-purple-600" />
+        <StatCard label="Active Bookings" value={stats.activeBookings} icon={<FaClipboardList />} color="bg-pink-600" />
+        <StatCard label="Cancelled" value={stats.cancelledBookings} icon={<FaBan />} color="bg-red-500" />
+        <StatCard label="Revenue" value={`₹${stats.totalRevenue}`} icon={<FaMoneyBillWave />} color="bg-emerald-600" />
       </div>
 
       {/* =========================
          PROVIDER APPLICATIONS
       ========================== */}
 
-      <div className="bg-white rounded-3xl shadow-xl p-8">
-        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+      <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
           <FaList className="text-indigo-600" /> Pending Provider Applications
         </h2>
 
         {applications.length === 0 ? (
-          <p className="text-gray-500">
-            No pending applications.
-          </p>
+          <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+            <FaCheckCircle className="mx-auto text-4xl text-gray-300 mb-3" />
+            No pending applications. All caught up!
+          </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {applications.map(app => (
               <motion.div
                 key={app.id}
-                whileHover={{ scale: 1.02 }}
-                className="p-6 border rounded-2xl shadow-sm flex flex-col md:flex-row justify-between gap-6"
+                whileHover={{ y: -4 }}
+                className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all flex flex-col lg:flex-row gap-6"
               >
-                <div>
-                  <h3 className="text-xl font-semibold flex items-center gap-2">
-                    <FaUser className="text-gray-400" /> {app.user.name}
-                  </h3>
-                  <p className="text-gray-600 flex items-center gap-2 mt-1">
-                    <FaMapMarkerAlt className="text-red-500" /> {app.parkingSpot.address}
-                  </p>
-                  <p className="text-gray-600 flex items-center gap-2">
-                    <FaPhone className="text-green-500" /> {app.user.phoneNumber || "N/A"}
-                  </p>
-                  <p className="text-gray-600 flex items-center gap-2">
-                    <FaParking className="text-blue-500" /> Capacity: {app.parkingSpot.totalCapacity}
-                  </p>
+                {/* THUMBNAIL */}
+                <div className="w-full lg:w-48 h-48 flex-shrink-0 rounded-xl overflow-hidden relative group bg-gray-100">
+                  <img
+                    src={app.parkingSpot.imageUrls?.[0] ? `http://localhost:8080${app.parkingSpot.imageUrls[0]}` : "https://via.placeholder.com/300?text=No+Image"}
+                    alt={app.parkingSpot.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
                 </div>
 
-                <div className="flex gap-4 items-center">
-                  <button
-                    onClick={() => setSelectedApp(app.id)}
-                    className="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
-                  >
-                    <FaEye /> View
-                  </button>
-                  <button
-                    onClick={() =>
-                      handleAction(app.id, "approve")
-                    }
-                    className="px-5 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2"
-                  >
-                    <FaCheck /> Approve
-                  </button>
+                {/* DETAILS */}
+                <div className="flex-1 flex flex-col justify-between space-y-4">
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                          {app.user.name}
+                          <span className="text-xs font-normal px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full flex items-center gap-1">
+                            <FaUser className="text-[10px]" /> Provider
+                          </span>
+                        </h3>
+                        <p className="text-gray-500 text-sm mt-1 flex items-center gap-1">
+                          <FaMapMarkerAlt className="text-red-500" /> {app.parkingSpot.address}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500 uppercase font-bold mb-1">Starts From</p>
+                        <span className="text-2xl font-bold text-emerald-600">
+                          ₹{app.parkingSpot.vehicleConfigs?.length > 0
+                            ? Math.min(...app.parkingSpot.vehicleConfigs.map(c => c.pricePerHour))
+                            : app.parkingSpot.pricePerHour}
+                          <span className="text-sm font-medium text-gray-500">/hr</span>
+                        </span>
+                      </div>
+                    </div>
 
-                  <button
-                    onClick={() =>
-                      handleAction(app.id, "reject")
-                    }
-                    className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
-                  >
-                    <FaTimes /> Reject
-                  </button>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        <p className="text-xs text-gray-500 uppercase font-bold">Capacity</p>
+                        <p className="font-semibold text-gray-800 flex items-center gap-1">
+                          <FaCar className="text-indigo-500" />
+                          {app.parkingSpot.totalCapacity || app.parkingSpot.totalSlots} Slots
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        <p className="text-xs text-gray-500 uppercase font-bold">Type</p>
+                        <p className="font-semibold text-gray-800">{app.parkingSpot.parkingType}</p>
+                      </div>
+                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        <p className="text-xs text-gray-500 uppercase font-bold">Contact</p>
+                        <p className="font-semibold text-gray-800">{app.user.phoneNumber || "N/A"}</p>
+                      </div>
+                      <div className="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                        <p className="text-xs text-gray-500 uppercase font-bold">Submitted</p>
+                        <p className="font-semibold text-gray-800">{new Date().toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ACTIONS */}
+                  <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-100">
+                    <button
+                      onClick={() => setSelectedApp(app.id)}
+                      className="flex-1 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 font-medium transition flex items-center justify-center gap-2"
+                    >
+                      <FaEye /> View Details
+                    </button>
+                    <button
+                      onClick={() => handleAction(app.id, "approve")}
+                      className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-medium transition flex items-center justify-center gap-2 shadow-sm shadow-emerald-200"
+                    >
+                      <FaCheck /> Approve
+                    </button>
+                    <button
+                      onClick={() => handleAction(app.id, "reject")}
+                      className="flex-1 px-4 py-2 bg-white border border-red-200 text-red-600 rounded-xl hover:bg-red-50 font-medium transition flex items-center justify-center gap-2"
+                    >
+                      <FaTimes /> Reject
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -210,19 +257,21 @@ export default function AdminDashboard() {
          SYSTEM ALERTS
       ========================== */}
 
-      <div className="bg-white rounded-3xl shadow-xl p-8">
-        <h2 className="text-2xl font-bold mb-4">
-          System Alerts
+      <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-gray-800">
+          <FaShieldAlt className="text-orange-500" /> System Alerts
         </h2>
 
         {stats.systemAlerts?.length === 0 ? (
-          <p className="text-gray-500">
-            No system alerts.
+          <p className="text-gray-500 italic pl-2">
+            No active system alerts.
           </p>
         ) : (
-          <ul className="list-disc ml-6 text-gray-700">
+          <ul className="space-y-2">
             {stats.systemAlerts.map((alert, index) => (
-              <li key={index}>{alert}</li>
+              <li key={index} className="flex items-start gap-3 p-3 bg-orange-50 text-orange-800 rounded-lg text-sm">
+                <FaVideo className="mt-1 flex-shrink-0" /> {alert}
+              </li>
             ))}
           </ul>
         )}
@@ -248,19 +297,20 @@ export default function AdminDashboard() {
    STAT CARD
 ========================= */
 
-function StatCard({ label, value, icon }) {
+function StatCard({ label, value, icon, color }) {
   return (
     <motion.div
-      whileHover={{ scale: 1.05 }}
-      className="bg-white p-6 rounded-2xl shadow-lg text-center flex flex-col items-center justify-center"
+      whileHover={{ y: -5 }}
+      className={`${color} text-white p-6 rounded-2xl shadow-lg relative overflow-hidden h-full min-h-[140px] flex flex-col justify-between`}
     >
-      <div className="text-3xl text-indigo-500 mb-2">
+      <div className="absolute -right-4 -bottom-4 text-8xl opacity-10 rotate-12 pointer-events-none">
         {icon}
       </div>
-      <p className="text-gray-500 text-sm">{label}</p>
-      <h3 className="text-2xl font-bold mt-2">
-        {value ?? 0}
-      </h3>
+
+      <div className="relative z-10">
+        <p className="text-sm font-medium opacity-90 uppercase tracking-wide">{label}</p>
+        <h3 className="text-2xl font-bold mt-2 tracking-tight">{value ?? 0}</h3>
+      </div>
     </motion.div>
   )
 }
@@ -282,37 +332,51 @@ function RejectionModal({ isOpen, onClose, onSubmit }) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl"
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl relative"
       >
-        <h2 className="text-2xl font-bold mb-4">Reject Application</h2>
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
+        >
+          <FaTimes />
+        </button>
+
+        <div className="mb-6 flex items-center gap-3">
+          <div className="p-3 bg-red-100 text-red-600 rounded-full text-xl">
+            <FaBan />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800">Reject Application</h2>
+        </div>
+
         <p className="text-gray-600 mb-6">
-          Please provide a reason for rejecting this application. The provider will be notified.
+          Please provide a reason for rejecting this application. This will be sent to the provider.
         </p>
 
         <form onSubmit={handleSubmit}>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full border rounded-lg p-3 h-32 mb-6"
-            placeholder="Enter rejection reason..."
+            className="w-full border border-gray-300 rounded-xl p-4 h-32 mb-6 focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none resize-none transition-shadow"
+            placeholder="e.g., Incomplete address details..."
             autoFocus
           />
 
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="px-5 py-2.5 text-gray-700 hover:bg-gray-100 rounded-xl font-medium transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              className="px-6 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium shadow-lg shadow-red-200 transition"
             >
               Reject Application
             </button>
@@ -348,10 +412,11 @@ function ApplicationDetailsModal({ applicationId, onClose }) {
   if (loading) return null
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
         className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-8 relative shadow-2xl"
       >
         <button
@@ -384,12 +449,49 @@ function ApplicationDetailsModal({ applicationId, onClose }) {
 
           <div>
             <h3 className="font-semibold text-gray-500 mb-2">Parking Details</h3>
-            <p className="flex items-center gap-2"><FaParking /> Capacity: <span className="font-medium">{details.totalCapacity}</span></p>
-            <p className="flex items-center gap-2"><FaMoneyBillWave /> Price: <span className="font-medium">₹{details.pricePerHour}/hr</span></p>
+            <p className="flex items-center gap-2 mb-1"><FaParking /> Type: <span className="font-medium">{details.parkingType}</span></p>
+            <p className="flex items-center gap-2 mb-4"><FaCar /> Total Capacity: <span className="font-medium">{details.totalCapacity}</span></p>
+
+            <h3 className="font-semibold text-gray-500 mb-2">Pricing Structure</h3>
+            <div className="overflow-hidden rounded-xl border border-gray-200 mb-4">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Vehicle</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Capacity</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Price/Hr</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {details.vehicleConfigs && details.vehicleConfigs.length > 0 ? (
+                    details.vehicleConfigs.map((config, idx) => (
+                      <tr key={idx}>
+                        <td className="px-3 py-2 text-sm text-gray-700">{config.vehicleType}</td>
+                        <td className="px-3 py-2 text-sm text-gray-500">{config.capacity}</td>
+                        <td className="px-3 py-2 text-sm font-bold text-emerald-600">₹{config.pricePerHour}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td className="px-3 py-2 text-sm text-gray-700">Standard</td>
+                      <td className="px-3 py-2 text-sm text-gray-500">{details.totalCapacity}</td>
+                      <td className="px-3 py-2 text-sm font-bold text-emerald-600">₹{details.pricePerHour}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
             {details.weekendPricing > 0 && (
-              <p className="flex items-center gap-2"><FaCalendarAlt /> Weekend Price: <span className="font-medium">₹{details.weekendPricing}/hr</span></p>
+              <div className="p-3 bg-indigo-50 text-indigo-700 rounded-xl text-sm flex items-center gap-2 border border-indigo-100">
+                <FaCalendarAlt className="text-lg" />
+                <div>
+                  <span className="font-bold block text-xs uppercase">Weekend Pricing</span>
+                  <span className="font-bold text-lg">₹{details.weekendPricing}/hr</span>
+                </div>
+              </div>
             )}
-            <p className="flex items-center gap-2"><FaCar /> Type: <span className="font-medium">{details.parkingType}</span></p>
+
 
             <h3 className="font-semibold text-gray-500 mt-6 mb-2">Amenities</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">

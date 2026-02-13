@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -57,7 +58,8 @@ public class ProviderApplicationDto {
     private String parkingType;
 
     private boolean monthlyPlan;
-    private Double weekendPricing;
+    private Double weekendSurcharge;
+    private Double monthlyDiscountPercent;
 
     @NotNull(message = "Parking area image is required")
     private MultipartFile parkingAreaImage;
@@ -79,6 +81,6 @@ public class ProviderApplicationDto {
 
     private ProviderApplication.ApplicationStatus status;
     private Long ownerId;
-    //private String ownerName;
+    // private String ownerName;
     private String phoneNumber;
 }

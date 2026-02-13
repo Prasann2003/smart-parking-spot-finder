@@ -1,18 +1,14 @@
 package com.smartparking.service;
 
 import com.smartparking.dto.ParkingSpotDTO;
-import com.smartparking.dto.UpdateParkingSpotDTO;
-import com.smartparking.util.GoogleMapsUtil;
 import com.smartparking.dto.ParkingSpotResponseDTO;
+import com.smartparking.dto.UpdateParkingSpotDTO;
 import com.smartparking.entity.ImageDirectoryType;
 import com.smartparking.entity.ParkingSpot;
 import com.smartparking.entity.Provider;
 import com.smartparking.entity.User;
-import com.smartparking.repository.ParkingSpotRepository;
-import com.smartparking.repository.ProviderRepository;
-import com.smartparking.repository.UserRepository;
-import com.smartparking.repository.NotificationRepository;
-import com.smartparking.repository.BookingRepository;
+import com.smartparking.repository.*;
+import com.smartparking.util.GoogleMapsUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -116,7 +112,8 @@ public class ParkingSpotService {
         // Details
         // spot.setTotalCapacity(dto.getTotalCapacity()); // Calculated
         // spot.setPricePerHour(dto.getPricePerHour()); // Removed
-        spot.setWeekendPricing(dto.getWeekendPricing());
+        spot.setWeekendSurcharge(dto.getWeekendSurcharge());
+        spot.setMonthlyDiscountPercent(dto.getMonthlyDiscountPercent());
         spot.setMonthlyPlan(dto.isMonthlyPlan());
 
         // Features
@@ -219,7 +216,8 @@ public class ParkingSpotService {
         spot.setDescription(dto.getDescription());
         // spot.setPricePerHour(dto.getPricePerHour()); // Removed
         // spot.setTotalCapacity(dto.getTotalCapacity()); // Calculated
-        spot.setWeekendPricing(dto.getWeekendPricing());
+        spot.setWeekendSurcharge(dto.getWeekendSurcharge());
+        spot.setMonthlyDiscountPercent(dto.getMonthlyDiscountPercent());
         spot.setMonthlyPlan(dto.isMonthlyPlan());
         spot.setParkingType(dto.getParkingType());
 
@@ -317,7 +315,7 @@ public class ParkingSpotService {
         double lonDistance = Math.toRadians(lon2 - lon1);
         double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                        * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
@@ -400,7 +398,8 @@ public class ParkingSpotService {
                 // .vehicleTypes(vehicles) // Removed
                 .parkingType(parkingSpot.getParkingType())
                 .monthlyPlan(parkingSpot.isMonthlyPlan())
-                .weekendPricing(parkingSpot.getWeekendPricing())
+                .weekendSurcharge(parkingSpot.getWeekendSurcharge())
+                .monthlyDiscountPercent(parkingSpot.getMonthlyDiscountPercent())
                 .imageUrls(images)
                 .status(parkingSpot.getStatus() != null ? parkingSpot.getStatus() : ParkingSpot.ParkingStatus.BLOCKED)
                 .ownerId(ownerId)

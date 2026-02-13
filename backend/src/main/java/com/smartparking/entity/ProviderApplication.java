@@ -46,7 +46,8 @@ public class ProviderApplication {
     private String googleMapsLink;
 
     // Capacity & Pricing - Now inside vehicleConfigs
-    private Double weekendPricing;
+    private Double weekendSurcharge;
+    private Double monthlyDiscountPercent;
 
     // Facilities
     private boolean covered;

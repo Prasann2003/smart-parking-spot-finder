@@ -33,7 +33,9 @@ public class ParkingSpotResponseDTO {
     private List<SpotVehicleConfigDTO> vehicleConfigs;
     private Integer totalCapacity;
     private Double pricePerHour;
-    private Double weekendPricing;
+
+    private Double weekendSurcharge;
+    private Double monthlyDiscountPercent;
     private boolean monthlyPlan;
 
     private boolean covered;

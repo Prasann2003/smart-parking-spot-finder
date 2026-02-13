@@ -76,10 +76,10 @@ export default function ProviderDashboard() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="max-w-7xl mx-auto pt-28 px-6 space-y-16"
+        className="max-w-7xl mx-auto pt-24 px-6 space-y-10 pb-12"
       >
         {/* HEADER */}
-        <div className="flex justify-between items-center flex-wrap gap-6">
+        <div className="flex justify-between items-end flex-wrap gap-6 border-b border-emerald-100 pb-6">
           <div>
             <h1 className="text-4xl font-bold text-gray-800">
               Welcome, {user.name}
@@ -91,7 +91,7 @@ export default function ProviderDashboard() {
 
           <button
             onClick={() => navigate("/add-parking")}
-            className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-lg flex items-center gap-2 transition-transform hover:scale-105"
+            className="px-6 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-lg hover:shadow-emerald-200 flex items-center gap-2 transition-all transform hover:scale-105 font-medium"
           >
             <FaPlus /> Add New Parking
           </button>
@@ -99,35 +99,40 @@ export default function ProviderDashboard() {
 
         {/* STATS */}
         <div className="grid md:grid-cols-4 gap-6">
-          <StatCard label="Total Parkings" value={stats.totalParkings} icon={<FaParking />} />
-          <StatCard label="Active Bookings" value={stats.activeBookings} icon={<FaClipboardList />} />
-          <StatCard label="Today's Earnings" value={`₹${stats.todayEarnings}`} icon={<FaMoneyBillWave />} />
-          <StatCard label="Monthly Earnings" value={`₹${stats.monthlyEarnings}`} icon={<FaMoneyBillWave />} />
+          <StatCard label="Total Parkings" value={stats.totalParkings} icon={<FaParking />} color="bg-blue-600" />
+          <StatCard label="Active Bookings" value={stats.activeBookings} icon={<FaClipboardList />} color="bg-indigo-600" />
+          <StatCard label="Today's Earnings" value={`₹${stats.todayEarnings}`} icon={<FaMoneyBillWave />} color="bg-emerald-600" />
+          <StatCard label="Monthly Earnings" value={`₹${stats.monthlyEarnings}`} icon={<FaMoneyBillWave />} color="bg-teal-600" />
         </div>
 
         {/* PARKING LIST */}
-        <div>
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-800">
             <FaParking className="text-indigo-600" /> Your Parking Spaces
           </h2>
 
           {loading ? (
-            <p>Loading...</p>
+            <div className="p-12 text-center bg-white/50 rounded-2xl animate-pulse text-gray-500">Loading your spaces...</div>
           ) : parkings.length === 0 ? (
-            <p className="text-gray-500">
-              You have not added any parking spaces yet.
-            </p>
+            <div className="p-12 text-center bg-white rounded-3xl shadow-sm border border-gray-100">
+              <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400 text-2xl">
+                <FaParking />
+              </div>
+              <h3 className="text-lg font-bold text-gray-700">No Parking Spaces Yet</h3>
+              <p className="text-gray-500 mt-2 mb-6">Start earning by adding your first parking spot.</p>
+              <button onClick={() => navigate("/add-parking")} className="text-emerald-600 font-semibold hover:underline">Add Parking Now</button>
+            </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {parkings.map((spot) => (
                 <motion.div
                   key={spot.id}
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-white p-6 rounded-2xl shadow-xl border"
+                  whileHover={{ y: -5 }}
+                  className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 flex flex-col h-full"
                 >
-                  <div className="flex justify-between items-start">
-                    <h3 className="text-xl font-bold">{spot.name}</h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${spot.status === "APPROVED" ? "bg-green-100 text-green-700" :
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-xl font-bold text-gray-800 line-clamp-1" title={spot.name}>{spot.name}</h3>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${spot.status === "APPROVED" ? "bg-green-100 text-green-700" :
                       spot.status === "REJECTED" ? "bg-red-100 text-red-700" :
                         "bg-yellow-100 text-yellow-700"
                       }`}>
@@ -135,31 +140,49 @@ export default function ProviderDashboard() {
                     </span>
                   </div>
 
-                  <p className="text-gray-600 mt-1 flex items-start gap-1">
-                    <span className="mt-1 text-xs"><FaBuilding /></span> {spot.address}
-                  </p>
+                  <div className="flex-1">
+                    <p className="text-gray-500 text-sm flex items-start gap-2 mb-4 line-clamp-2 min-h-[2.5rem]">
+                      <FaBuilding className="mt-1 flex-shrink-0 text-gray-400" /> {spot.address}
+                    </p>
 
-                  <div className="mt-4 text-sm space-y-2">
-                    <p className="flex items-center gap-2">
-                      <FaMoneyBillWave className="text-green-600" />
-                      {spot.vehicleConfigs && spot.vehicleConfigs.length > 0
-                        ? `Starts ₹${Math.min(...spot.vehicleConfigs.map(c => c.pricePerHour))}/hr`
-                        : "Price not set"
-                      }
-                    </p>
-                    <p className="flex items-center gap-2"><FaParking className="text-blue-600" /> Total Slots: {spot.totalSlots || 0}</p>
-                    <p className="flex items-center gap-2">
-                      {spot.availableSlots > 0
-                        ? <><FaCheckCircle className="text-green-500" /> Available</>
-                        : <><FaTimesCircle className="text-red-500" /> Full</>}
-                    </p>
-                    <p className="flex items-center gap-2"><FaStar className="text-yellow-500" /> Rating: {spot.rating || "N/A"}</p>
+                    <div className="bg-gray-50 p-4 rounded-xl space-y-2 text-sm">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Rate</span>
+                        <span className="font-bold text-gray-800 flex items-center gap-1">
+                          <FaMoneyBillWave className="text-green-600" />
+                          {spot.vehicleConfigs && spot.vehicleConfigs.length > 0
+                            ? `Starts ₹${Math.min(...spot.vehicleConfigs.map(c => c.pricePerHour))}/hr`
+                            : "N/A"
+                          }
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Capacity</span>
+                        <span className="font-bold text-gray-800 flex items-center gap-1">
+                          <FaParking className="text-blue-600" /> {spot.totalSlots || 0} Slots
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Status</span>
+                        <span className="font-bold flex items-center gap-1">
+                          {spot.availableSlots > 0
+                            ? <span className="text-green-600 flex items-center gap-1"><FaCheckCircle /> Available</span>
+                            : <span className="text-red-500 flex items-center gap-1"><FaTimesCircle /> Full</span>}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Rating</span>
+                        <span className="font-bold text-gray-800 flex items-center gap-1">
+                          <FaStar className="text-yellow-500" /> {spot.rating || "N/A"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="mt-6 flex flex-wrap gap-3">
+                  <div className="mt-6 pt-4 border-t border-gray-100 flex flex-wrap gap-3">
                     <button
                       onClick={() => navigate(`/edit-parking/${spot.id}`, { state: { spot } })}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2"
+                      className="flex-1 px-4 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition flex justify-center items-center gap-2 font-medium"
                     >
                       <FaEdit /> Edit
                     </button>
@@ -167,14 +190,14 @@ export default function ProviderDashboard() {
                     {spot.status === "ACTIVE" ? (
                       <button
                         onClick={() => handleToggleStatus(spot.id, "MAINTENANCE")}
-                        className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition flex items-center gap-2"
+                        className="flex-1 px-4 py-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition flex justify-center items-center gap-2 font-medium"
                       >
                         <FaBan /> Deactivate
                       </button>
                     ) : (
                       <button
                         onClick={() => handleToggleStatus(spot.id, "ACTIVE")}
-                        className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition flex items-center gap-2"
+                        className="flex-1 px-4 py-2.5 bg-green-50 text-green-700 rounded-xl hover:bg-green-100 transition flex justify-center items-center gap-2 font-medium"
                       >
                         <FaCheckCircle /> Activate
                       </button>
@@ -187,40 +210,43 @@ export default function ProviderDashboard() {
         </div>
 
         {/* RECENT BOOKINGS */}
-        <div>
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+        <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
             <FaClipboardList className="text-indigo-600" /> Recent Bookings
           </h2>
 
           {recentBookings.length === 0 ? (
-            <p className="text-gray-500">
-              No bookings yet.
-            </p>
+            <div className="text-center py-8 text-gray-500">
+              <FaClipboardList className="mx-auto text-4xl text-gray-200 mb-3" />
+              No bookings received yet.
+            </div>
           ) : (
             <div className="space-y-4">
               {recentBookings.map((booking) => (
                 <div
                   key={booking.id}
-                  className="bg-white p-6 rounded-2xl shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-gray-100"
+                  className="bg-gray-50 hover:bg-white p-5 rounded-2xl transition-all hover:shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-gray-200"
                 >
                   <div>
-                    <p className="font-bold text-lg text-indigo-900">
-                      {booking.parkingSpotName}
-                    </p>
-                    <div className="text-sm text-gray-600 mt-1 space-y-1">
-                      <p className="flex items-center gap-2"><FaCalendarAlt className="text-indigo-500" /> {new Date(booking.startTime).toLocaleString()} - {new Date(booking.endTime).toLocaleString()}</p>
-                      <p className="flex items-center gap-2"><FaCar className="text-blue-500" /> {booking.vehicleType || "Standard"}</p>
-                      <p className="flex items-center gap-2"><FaUser className="text-gray-500" /> <span className="font-semibold">{booking.userName || "Unknown User"}</span> ({booking.userPhone || "N/A"})</p>
-                      <p className="flex items-center gap-2"><FaMoneyBillWave className="text-green-600" /> Total: ₹{booking.totalPrice}</p>
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="font-bold text-lg text-indigo-900">{booking.parkingSpotName}</span>
+                      <span className="text-xs px-2 py-1 bg-gray-200 rounded text-gray-600 font-mono">#{booking.id?.toString().slice(-6)}</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:flex md:gap-6 text-sm text-gray-600">
+                      <p className="flex items-center gap-1.5"><FaCalendarAlt className="text-indigo-400" /> {new Date(booking.startTime).toLocaleDateString()}</p>
+                      <p className="flex items-center gap-1.5"><FaCar className="text-blue-400" /> {booking.vehicleType || "Standard"}</p>
+                      <p className="flex items-center gap-1.5"><FaUser className="text-gray-400" /> {booking.userName || "Guest"}</p>
+                      <p className="flex items-center gap-1.5 max-md:font-bold max-md:text-emerald-700"><FaMoneyBillWave className="text-emerald-500" /> ₹{booking.totalPrice}</p>
                     </div>
                   </div>
 
                   <span
-                    className={`px-4 py-2 rounded-full text-sm font-semibold ${booking.status === "CONFIRMED"
-                      ? "bg-emerald-100 text-emerald-700"
+                    className={`px-4 py-1.5 rounded-full text-sm font-bold tracking-wide uppercase ${booking.status === "CONFIRMED"
+                      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
                       : booking.status === "COMPLETED"
-                        ? "bg-sky-100 text-sky-700"
-                        : "bg-red-100 text-red-700"
+                        ? "bg-sky-100 text-sky-700 border border-sky-200"
+                        : "bg-red-100 text-red-700 border border-red-200"
                       }`}
                   >
                     {booking.status}
@@ -236,17 +262,20 @@ export default function ProviderDashboard() {
 }
 
 /* STAT CARD */
-function StatCard({ label, value, icon }) {
+function StatCard({ label, value, icon, color }) {
   return (
     <motion.div
-      whileHover={{ scale: 1.05 }}
-      className="bg-emerald-600 text-white p-6 rounded-2xl shadow-xl flex flex-col justify-between"
+      whileHover={{ y: -5 }}
+      className={`${color} text-white p-6 rounded-2xl shadow-lg relative overflow-hidden h-full min-h-[140px] flex flex-col justify-between`}
     >
-      <div className="flex justify-between items-start">
-        <p className="text-sm opacity-90">{label}</p>
-        <div className="text-2xl opacity-80">{icon}</div>
+      <div className="absolute -right-4 -bottom-4 text-8xl opacity-10 rotate-12 pointer-events-none">
+        {icon}
       </div>
-      <h3 className="text-3xl font-bold mt-2">{value}</h3>
+
+      <div className="relative z-10">
+        <p className="text-sm font-medium opacity-90 uppercase tracking-wide">{label}</p>
+        <h3 className="text-3xl font-bold mt-2">{value}</h3>
+      </div>
     </motion.div>
   )
 }

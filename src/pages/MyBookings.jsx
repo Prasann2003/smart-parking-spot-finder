@@ -58,87 +58,121 @@ export default function MyBookings() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
       <Navbar />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-6xl mx-auto mt-16 px-6"
+        className="max-w-7xl mx-auto pt-24 px-6 space-y-10 pb-12"
       >
-        <div className="mb-12">
-          <h2 className="text-4xl font-extrabold text-gray-800 mb-2 flex items-center gap-3">
+        <div className="border-b border-indigo-200 pb-6">
+          <h2 className="text-4xl font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-3">
             My Bookings <FaCar className="text-indigo-600" />
           </h2>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Track your real-time parking reservations
           </p>
         </div>
 
         {loading ? (
-          <p className="text-lg font-semibold">Loading bookings...</p>
+          <div className="p-12 text-center text-gray-500 bg-white/50 rounded-2xl animate-pulse">
+            Loading bookings...
+          </div>
         ) : error ? (
-          <p className="text-red-500">{error}</p>
+          <div className="p-6 bg-red-50 text-red-600 rounded-2xl border border-red-100 text-center">
+            {error}
+          </div>
         ) : bookings.length === 0 ? (
-          <div className="bg-white rounded-2xl p-10 text-center shadow-xl">
-            <FaCar className="text-6xl text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">
-              You have no bookings yet
+          <div className="bg-white dark:bg-gray-800 rounded-3xl p-12 text-center shadow-lg border border-gray-100 dark:border-gray-700">
+            <div className="bg-gray-100 dark:bg-gray-700 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-400 text-3xl">
+              <FaCar />
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">No bookings found</h3>
+            <p className="text-gray-500 dark:text-gray-400 mt-2 text-lg">
+              You haven't made any parking reservations yet.
             </p>
+            <button onClick={() => navigate("/dashboard")} className="mt-6 px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition">
+              Find Parking
+            </button>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {bookings.map((booking, index) => {
               const bookingId = booking.id || booking._id
 
               return (
                 <motion.div
                   key={bookingId}
-                  initial={{ opacity: 0, y: 40 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.02 }}
-                  className="bg-white rounded-3xl shadow-xl p-8 flex flex-col md:flex-row justify-between gap-6"
+                  whileHover={{ y: -4, boxShadow: "0 10px 30px -10px rgba(0, 0, 0, 0.1)" }}
+                  className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 md:p-8 flex flex-col lg:flex-row justify-between gap-8 transition-all"
                 >
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
-                      <FaMapMarkerAlt className="text-red-500" /> {booking.parkingSpotName}
-                    </h3>
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-start justify-between mb-6 gap-4">
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                          {booking.parkingSpotName}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium tracking-wide mt-1">
+                          Ref: #{bookingId?.toString().slice(-6).toUpperCase()}
+                        </p>
+                      </div>
+                      <StatusBadge status={booking.status} />
+                    </div>
 
-                    <div className="text-gray-600 space-y-1">
-                      <p className="flex items-center gap-2"><FaCalendarAlt className="text-gray-400" /> Booked: {new Date(booking.createdAt).toLocaleString()}</p>
-                      <p className="flex items-center gap-2"><FaClock className="text-gray-400" /> {new Date(booking.startTime).toLocaleString()} - {new Date(booking.endTime).toLocaleString()}</p>
-                      <p className="flex items-center gap-2"><FaCar className="text-blue-500" /> Vehicle: {booking.vehicleType || "Standard"}</p>
-                      <p className="flex items-center gap-2"><FaMoneyBillWave className="text-green-600" /> Price: ₹{booking.totalPrice} ({booking.paymentMethod})</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-indigo-500 mb-1">
+                          <FaCalendarAlt /> <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Date</span>
+                        </div>
+                        <p className="font-semibold text-gray-700 dark:text-gray-200">{new Date(booking.startTime).toLocaleDateString()}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-blue-500 mb-1">
+                          <FaClock /> <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Time</span>
+                        </div>
+                        <p className="font-semibold text-gray-700 dark:text-gray-200">
+                          {new Date(booking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(booking.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-emerald-500 mb-1">
+                          <FaCar /> <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Vehicle</span>
+                        </div>
+                        <p className="font-semibold text-gray-700 dark:text-gray-200 capitalize">{booking.vehicleType || "Standard"}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 text-green-600 mb-1">
+                          <FaMoneyBillWave /> <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Total</span>
+                        </div>
+                        <p className="font-bold text-lg text-emerald-600">₹{booking.totalPrice}</p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end justify-between">
-                    <StatusBadge status={booking.status} />
+                  {/* ACTIONS */}
+                  <div className="flex flex-col sm:flex-row lg:flex-col justify-center items-stretch gap-3 min-w-[160px] lg:border-l lg:border-gray-100 dark:border-gray-700 lg:pl-8">
+                    <button
+                      onClick={() => navigate(`/booking/${bookingId}`)}
+                      className="px-5 py-3 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold transition text-sm text-center"
+                    >
+                      View Receipt
+                    </button>
 
-                    <div className="flex gap-4 mt-6 items-center">
-                      {booking.status === "CONFIRMED" && (
-                        <div className="text-xs text-gray-500 italic mr-2">
-                          Free cancellation up to 48h before start
-                        </div>
-                      )}
-
+                    {booking.status === "CONFIRMED" && (
                       <button
-                        onClick={() => navigate(`/booking/${bookingId}`)}
-                        className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+                        onClick={() => handleCancel(bookingId)}
+                        className="px-5 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold transition text-sm text-center"
                       >
-                        View
+                        Cancel Booking
                       </button>
-
-                      {booking.status === "CONFIRMED" && (
-                        <button
-                          onClick={() => handleCancel(bookingId)}
-                          className="px-5 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
-                        >
-                          Cancel
-                        </button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </motion.div>
               )
@@ -153,15 +187,14 @@ export default function MyBookings() {
 /* STATUS BADGE */
 function StatusBadge({ status }) {
   const styles = {
-    Active: "bg-emerald-100 text-emerald-700",
-    Completed: "bg-sky-100 text-sky-700",
-    Cancelled: "bg-red-100 text-red-700",
+    CONFIRMED: "bg-emerald-50 text-emerald-700 border-emerald-100 ring-emerald-500/20",
+    COMPLETED: "bg-blue-50 text-blue-700 border-blue-100 ring-blue-500/20",
+    CANCELLED: "bg-red-50 text-red-700 border-red-100 ring-red-500/20",
   }
 
   return (
     <span
-      className={`px-4 py-2 rounded-full text-sm font-semibold ${styles[status] || "bg-gray-100 text-gray-700"
-        }`}
+      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ring-1 ring-inset ${styles[status] || "bg-gray-50 text-gray-600 border-gray-200"}`}
     >
       {status}
     </span>

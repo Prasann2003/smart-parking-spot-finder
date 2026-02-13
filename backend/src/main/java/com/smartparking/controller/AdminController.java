@@ -54,6 +54,29 @@ public class AdminController {
             spotMap.put("name", app.getName());
             spotMap.put("address", app.getAddress());
             spotMap.put("totalCapacity", app.getTotalCapacity());
+            spotMap.put("pricePerHour", app.getPricePerHour());
+            spotMap.put("vehicleConfigs", app.getVehicleConfigs());
+            spotMap.put("parkingType", app.getParkingType());
+
+            // Sanitize image URLs for frontend items
+            if (app.getImageUrls() != null) {
+                List<String> sanitizedImages = app.getImageUrls().stream()
+                        .map(url -> {
+                            if (url.startsWith("D:\\Infosys\\upload")) {
+                                String relative = url.substring("D:\\Infosys\\upload".length());
+                                return "/uploads" + relative.replace("\\", "/");
+                            } else if (url.startsWith("/api/images")) {
+                                return url;
+                            } else if (!url.startsWith("/uploads") && !url.startsWith("http")) {
+                                return "/uploads/" + url;
+                            }
+                            return url;
+                        })
+                        .collect(java.util.stream.Collectors.toList());
+                spotMap.put("imageUrls", sanitizedImages);
+            } else {
+                spotMap.put("imageUrls", java.util.Collections.emptyList());
+            }
 
             map.put("parkingSpot", spotMap);
 
@@ -107,7 +130,8 @@ public class AdminController {
         map.put("vehicleConfigs", app.getVehicleConfigs());
         map.put("parkingType", app.getParkingType());
         map.put("monthlyPlan", app.isMonthlyPlan());
-        map.put("weekendPricing", app.getWeekendPricing());
+        map.put("weekendSurcharge", app.getWeekendSurcharge());
+        map.put("monthlyDiscountPercent", app.getMonthlyDiscountPercent());
 
         // Bank (Admin only)
         map.put("bankAccount", app.getBankAccount());

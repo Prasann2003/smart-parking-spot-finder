@@ -1,9 +1,11 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
+import { useNavigate } from "react-router-dom"
 import Navbar from "../components/Navbar"
 import indiaData from "../utils/indiaData"
 import api from "../utils/api"
 import toast from "react-hot-toast"
+import { isLoggedIn, getCurrentUser } from "../utils/auth"
 import {
   FaUser,
   FaMapMarkedAlt,
@@ -15,10 +17,25 @@ import {
   FaImages,
   FaUniversity,
   FaCheckCircle,
-  FaRocket
+  FaRocket,
+  FaShieldAlt,
+  FaIdCard,
+  FaTruck,
+  FaTrash,
+  FaExternalLinkAlt
 } from "react-icons/fa"
 
 export default function BecomeProvider() {
+  const navigate = useNavigate()
+
+  // 🔒 Auth Check
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      toast.error("Please login to become a provider")
+      navigate("/auth")
+    }
+  }, [navigate])
+
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -37,7 +54,8 @@ export default function BecomeProvider() {
     guard: false,
     evCharging: false,
     monthlyPlan: false,
-    weekendPricing: "",
+    weekendSurcharge: "",
+    monthlyDiscountPercent: "",
     bankAccount: "",
     upi: "",
     gst: "",
@@ -45,13 +63,27 @@ export default function BecomeProvider() {
     declaration: false,
   })
 
+  // Pre-fill user data
+  useEffect(() => {
+    const user = getCurrentUser()
+    if (user) {
+      setForm(prev => ({
+        ...prev,
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phoneNumber || ""
+      }))
+    }
+  }, [])
+
   const [images, setImages] = useState({
-    parkingArea: null,
-    entryGate: null,
-    surrounding: null
+    parkingArea: { file: null, preview: null },
+    entryGate: { file: null, preview: null },
+    surrounding: { file: null, preview: null }
   })
 
   const [loading, setLoading] = useState(false)
+  const [step, setStep] = useState(1)
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -62,7 +94,23 @@ export default function BecomeProvider() {
   }
 
   const handleFileChange = (e, key) => {
-    setImages(prev => ({ ...prev, [key]: e.target.files[0] }))
+    const file = e.target.files[0]
+    if (file) {
+      const previewUrl = URL.createObjectURL(file)
+      setImages(prev => ({
+        ...prev,
+        [key]: { file, preview: previewUrl }
+      }))
+    }
+  }
+
+  const handleRemoveFile = (key) => {
+    setImages(prev => {
+      if (prev[key].preview) {
+        URL.revokeObjectURL(prev[key].preview) // Cleanup memory
+      }
+      return { ...prev, [key]: { file: null, preview: null } }
+    })
   }
 
   const handleVehicleTypeChange = (type) => {
@@ -98,214 +146,200 @@ export default function BecomeProvider() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setLoading(true)
 
-    if (!form.declaration) {
-      toast.error("Please accept legal declaration")
-      return
-    }
-
-    if (!images.parkingArea || !images.entryGate) {
-      toast.error("Please upload required images (Parking Area & Entry Gate)")
-      return
-    }
-
-    if (form.vehicleTypes.length === 0) {
-      toast.error("Please select at least one vehicle type")
-      return
-    }
-
-    // Validate config details
-    for (const type of form.vehicleTypes) {
-      const config = form.vehicleConfigs[type]
-      if (!config || !config.capacity || !config.price) {
-        toast.error(`Please enter capacity and price for ${type}`)
+    try {
+      if (!form.declaration) {
+        toast.error("Please accept the declaration.")
+        setLoading(false)
         return
       }
-    }
 
-    setLoading(true)
-    try {
       const formData = new FormData()
+      // Append complex object as JSON string
+      formData.append("application", JSON.stringify(form))
 
-      // 1. Owner & Basic Info
-      formData.append("ownerName", form.name)
-      formData.append("phoneNumber", form.phone)
-      formData.append("governmentId", form.governmentId)
+      if (images.parkingArea.file) formData.append("parkingArea", images.parkingArea.file)
+      if (images.entryGate.file) formData.append("entryGate", images.entryGate.file)
+      if (images.surrounding.file) formData.append("surrounding", images.surrounding.file)
 
-      // 2. Bank & Compliance
-      formData.append("bankAccount", form.bankAccount)
-      formData.append("upiId", form.upi)
-      formData.append("gstNumber", form.gst)
-      formData.append("panNumber", form.pan)
-
-      // 3. Location
-      formData.append("state", form.state)
-      formData.append("district", form.district)
-      formData.append("address", `${form.address1}${form.address2 ? ", " + form.address2 : ""}`)
-      formData.append("pincode", form.pincode)
-      formData.append("googleMapsLink", form.mapsLink)
-
-      // 4. Parking Details
-      formData.append("name", `${form.name}'s Parking`)
-      formData.append("description", "Safe and secure parking space.")
-
-      formData.append("weekendPricing", form.weekendPricing || 0)
-      formData.append("monthlyPlan", form.monthlyPlan)
-
-      formData.append("parkingType", form.parkingType)
-      formData.append("covered", form.parkingType === "Covered")
-
-      formData.append("cctv", form.cctv)
-      formData.append("guard", form.guard)
-      formData.append("evCharging", form.evCharging)
-
-      // 5. Vehicle Configs (List)
-      form.vehicleTypes.forEach((type, index) => {
-        const config = form.vehicleConfigs[type]
-        formData.append(`vehicleConfigs[${index}].vehicleType`, type)
-        formData.append(`vehicleConfigs[${index}].capacity`, config.capacity)
-        formData.append(`vehicleConfigs[${index}].pricePerHour`, config.price)
+      await api.post("/provider/apply", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       })
 
-      // 6. Images
-      if (images.parkingArea) formData.append("parkingAreaImage", images.parkingArea)
-      if (images.entryGate) formData.append("entryGateImage", images.entryGate)
-      if (images.surrounding) formData.append("surroundingAreaImage", images.surrounding)
-
-      // Submit
-      const res = await api.post("/provider/add", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      })
-
-      if (res.data?.message) {
-        toast.success(res.data.message)
-      } else {
-        toast.success("Application submitted successfully!")
-      }
-
+      toast.success("Application Submitted Successfully!")
+      navigate("/dashboard")
     } catch (error) {
-      console.error("Submission Error:", error)
-      toast.error(error.response?.data?.message || "Failed to submit application.")
+      console.error(error)
+      toast.error(error.response?.data?.message || "Submission failed")
     } finally {
       setLoading(false)
     }
   }
 
+  const isVehicleSelected = (type) => form.vehicleTypes.includes(type)
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 text-white pb-20">
       <Navbar />
 
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-6xl mx-auto px-6 py-12"
-      >
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+      <div className="max-w-5xl mx-auto pt-28 px-6">
 
-          {/* HEADER */}
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-10 text-white">
-            <h2 className="text-4xl font-extrabold flex items-center gap-3">
-              <FaRocket /> Become a Parking Provider
-            </h2>
-            <p className="text-white/90 mt-2">
-              Fill the form below to apply for listing your parking space
-            </p>
+        {/* HEADER */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-indigo-400">
+            Become a Parking Partner
+          </h1>
+          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+            Monetize your empty space. Join our network of secure, intelligent parking spots and start earning today.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12 shadow-2xl">
+
+          {/* STEP PROGRESS */}
+          <div className="flex justify-between items-center mb-12 relative px-4">
+            <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-700 -z-10 rounded-full"></div>
+            {[1, 2, 3, 4].map((s) => (
+              <div
+                key={s}
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${step >= s ? "bg-cyan-500 text-white shadow-[0_0_20px_rgba(6,182,212,0.5)]" : "bg-gray-800 text-gray-400 border border-gray-600"
+                  }`}
+              >
+                {s}
+              </div>
+            ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="p-10 space-y-12">
+          {/* STEP 1: PERSONAL & LOCATION */}
+          {step === 1 && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+              <h2 className="text-2xl font-bold flex items-center gap-3 text-cyan-400">
+                <FaUser /> Personal & Location Details
+              </h2>
 
-            {/* =================== PERSONAL INFO =================== */}
-            <Section title="Owner Information" icon={<FaUser />}>
-              <Input label="Full Name" name="name" onChange={handleChange} />
-              <Input label="Phone Number" name="phone" onChange={handleChange} />
-              <Input label="Email" name="email" onChange={handleChange} />
-              <Input label="Government ID Number" name="governmentId" onChange={handleChange} />
-            </Section>
+              <div className="grid md:grid-cols-2 gap-6">
+                <InputGroup label="Full Name" name="name" value={form.name} onChange={handleChange} placeholder="John Doe" />
+                <InputGroup label="Phone Number" name="phone" value={form.phone} onChange={handleChange} placeholder="+91 98765 43210" />
+                <InputGroup label="Email Address" name="email" value={form.email} onChange={handleChange} type="email" placeholder="john@example.com" />
+                <InputGroup label="Government ID (Aadhaar/Voter ID)" name="governmentId" value={form.governmentId} onChange={handleChange} placeholder="XXXX-XXXX-XXXX" icon={<FaIdCard />} />
+              </div>
 
-            {/* =================== LOCATION =================== */}
-            <Section title="Parking Location Details" icon={<FaMapMarkedAlt />}>
-              <Select
-                label="State"
-                value={form.state}
-                onChange={(e) =>
-                  setForm({ ...form, state: e.target.value, district: "" })
-                }
-                options={Object.keys(indiaData)}
-              />
+              <div className="border-t border-gray-700 pt-8">
+                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-indigo-300">
+                  <FaMapMarkedAlt /> Address
+                </h3>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">State</label>
+                    <select
+                      name="state"
+                      value={form.state}
+                      onChange={handleChange}
+                      className="w-full bg-gray-900/50 border border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition"
+                    >
+                      <option value="">Select State</option>
+                      {Object.keys(indiaData).map((state) => (
+                        <option key={state} value={state}>{state}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <Select
-                label="District"
-                value={form.district}
-                onChange={(e) =>
-                  setForm({ ...form, district: e.target.value })
-                }
-                options={indiaData[form.state] || []}
-                disabled={!form.state}
-              />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">District</label>
+                    <select
+                      name="district"
+                      value={form.district}
+                      onChange={handleChange}
+                      className="w-full bg-gray-900/50 border border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition"
+                    >
+                      <option value="">Select District</option>
+                      {form.state && indiaData[form.state]?.map((dist) => (
+                        <option key={dist} value={dist}>{dist}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <Input label="Address Line 1" name="address1" onChange={handleChange} />
-              <Input label="Address Line 2" name="address2" onChange={handleChange} />
-              <Input label="Pincode" name="pincode" onChange={handleChange} />
-              <Input label="Google Maps Link (optional)" name="mapsLink" onChange={handleChange} />
-            </Section>
+                  <InputGroup label="Address Line 1" name="address1" value={form.address1} onChange={handleChange} placeholder="Street, Sector..." />
+                  <InputGroup label="Address Line 2" name="address2" value={form.address2} onChange={handleChange} placeholder="Landmark..." />
+                  <InputGroup label="Pincode" name="pincode" value={form.pincode} onChange={handleChange} placeholder="110001" />
+                  <div className="relative">
+                    <InputGroup label="Google Maps Link" name="mapsLink" value={form.mapsLink} onChange={handleChange} placeholder="https://maps.app.goo.gl/..." />
+                    {form.mapsLink && (
+                      <a
+                        href={form.mapsLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute top-9 right-3 text-cyan-500 hover:text-cyan-400 p-2"
+                        title="Test Map Link"
+                      >
+                        <FaExternalLinkAlt />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-            {/* =================== PARKING DETAILS =================== */}
-            <Section title="Parking Space Details" icon={<FaCar />}>
+              <div className="flex justify-end">
+                <button type="button" onClick={() => setStep(2)} className="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold transition shadow-lg shadow-cyan-500/20">Next Step</button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 2: PARKING DETAILS & PRICING */}
+          {step === 2 && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+              <h2 className="text-2xl font-bold flex items-center gap-3 text-cyan-400">
+                <FaCar /> Parking Configuration
+              </h2>
 
               <div>
-                <label className="block text-sm font-semibold mb-2">
-                  Vehicle Types Allowed
-                </label>
-                <div className="flex gap-4 flex-wrap">
-                  {["CAR", "BIKE", "BUS", "EV"].map((type) => (
+                <label className="block text-sm font-medium text-gray-400 mb-4">Supported Vehicles</label>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  {[
+                    { type: "CAR", icon: <FaCar /> },
+                    { type: "BIKE", icon: <FaMotorcycle /> },
+                    { type: "EV", icon: <FaBolt /> },
+                    { type: "BUS", icon: <FaBus /> },
+                    { type: "TRUCK", icon: <FaTruck /> }
+                  ].map(({ type, icon }) => (
                     <button
-                      type="button"
                       key={type}
+                      type="button"
                       onClick={() => handleVehicleTypeChange(type)}
-                      className={`px-4 py-2 rounded-lg border transition flex items-center gap-2 ${form.vehicleTypes.includes(type)
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100"
+                      className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${isVehicleSelected(type)
+                        ? "bg-cyan-500/20 border-cyan-500 text-cyan-400 shadow-lg shadow-cyan-500/10 scale-105"
+                        : "bg-gray-900/50 border-gray-700 text-gray-500 hover:border-gray-500 hover:bg-gray-800"
                         }`}
                     >
-                      {type === "CAR" && <FaCar />}
-                      {type === "BIKE" && <FaMotorcycle />}
-                      {type === "BUS" && <FaBus />}
-                      {type === "EV" && <FaBolt />}
-                      {type}
+                      <span className="text-2xl">{icon}</span>
+                      <span className="font-bold">{type}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Dynamic Inputs per Vehicle Type */}
               {form.vehicleTypes.length > 0 && (
-                <div className="bg-gray-50 p-4 rounded-xl space-y-4 border mt-4 col-span-2">
-                  <h4 className="font-medium text-gray-700">Capacity & Pricing details</h4>
+                <div className="grid md:grid-cols-2 gap-6 bg-gray-900/30 p-6 rounded-2xl border border-white/5">
                   {form.vehicleTypes.map(type => (
-                    <div key={type} className="grid md:grid-cols-3 gap-4 items-end bg-white p-3 rounded shadow-sm">
-                      <div className="font-bold text-indigo-700 flex items-center gap-2 min-w-[80px]">
-                        {type}
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Capacity</label>
-                        <input
+                    <div key={type} className="space-y-3">
+                      <h4 className="font-bold text-cyan-300 flex items-center gap-2">
+                        {type === 'CAR' ? <FaCar /> : type === 'BIKE' ? <FaMotorcycle /> : type === 'EV' ? <FaBolt /> : <FaBus />} {type} Settings
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <InputGroup
+                          label="Capacity"
                           type="number"
-                          placeholder="Slots"
                           value={form.vehicleConfigs[type]?.capacity || ""}
-                          onChange={(e) => handleConfigChange(type, "capacity", e.target.value)}
-                          className="w-full p-2 border rounded"
-                          required
+                          onChange={(e) => handleConfigChange(type, 'capacity', e.target.value)}
+                          placeholder="Ex: 5"
                         />
-                      </div>
-                      <div>
-                        <label className="text-xs text-gray-500">Price/Hr (₹)</label>
-                        <input
+                        <InputGroup
+                          label="Price/Hr (₹)"
                           type="number"
-                          placeholder="₹"
                           value={form.vehicleConfigs[type]?.price || ""}
-                          onChange={(e) => handleConfigChange(type, "price", e.target.value)}
-                          className="w-full p-2 border rounded"
-                          required
+                          onChange={(e) => handleConfigChange(type, 'price', e.target.value)}
+                          placeholder="Ex: 50"
                         />
                       </div>
                     </div>
@@ -313,141 +347,173 @@ export default function BecomeProvider() {
                 </div>
               )}
 
-              <Select
-                label="Parking Type"
-                value={form.parkingType}
-                onChange={(e) =>
-                  setForm({ ...form, parkingType: e.target.value })
-                }
-                options={["Covered", "Open"]}
-              />
-
-              <Checkbox label="CCTV Available" name="cctv" onChange={handleChange} />
-              <Checkbox label="Security Guard Available" name="guard" onChange={handleChange} />
-              <Checkbox label="EV Charging Available" name="evCharging" onChange={handleChange} />
-            </Section>
-
-            {/* =================== PRICING =================== */}
-            <Section title="Additional Pricing" icon={<FaMoneyBillWave />}>
-              <Checkbox label="Monthly Plan Available" name="monthlyPlan" onChange={handleChange} />
-              <Input label="Special Weekend Pricing (optional)" name="weekendPricing" type="number" onChange={handleChange} />
-            </Section>
-
-            {/* =================== IMAGES =================== */}
-            <Section title="Parking Area Images" icon={<FaImages />}>
-              <FileInput label="Upload Parking Area Image" onChange={(e) => handleFileChange(e, "parkingArea")} />
-              <FileInput label="Upload Entry Gate Image" onChange={(e) => handleFileChange(e, "entryGate")} />
-              <FileInput label="Upload Surrounding Area (optional)" onChange={(e) => handleFileChange(e, "surrounding")} />
-            </Section>
-
-            {/* =================== PAYMENT =================== */}
-            <Section title="Payment & Legal Details" icon={<FaUniversity />}>
-              <Input label="Bank Account Number" name="bankAccount" onChange={handleChange} />
-              <Input label="UPI ID" name="upi" onChange={handleChange} />
-              <Input label="GST Number (optional)" name="gst" onChange={handleChange} />
-              <Input label="PAN Number" name="pan" onChange={handleChange} />
-
-              <div className="flex items-center gap-3 mt-4">
-                <input
-                  type="checkbox"
-                  name="declaration"
-                  onChange={handleChange}
-                />
-                <label>
-                  I confirm that I have legal rights to list this parking space.
-                </label>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Parking Type</label>
+                  <select
+                    name="parkingType"
+                    value={form.parkingType}
+                    onChange={handleChange}
+                    className="w-full bg-gray-900/50 border border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition"
+                  >
+                    <option value="Covered">Covered (Safe from rain/sun)</option>
+                    <option value="Open">Open Area</option>
+                    <option value="Basement">Basement</option>
+                  </select>
+                </div>
+                <InputGroup label="Weekend Surcharge (₹/Hr Optional)" name="weekendSurcharge" value={form.weekendSurcharge} onChange={handleChange} placeholder="Ex: 20 (Added to base price)" />
+                {form.monthlyPlan && (
+                  <InputGroup label="Monthly Discount (%)" name="monthlyDiscountPercent" value={form.monthlyDiscountPercent} onChange={handleChange} placeholder="Ex: 10" type="number" />
+                )}
               </div>
-            </Section>
 
-            <div className="text-center">
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold text-lg transition disabled:bg-gray-400"
-              >
-                {loading ? "Submitting..." : "Submit Application"}
-              </button>
-            </div>
+              <div className="flex flex-wrap gap-4">
+                {[
+                  { name: "cctv", label: "CCTV", icon: <FaShieldAlt /> },
+                  { name: "guard", label: "Security Guard", icon: <FaUser /> },
+                  { name: "evCharging", label: "EV Charging", icon: <FaBolt /> },
+                  { name: "monthlyPlan", label: "Monthly Pass", icon: <FaMoneyBillWave /> },
+                ].map(({ name, label, icon }) => (
+                  <label key={name} className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer border transition-all ${form[name] ? "bg-green-500/20 border-green-500 text-green-400" : "bg-gray-800 border-gray-600 text-gray-400"
+                    }`}>
+                    <input type="checkbox" name={name} checked={form[name]} onChange={handleChange} className="hidden" />
+                    {icon} {label} {form[name] && <FaCheckCircle />}
+                  </label>
+                ))}
+              </div>
 
-          </form>
-        </div>
-      </motion.div>
+              <div className="flex justify-between mt-8">
+                <button type="button" onClick={() => setStep(1)} className="px-6 py-3 border border-gray-600 rounded-xl hover:bg-gray-800 transition">Back</button>
+                <button type="button" onClick={() => setStep(3)} className="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold transition shadow-lg shadow-cyan-500/20">Next Step</button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 3: FINANCIALS & DOCUMENTS */}
+          {step === 3 && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+              <h2 className="text-2xl font-bold flex items-center gap-3 text-cyan-400">
+                <FaUniversity /> Bank & Documents
+              </h2>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <InputGroup label="Bank Account Number" name="bankAccount" value={form.bankAccount} onChange={handleChange} placeholder="xxxxxxxxxxxx" />
+                <InputGroup label="UPI ID" name="upi" value={form.upi} onChange={handleChange} placeholder="phone@upi" />
+                <InputGroup label="GST Number (Optional)" name="gst" value={form.gst} onChange={handleChange} placeholder="22AAAAA0000A1Z5" />
+                <InputGroup label="PAN Number" name="pan" value={form.pan} onChange={handleChange} placeholder="ABCDE1234F" />
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-indigo-300">
+                  <FaImages /> Site Photos
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <FileInput
+                    label="Parking Area"
+                    onChange={(e) => handleFileChange(e, 'parkingArea')}
+                    preview={images.parkingArea.preview}
+                    onRemove={() => handleRemoveFile('parkingArea')}
+                  />
+                  <FileInput
+                    label="Entry Gate"
+                    onChange={(e) => handleFileChange(e, 'entryGate')}
+                    preview={images.entryGate.preview}
+                    onRemove={() => handleRemoveFile('entryGate')}
+                  />
+                  <FileInput
+                    label="Surroundings"
+                    onChange={(e) => handleFileChange(e, 'surrounding')}
+                    preview={images.surrounding.preview}
+                    onRemove={() => handleRemoveFile('surrounding')}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-between mt-8">
+                <button type="button" onClick={() => setStep(2)} className="px-6 py-3 border border-gray-600 rounded-xl hover:bg-gray-800 transition">Back</button>
+                <button type="button" onClick={() => setStep(4)} className="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold transition shadow-lg shadow-cyan-500/20">Review & Submit</button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 4: REVIEW */}
+          {step === 4 && (
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+              <h2 className="text-2xl font-bold flex items-center gap-3 text-cyan-400">
+                <FaCheckCircle /> Review Application
+              </h2>
+
+              <div className="bg-gray-900/50 p-6 rounded-2xl space-y-4 text-gray-300">
+                <p><strong className="text-white">Name:</strong> {form.name}</p>
+                <p><strong className="text-white">Location:</strong> {form.address1}, {form.district}, {form.state}</p>
+                <p><strong className="text-white">Vehicles:</strong> {form.vehicleTypes.join(", ")}</p>
+                <p><strong className="text-white">Capacity:</strong> {Object.values(form.vehicleConfigs).reduce((acc, curr) => acc + (parseInt(curr.capacity) || 0), 0)} Total Slots</p>
+              </div>
+
+              <label className="flex items-start gap-3 p-4 border border-gray-600 rounded-xl cursor-pointer hover:bg-gray-800/50 transition">
+                <input type="checkbox" name="declaration" checked={form.declaration} onChange={handleChange} className="mt-1 w-5 h-5 text-cyan-500 rounded" />
+                <span className="text-sm text-gray-400">
+                  I hereby declare that the information provided is true and I own/have permission to lease this property for parking purposes. I agree to the terms and conditions.
+                </span>
+              </label>
+
+              <div className="flex justify-between mt-8">
+                <button type="button" onClick={() => setStep(3)} className="px-6 py-3 border border-gray-600 rounded-xl hover:bg-gray-800 transition">Back</button>
+                <button
+                  type="submit"
+                  disabled={loading || !form.declaration}
+                  className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white rounded-xl font-bold transition shadow-lg shadow-indigo-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {loading ? "Submitting..." : "Submit Application"} <FaRocket />
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+
+        </form>
+      </div>
     </div>
   )
 }
 
-/* ================= COMPONENTS ================= */
-
-function Section({ title, icon, children }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="space-y-6"
-    >
-      <h3 className="text-2xl font-bold text-indigo-700 flex items-center gap-2">
-        {icon} {title}
-      </h3>
-      <div className="grid md:grid-cols-2 gap-6">
-        {children}
-      </div>
-    </motion.div>
-  )
-}
-
-function Input({ label, name, onChange, type = "text" }) {
+function InputGroup({ label, ...props }) {
   return (
     <div>
-      <label className="block text-sm font-semibold mb-1">
-        {label}
-      </label>
+      <label className="block text-sm font-medium text-gray-400 mb-2">{label}</label>
       <input
-        type={type}
-        name={name}
-        onChange={onChange}
-        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500"
+        className="w-full bg-gray-900/50 border border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition text-white placeholder-gray-600"
+        {...props}
       />
     </div>
   )
 }
 
-function Select({ label, value, onChange, options, disabled }) {
+function FileInput({ label, onChange, preview, onRemove }) {
   return (
     <div>
-      <label className="block text-sm font-semibold mb-1">
-        {label}
-      </label>
-      <select
-        value={value}
-        onChange={onChange}
-        disabled={disabled}
-        className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-indigo-500"
-      >
-        <option value="">Select {label}</option>
-        {options.map((opt) => (
-          <option key={opt}>{opt}</option>
-        ))}
-      </select>
-    </div>
-  )
-}
+      <label className="block text-sm font-medium text-gray-400 mb-2">{label}</label>
 
-function Checkbox({ label, name, onChange }) {
-  return (
-    <div className="flex items-center gap-3">
-      <input type="checkbox" name={name} onChange={onChange} />
-      <label>{label}</label>
-    </div>
-  )
-}
-
-function FileInput({ label, onChange }) {
-  return (
-    <div>
-      <label className="block text-sm font-semibold mb-1">
-        {label}
-      </label>
-      <input type="file" onChange={onChange} className="w-full" />
+      {preview ? (
+        <div className="relative rounded-xl overflow-hidden border border-gray-600 group h-40">
+          <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+            <button
+              type="button"
+              onClick={onRemove}
+              className="p-2 bg-red-500 rounded-full text-white hover:bg-red-600 transition"
+            >
+              <FaTrash />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="relative border-2 border-dashed border-gray-700 rounded-xl p-6 text-center hover:border-cyan-500 transition group cursor-pointer h-40 flex flex-col items-center justify-center">
+          <input type="file" onChange={onChange} className="absolute inset-0 opacity-0 cursor-pointer" />
+          <FaImages className="text-3xl text-gray-600 group-hover:text-cyan-500 mb-2 transition" />
+          <p className="text-xs text-gray-500">Tap to upload</p>
+        </div>
+      )}
     </div>
   )
 }

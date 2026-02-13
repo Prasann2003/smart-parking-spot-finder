@@ -58,7 +58,8 @@ public class ParkingProviderApplicationDto {
     private String parkingType;
 
     private boolean monthlyPlan;
-    private Double weekendPricing;
+    private Double weekendSurcharge;
+    private Double monthlyDiscountPercent;
 
     @NotNull(message = "Parking area image is required")
     private MultipartFile parkingAreaImage;

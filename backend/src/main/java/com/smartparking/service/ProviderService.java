@@ -212,7 +212,8 @@ public class ProviderService {
                         application.setEvCharging(dto.isEvCharging());
                         application.setParkingType(dto.getParkingType());
                         application.setMonthlyPlan(dto.isMonthlyPlan());
-                        application.setWeekendPricing(dto.getWeekendPricing());
+                        application.setWeekendSurcharge(dto.getWeekendSurcharge());
+                        application.setMonthlyDiscountPercent(dto.getMonthlyDiscountPercent());
                         application.setBankAccount(dto.getBankAccount());
                         application.setUpiId(dto.getUpiId());
                         application.setGstNumber(dto.getGstNumber());
@@ -266,7 +267,8 @@ public class ProviderService {
                                         .evCharging(dto.isEvCharging())
                                         .parkingType(dto.getParkingType())
                                         .monthlyPlan(dto.isMonthlyPlan())
-                                        .weekendPricing(dto.getWeekendPricing())
+                                        .weekendSurcharge(dto.getWeekendSurcharge())
+                                        .monthlyDiscountPercent(dto.getMonthlyDiscountPercent())
                                         .bankAccount(dto.getBankAccount())
                                         .upiId(dto.getUpiId())
                                         .gstNumber(dto.getGstNumber())
@@ -307,7 +309,8 @@ public class ProviderService {
 
                 spot.setParkingType(dto.getParkingType());
                 spot.setMonthlyPlan(dto.isMonthlyPlan());
-                spot.setWeekendPricing(dto.getWeekendPricing());
+                spot.setWeekendSurcharge(dto.getWeekendSurcharge());
+                spot.setMonthlyDiscountPercent(dto.getMonthlyDiscountPercent());
 
                 if (dto.getVehicleConfigs() != null) {
                         List<SpotVehicleConfig> spotConfigs = dto.getVehicleConfigs().stream()
