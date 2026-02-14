@@ -44,11 +44,14 @@ public class BookingService {
                                 .orElseThrow(() -> new RuntimeException("Vehicle type " + dto.getVehicleType()
                                                 + " not supported by this spot"));
 
-                // Calculate total price using CONFIG price
-                long hours = Duration.between(dto.getStartTime(), dto.getEndTime()).toHours();
-                if (hours < 1)
-                        hours = 1; // Minimum 1 hour
-                double totalPrice = hours * config.getPricePerHour();
+                // Calculate total price using DYNAMIC logic
+                double totalPrice = calculateDynamicPrice(
+                                dto.getStartTime(),
+                                dto.getEndTime(),
+                                config.getPricePerHour(),
+                                parkingSpot.getWeekendSurcharge(),
+                                parkingSpot.getMonthlyDiscountPercent(),
+                                parkingSpot.isMonthlyPlan());
 
                 // CHECK AVAILABILITY FOR VEHICLE TYPE
                 long overlappingBookings = bookingRepository.countOverlappingBookings(
@@ -188,5 +191,63 @@ public class BookingService {
                 }
 
                 bookingRepository.save(booking);
+        }
+
+        private double calculateDynamicPrice(
+                        java.time.LocalDateTime start,
+                        java.time.LocalDateTime end,
+                        double pricePerHour,
+                        Double weekendSurcharge,
+                        Double monthlyDiscountPercent,
+                        boolean isMonthlyPlan) {
+
+                long totalMinutes = Duration.between(start, end).toMinutes();
+                long totalHours = totalMinutes / 60;
+                if (totalMinutes % 60 > 0)
+                        totalHours++;
+
+                if (totalHours < 1)
+                        totalHours = 1;
+
+                double finalPrice = 0;
+                double currentBlockCost = 0;
+                int hoursInCurrentBlock = 0;
+                long HOURS_IN_30_DAYS = 30 * 24; // 720 hours
+
+                double actualWeekendSurcharge = (weekendSurcharge != null) ? weekendSurcharge : 0.0;
+                boolean canApplyDiscount = isMonthlyPlan
+                                && (monthlyDiscountPercent != null && monthlyDiscountPercent > 0);
+
+                // We use a loop for the number of hours.
+                java.time.LocalDateTime currentPointer = start;
+
+                for (int i = 0; i < totalHours; i++) {
+                        java.time.DayOfWeek day = currentPointer.getDayOfWeek();
+                        boolean isWeekend = (day == java.time.DayOfWeek.SATURDAY || day == java.time.DayOfWeek.SUNDAY);
+
+                        double hourlyCost = pricePerHour;
+                        if (isWeekend) {
+                                hourlyCost += actualWeekendSurcharge;
+                        }
+
+                        currentBlockCost += hourlyCost;
+                        hoursInCurrentBlock++;
+
+                        if (hoursInCurrentBlock >= HOURS_IN_30_DAYS) {
+                                if (canApplyDiscount) {
+                                        finalPrice += currentBlockCost * (1 - monthlyDiscountPercent / 100.0);
+                                } else {
+                                        finalPrice += currentBlockCost;
+                                }
+                                currentBlockCost = 0;
+                                hoursInCurrentBlock = 0;
+                        }
+
+                        currentPointer = currentPointer.plusHours(1);
+                }
+
+                finalPrice += currentBlockCost;
+
+                return Math.round(finalPrice);
         }
 }

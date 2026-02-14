@@ -50,19 +50,92 @@ export default function Payment() {
     if (startTime && endTime && spot && selectedVehicleType) {
       const start = new Date(startTime)
       const end = new Date(endTime)
-      const hours = (end - start) / (1000 * 60 * 60)
+      const diffMs = end - start
+      const totalHours = diffMs / (1000 * 60 * 60)
 
       // Find config for price
       let pricePerHour = 0;
+      let capacity = 0;
       if (spot.vehicleConfigs) {
         const config = spot.vehicleConfigs.find(c => c.vehicleType === selectedVehicleType);
-        pricePerHour = config ? config.pricePerHour : 0;
+        pricePerHour = config ? Number(config.pricePerHour) : 0;
+        capacity = config ? config.capacity : 0;
       } else {
-        pricePerHour = spot.pricePerHour || 0;
+        pricePerHour = spot.pricePerHour ? Number(spot.pricePerHour) : 0;
+        capacity = spot.totalCapacity || 0;
       }
 
-      if (hours > 0) {
-        setTotalPrice(Math.round(hours * pricePerHour))
+      // Dynamic Price Calculation
+      if (totalHours > 0) {
+        let finalPrice = 0;
+
+        // Validation: Check if we should apply monthly logic
+        const isMonthlyPlanAvailable = spot.monthlyPlan;
+        const monthlyDiscountPercent = (isMonthlyPlanAvailable && spot.monthlyDiscountPercent)
+          ? Number(spot.monthlyDiscountPercent)
+          : 0;
+
+        // Validation: Check weekend surcharge
+        const weekendSurcharge = spot.weekendSurcharge ? Number(spot.weekendSurcharge) : 0;
+
+        // Pricing Strategy: 30-Day Blocks
+        // We calculate hour by hour to be precise with weekends inside the blocks
+
+        let currentBlockCost = 0;
+        let hoursInCurrentBlock = 0;
+        const HOURS_IN_30_DAYS = 30 * 24; // 720 hours
+
+        // Iterate through each hour of the booking
+        let currentPointer = new Date(start);
+        // We use a loop for the number of hours. 
+        // Note: For very long duration (years), this loop might be heavy, but for parking (months), it's negligible.
+        // Math.ceil to treat partial hour as full hour if needed, but usually we calculate exact or floor. 
+        // Current logic uses exact float hours for base, but surcharge is usually per started hour.
+        // For consistency with "basePrice = hours * price", we will use the exact duration logic but apply surcharge to "weekend hours".
+
+        // To accurately apply surcharge to specific hours, we need to know how many of the requested hours fall on Sat/Sun.
+        // Simplified approach: Iterate hour by hour.
+
+        for (let i = 0; i < Math.ceil(totalHours); i++) {
+          // Check if this specific hour is a weekend
+          // currentPointer is start + i hours
+          const checkTime = new Date(start.getTime() + i * 60 * 60 * 1000);
+          const day = checkTime.getDay(); // 0 = Sunday, 6 = Saturday
+          const isWeekend = (day === 0 || day === 6);
+
+          // Base price for this hour
+          // If it's the last partial hour, we could prorate, but standard parking is usually per hour or part thereof.
+          // keeping it simple: full price for the hour. 
+          // BUT the original logic was `hours * pricePerHour` (float). 
+          // To stick to strict "Option 2", we should accumulate cost.
+
+          let hourlyCost = pricePerHour;
+          if (isWeekend) {
+            hourlyCost += weekendSurcharge;
+          }
+
+          currentBlockCost += hourlyCost;
+          hoursInCurrentBlock++;
+
+          // Check if we completed a 30-day block
+          if (hoursInCurrentBlock >= HOURS_IN_30_DAYS) {
+            // Apply discount to this block
+            if (monthlyDiscountPercent > 0) {
+              finalPrice += currentBlockCost * (1 - monthlyDiscountPercent / 100);
+            } else {
+              finalPrice += currentBlockCost;
+            }
+
+            // Reset for next block
+            currentBlockCost = 0;
+            hoursInCurrentBlock = 0;
+          }
+        }
+
+        // Add remaining unfinished block (no discount)
+        finalPrice += currentBlockCost;
+
+        setTotalPrice(Math.round(finalPrice));
 
         // Check Availability
         const checkAvailability = async () => {
