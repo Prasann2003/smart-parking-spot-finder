@@ -173,13 +173,20 @@ export default function ProviderDashboard() {
                       <div className="flex justify-between items-center">
                         <span className="text-gray-500">Rating</span>
                         <span className="font-bold text-gray-800 flex items-center gap-1">
-                          <FaStar className="text-yellow-500" /> {spot.rating || "N/A"}
+                          <FaStar className="text-yellow-500" /> {spot.averageRating ? spot.averageRating.toFixed(1) : "N/A"}
+                          <span className="text-gray-400 text-xs font-normal">({spot.totalReviews || 0} reviews)</span>
                         </span>
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-6 pt-4 border-t border-gray-100 flex flex-wrap gap-3">
+                    <button
+                      onClick={() => navigate(`/spot/${spot.id}/reviews`)}
+                      className="w-full px-4 py-2.5 bg-yellow-50 text-yellow-700 rounded-xl hover:bg-yellow-100 transition flex justify-center items-center gap-2 font-medium mb-1"
+                    >
+                      <FaStar /> View Reviews
+                    </button>
                     <button
                       onClick={() => navigate(`/edit-parking/${spot.id}`, { state: { spot } })}
                       className="flex-1 px-4 py-2.5 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition flex justify-center items-center gap-2 font-medium"

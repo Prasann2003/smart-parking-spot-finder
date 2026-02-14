@@ -3,6 +3,7 @@ import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import api from "../utils/api"
+import { getCurrentUser } from "../utils/auth"
 import toast from "react-hot-toast"
 import {
   FaCalendarAlt,
@@ -10,20 +11,48 @@ import {
   FaMoneyBillWave,
   FaMapMarkerAlt,
   FaCar,
-  FaInfoCircle
+  FaInfoCircle,
+  FaStar
 } from "react-icons/fa"
+import RatingModal from "../components/RatingModal"
 
 export default function MyBookings() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const navigate = useNavigate()
+  const [ratingModalOpen, setRatingModalOpen] = useState(false)
+  const [selectedBookingId, setSelectedBookingId] = useState(null)
+
+  const openRatingModal = (bookingId) => {
+    setSelectedBookingId(bookingId)
+    setRatingModalOpen(true)
+  }
+
+  const handleRatingSuccess = () => {
+    // Refresh bookings to show updated rating status
+    setBookings(prev => prev.map(b =>
+      (b.id === selectedBookingId || b._id === selectedBookingId)
+        ? { ...b, isRated: true, ratingValue: 5 } // Optimistic update, value might differ but 'isRated' is key
+        : b
+    ))
+    // Ideally refetch to get exact rating value, but simple switch is fine
+    // Or just refetch all:
+    // window.location.reload() // simple but harsh
+    // re-calling fetchBookings would be better if extracted
+  }
 
   /* ===============================
      FETCH REAL BOOKINGS
   =============================== */
   useEffect(() => {
     const fetchBookings = async () => {
+      const user = getCurrentUser()
+      if (user?.role !== "USER") {
+        navigate("/dashboard")
+        return
+      }
+
       try {
         const res = await api.get("/bookings/my-bookings")
         setBookings(res.data)
@@ -36,6 +65,7 @@ export default function MyBookings() {
 
     fetchBookings()
   }, [])
+
 
   /* ===============================
      CANCEL BOOKING
@@ -158,6 +188,24 @@ export default function MyBookings() {
 
                   {/* ACTIONS */}
                   <div className="flex flex-col sm:flex-row lg:flex-col justify-center items-stretch gap-3 min-w-[160px] lg:border-l lg:border-gray-100 dark:border-gray-700 lg:pl-8">
+                    {/* Allow rating if status is COMPLETED OR if CONFIRMED and time has passed */}
+                    {((booking.status === "COMPLETED") ||
+                      (booking.status === "CONFIRMED" && new Date(booking.endTime) < new Date()))
+                      && !booking.isRated && (
+                        <button
+                          onClick={() => openRatingModal(bookingId)}
+                          className="px-5 py-3 rounded-xl bg-yellow-50 hover:bg-yellow-100 text-yellow-700 font-semibold transition text-sm text-center flex items-center justify-center gap-2"
+                        >
+                          <FaStar /> Rate Parking
+                        </button>
+                      )}
+
+                    {booking.isRated && (
+                      <div className="px-5 py-3 rounded-xl bg-gray-50 text-gray-500 font-semibold text-sm text-center flex items-center justify-center gap-2">
+                        <FaStar className="text-yellow-400" /> Rated
+                      </div>
+                    )}
+
                     <button
                       onClick={() => navigate(`/booking/${bookingId}`)}
                       className="px-5 py-3 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold transition text-sm text-center"
@@ -178,9 +226,18 @@ export default function MyBookings() {
               )
             })}
           </div>
-        )}
-      </motion.div>
-    </div>
+        )
+        }
+
+        {/* Rating Modal */}
+        <RatingModal
+          isOpen={ratingModalOpen}
+          onClose={() => setRatingModalOpen(false)}
+          bookingId={selectedBookingId}
+          onSuccess={handleRatingSuccess}
+        />
+      </motion.div >
+    </div >
   )
 }
 

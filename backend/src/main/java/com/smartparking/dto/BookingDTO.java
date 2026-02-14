@@ -40,4 +40,8 @@ public class BookingDTO {
     private String userName;
     private String userEmail;
     private String userPhone;
+
+    // Rating
+    private boolean isRated;
+    private Integer ratingValue;
 }

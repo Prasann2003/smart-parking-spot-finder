@@ -57,6 +57,10 @@ public class ParkingSpot {
         @Column(name = "has_ev_charging")
         private boolean evCharging;
 
+        // Ratings
+        private Double averageRating = 0.0;
+        private Integer totalReviews = 0;
+
         // Vehicles Allowed & Pricing - NEW RELATIONSHIP
         @Builder.Default
         @OneToMany(mappedBy = "parkingSpot", cascade = CascadeType.ALL, orphanRemoval = true)

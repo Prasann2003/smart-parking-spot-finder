@@ -149,6 +149,8 @@ public class BookingService {
                                 .userPhone(booking.getUser().getPhoneNumber() != null
                                                 ? booking.getUser().getPhoneNumber()
                                                 : "N/A")
+                                .isRated(booking.getRating() != null)
+                                .ratingValue(booking.getRating() != null ? booking.getRating().getRatingValue() : null)
                                 .build();
         }
 

@@ -47,6 +47,9 @@ public class Booking {
     @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Payment payment;
 
+    @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Rating rating;
+
     @org.hibernate.annotations.CreationTimestamp
     private LocalDateTime createdAt;
 }

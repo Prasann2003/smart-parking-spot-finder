@@ -38,8 +38,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/api/public/**", "/actuator/**", "/api/images/**",
-                                "/uploads/**",
-                                "/api/parking/search", "/api/parking/nearby")
+                                "/uploads/**")
+                        .permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/parking/**", "/api/ratings/**")
                         .permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/provider/application-status", "/api/provider/add")

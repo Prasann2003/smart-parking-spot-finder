@@ -30,6 +30,7 @@ public class ParkingSpotService {
     private final ImageStorageService imageStorageService;
     private final BookingRepository bookingRepository;
     private final NotificationRepository notificationRepository;
+    private final RatingRepository ratingRepository;
 
     // addParkingSpot logic moved to ProviderService.addProviderWithSpot
 
@@ -315,12 +316,31 @@ public class ParkingSpotService {
         double lonDistance = Math.toRadians(lon2 - lon1);
         double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+                        * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
 
     private ParkingSpotResponseDTO mapToDTO(ParkingSpot parkingSpot) {
+
+        // --- SELF-HEALING FOR LEGACY DATA ---
+        // If rating is 0 but reviews might exist in DB, verify and sync.
+        if (parkingSpot.getTotalReviews() == null || parkingSpot.getTotalReviews() == 0) {
+            Long realCount = ratingRepository.countByParkingSpotId(parkingSpot.getId());
+            if (realCount > 0) {
+                Double realAvg = ratingRepository.getAverageRating(parkingSpot.getId());
+                // Round to 1 decimal
+                realAvg = Math.round(realAvg * 10.0) / 10.0;
+
+                parkingSpot.setTotalReviews(realCount.intValue());
+                parkingSpot.setAverageRating(realAvg);
+
+                // Persist the correction so we don't query again
+                parkingSpotRepository.save(parkingSpot);
+                System.out.println("✅ Self-healed rating for spot " + parkingSpot.getId() + ": " + realAvg);
+            }
+        }
+        // ------------------------------------
 
         java.util.List<String> images = new java.util.ArrayList<>();
         try {
@@ -402,6 +422,8 @@ public class ParkingSpotService {
                 .monthlyDiscountPercent(parkingSpot.getMonthlyDiscountPercent())
                 .imageUrls(images)
                 .status(parkingSpot.getStatus() != null ? parkingSpot.getStatus() : ParkingSpot.ParkingStatus.BLOCKED)
+                .averageRating(parkingSpot.getAverageRating() != null ? parkingSpot.getAverageRating() : 0.0)
+                .totalReviews(parkingSpot.getTotalReviews() != null ? parkingSpot.getTotalReviews() : 0)
                 .ownerId(ownerId)
                 .ownerName(ownerName)
                 .phoneNumber(phoneNumber)

@@ -379,7 +379,7 @@ function DriverDashboard({ user, navigate }) {
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
                         <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-sm flex items-center gap-1">
-                          <FaStar className="text-yellow-500" /> {spot.rating || "N/A"}
+                          <FaStar className="text-yellow-500" /> {spot.averageRating ? spot.averageRating : "New"}
                         </div>
                       </div>
 
@@ -554,9 +554,9 @@ function ParkingDetailModal({ spot, onClose, navigate }) {
                     <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full text-sm font-bold flex items-center gap-2">
                       <FaParking /> {spot.parkingType}
                     </span>
-                    {spot.rating && (
+                    {spot.averageRating > 0 && (
                       <span className="px-3 py-1 bg-yellow-50 text-yellow-700 border border-yellow-100 rounded-full text-sm font-bold flex items-center gap-2">
-                        <FaStar className="text-yellow-500" /> {spot.rating}
+                        <FaStar className="text-yellow-500" /> {spot.averageRating} <span className="text-xs font-normal text-gray-500">({spot.totalReviews} reviews)</span>
                       </span>
                     )}
                   </div>
@@ -612,52 +612,132 @@ function ParkingDetailModal({ spot, onClose, navigate }) {
                   </div>
                 </div>
 
+                {/* REVIEWS SECTION */}
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <FaStar className="text-yellow-500" /> Recent Reviews
+                    </h3>
+                    {spot.totalReviews > 3 && (
+                      <button
+                        onClick={() => navigate(`/spot/${spot.id}/reviews`)}
+                        className="text-indigo-600 hover:text-indigo-800 text-sm font-bold hover:underline"
+                      >
+                        View All ({spot.totalReviews})
+                      </button>
+                    )}
+                  </div>
+                  <ReviewsList spotId={spot.id} limit={3} />
+
+                  {/* Always show View All if reviews exist but button above didn't catch (e.g. exactly 3 or manual check) 
+                      Actually let's just make ReviewsList show only 3, and a button below if needed.
+                  */}
+                  {spot.totalReviews > 0 && spot.totalReviews <= 3 && (
+                    <button
+                      onClick={() => navigate(`/spot/${spot.id}/reviews`)}
+                      className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold mt-2"
+                    >
+                      View Full Page
+                    </button>
+                  )}
+                </div>
+
               </div>
 
-              {/* RIGHT COLUMN: BOOKING CARD (35%) */}
-              <div className="w-full lg:w-96 flex-shrink-0">
-                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-6 shadow-xl sticky top-4">
-                  <div className="flex justify-between items-baseline border-b border-gray-100 dark:border-gray-700 pb-4 mb-4">
+              {/* RIGHT COLUMN: BOOKING FORM (35%) */}
+              <div className="lg:w-80 xl:w-96 flex-shrink-0">
+                <div className="sticky top-8 border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
+                  <div className="flex justify-between items-center mb-6">
                     <div>
-                      <span className="text-gray-500 text-sm font-semibold uppercase tracking-wide">Starts From</span>
-                      <div className="flex items-baseline gap-1 mt-1">
-                        <span className="text-3xl font-extrabold text-gray-900 dark:text-white">
-                          ₹{spot.vehicleConfigs?.length > 0
-                            ? Math.min(...spot.vehicleConfigs.map(c => c.pricePerHour))
-                            : spot.pricePerHour}
+                      <span className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wider">Price</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-black text-gray-900 dark:text-white">
+                          ₹{spot.vehicleConfigs?.[0]?.pricePerHour || 0}
                         </span>
                         <span className="text-gray-500 font-medium">/ hour</span>
                       </div>
                     </div>
                   </div>
 
-                  {spot.weekendPricing > 0 && (
-                    <div className="mb-6 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 p-4 rounded-xl text-sm border border-amber-100 dark:border-amber-800/50">
-                      <div className="flex items-center gap-2 font-bold mb-1">
-                        <FaCalendarAlt /> Weekend Pricing
-                      </div>
-                      <p>Rates starting at <strong>₹{spot.weekendPricing}/hr</strong> on weekends.</p>
-                    </div>
-                  )}
-
                   <button
-                    onClick={() => navigate("/payment", { state: { spot } })}
-                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all transform active:scale-95 flex items-center justify-center gap-2 text-lg"
+                    onClick={() => navigate(`/book/${spot.id}`)}
+                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-indigo-500/30 transition-all active:scale-95 flex items-center justify-center gap-2"
                   >
                     Book This Spot
                   </button>
 
-                  <p className="mt-4 text-center text-xs text-gray-400 font-medium">
-                    <FaCheckCircle className="inline text-green-500 mr-1" />
-                    Free cancellation up to 15 days before
-                  </p>
+                  <div className="mt-4 flex items-center justify-center gap-2 text-xs text-green-600 font-bold bg-green-50 py-2 rounded-lg">
+                    <FaShieldAlt /> Free cancellation up to 15 days before
+                  </div>
                 </div>
               </div>
 
             </div>
           </div>
+
         </div>
       </motion.div>
+    </div>
+  )
+}
+
+/* =====================================================
+   REVIEWS LIST COMPONENT
+===================================================== */
+function ReviewsList({ spotId, limit }) {
+  const [reviews, setReviews] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        // If limit is small (e.g. 3), we can still use the normal endpoint or the paged one.
+        // For simplicity reusing the list endpoint and slicing client side for the modal 
+        // OR using paged endpoint with small size. 
+        // Let's use the list endpoint as it's already there
+        const res = await api.get(`/ratings/spot/${spotId}`)
+        console.log("🔍 Reviews Response for spot", spotId, ":", res.data)
+        setReviews(res.data)
+      } catch (err) {
+        console.error("Failed to fetch reviews", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchReviews()
+  }, [spotId])
+
+  if (loading) return <div className="text-center py-4 text-gray-500">Loading reviews...</div>
+
+  if (reviews.length === 0) {
+    return (
+      <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-8 text-center">
+        <p className="text-gray-500 dark:text-gray-400 font-medium">No reviews yet.</p>
+        <p className="text-sm text-gray-400">Be the first to rate this spot!</p>
+      </div>
+    )
+  }
+
+  const displayReviews = limit ? reviews.slice(0, limit) : reviews;
+
+  return (
+    <div className="space-y-4">
+      {displayReviews.map((review) => (
+        <div key={review.id} className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <p className="font-bold text-gray-900 dark:text-white text-sm">{review.userName || "User"}</p>
+              <div className="flex text-yellow-500 text-xs mt-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <FaStar key={i} className={i < review.ratingValue ? "" : "text-gray-300 dark:text-gray-600"} />
+                ))}
+              </div>
+            </div>
+            <span className="text-xs text-gray-400">{new Date(review.createdAt).toLocaleDateString()}</span>
+          </div>
+          <p className="text-gray-600 dark:text-gray-300 text-sm italic">"{review.reviewComment}"</p>
+        </div>
+      ))}
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
 import { useTheme } from "../context/ThemeContext"
 import api from "../utils/api"
+import { getCurrentUser } from "../utils/auth"
 import { toast } from "react-hot-toast"
 import {
   FaUserShield,
@@ -24,6 +25,7 @@ import {
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme()
+  const user = getCurrentUser()
   const [showPasswordModal, setShowPasswordModal] = useState(false)
 
   const [settings, setSettings] = useState({
@@ -166,33 +168,36 @@ export default function Settings() {
         </Section>
 
         {/* PARKING */}
-        <Section title="Parking Preferences" icon={<FaCar className="text-blue-500" />}>
-          <SettingRow label={<span className="flex items-center gap-3"><FaCar className="text-gray-400" /> Preferred Vehicle Type</span>}>
-            <div className="relative">
-              <select
-                value={settings.vehicleType}
-                onChange={(e) => updateProfileSetting('vehicleType', e.target.value)}
-                className="pl-4 pr-10 py-2 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 appearance-none cursor-pointer"
-              >
-                <option value="CAR">Car</option>
-                <option value="BIKE">Bike</option>
-                <option value="BUS">Bus</option>
-                <option value="TRUCK">Truck</option>
-                <option value="EV">Electric Vehicle</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+        {/* PARKING PREFERENCES (USER ONLY) */}
+        {user?.role === "USER" && (
+          <Section title="Parking Preferences" icon={<FaCar className="text-blue-500" />}>
+            <SettingRow label={<span className="flex items-center gap-3"><FaCar className="text-gray-400" /> Preferred Vehicle Type</span>}>
+              <div className="relative">
+                <select
+                  value={settings.vehicleType}
+                  onChange={(e) => updateProfileSetting('vehicleType', e.target.value)}
+                  className="pl-4 pr-10 py-2 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 appearance-none cursor-pointer"
+                >
+                  <option value="CAR">Car</option>
+                  <option value="BIKE">Bike</option>
+                  <option value="BUS">Bus</option>
+                  <option value="TRUCK">Truck</option>
+                  <option value="EV">Electric Vehicle</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+                </div>
               </div>
-            </div>
-          </SettingRow>
+            </SettingRow>
 
-          <SettingRow label={<span className="flex items-center gap-3"><FaCar className="text-gray-400" /> Auto-book Nearest Parking</span>}>
-            <Toggle
-              enabled={settings.autoBook}
-              onClick={() => handleToggle("autoBook")}
-            />
-          </SettingRow>
-        </Section>
+            <SettingRow label={<span className="flex items-center gap-3"><FaCar className="text-gray-400" /> Auto-book Nearest Parking</span>}>
+              <Toggle
+                enabled={settings.autoBook}
+                onClick={() => handleToggle("autoBook")}
+              />
+            </SettingRow>
+          </Section>
+        )}
 
         {/* DANGER */}
         <Section title="Danger Zone" icon={<FaExclamationTriangle className="text-red-500" />}>

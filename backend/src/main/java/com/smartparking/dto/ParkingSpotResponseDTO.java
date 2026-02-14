@@ -45,6 +45,10 @@ public class ParkingSpotResponseDTO {
 
     private String parkingType;
 
+    // ===== Ratings =====
+    private Double averageRating;
+    private Integer totalReviews;
+
     // ===== Images =====
     private List<String> imageUrls;
 
