@@ -39,10 +39,30 @@ export default function Payment() {
   const [checkingAvailability, setCheckingAvailability] = useState(false)
 
   // Initialize selected vehicle type if configs exist
+  // Initialize selected vehicle type if configs exist
   useEffect(() => {
-    if (spot && spot.vehicleConfigs && spot.vehicleConfigs.length > 0 && !selectedVehicleType) {
-      setSelectedVehicleType(spot.vehicleConfigs[0].vehicleType)
+    const initializeSelection = async () => {
+      if (spot && spot.vehicleConfigs && spot.vehicleConfigs.length > 0 && !selectedVehicleType) {
+        let preferred = null;
+        try {
+          const res = await api.get("/users/profile");
+          if (res.data && res.data.vehicleType) {
+            preferred = res.data.vehicleType;
+          }
+        } catch (err) {
+          console.warn("Could not fetch user preference", err);
+        }
+
+        const supportedTypes = spot.vehicleConfigs.map(c => c.vehicleType);
+
+        if (preferred && supportedTypes.includes(preferred)) {
+          setSelectedVehicleType(preferred);
+        } else {
+          setSelectedVehicleType(spot.vehicleConfigs[0].vehicleType);
+        }
+      }
     }
+    initializeSelection();
   }, [spot, selectedVehicleType])
 
   // Calculate Price & Check Availability

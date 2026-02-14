@@ -11,4 +11,5 @@ public class UpdateProfileDTO {
     private String state;
     private String district;
     private String pincode;
+    private String vehicleType;
 }

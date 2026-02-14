@@ -30,6 +30,8 @@ public class UserService {
             user.setDistrict(dto.getDistrict());
         if (dto.getPincode() != null)
             user.setPincode(dto.getPincode());
+        if (dto.getVehicleType() != null)
+            user.setVehicleType(dto.getVehicleType());
 
         return userRepository.save(user);
     }
@@ -49,6 +51,7 @@ public class UserService {
                 .state(user.getState())
                 .district(user.getDistrict())
                 .pincode(user.getPincode())
+                .vehicleType(user.getVehicleType())
                 .build();
     }
 }

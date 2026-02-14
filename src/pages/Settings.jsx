@@ -1,6 +1,6 @@
 import Navbar from "../components/Navbar"
 import { motion, AnimatePresence } from "framer-motion"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTheme } from "../context/ThemeContext"
 import api from "../utils/api"
 import { toast } from "react-hot-toast"
@@ -31,9 +31,43 @@ export default function Settings() {
     smsNotif: false,
     pushNotif: true,
     autoBook: false,
-    vehicleType: "Car",
+    vehicleType: "CAR",
     accentColor: "Indigo",
   })
+
+  // Fetch User Profile on Mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get("/users/profile")
+        if (res.data) {
+          setSettings(prev => ({
+            ...prev,
+            vehicleType: res.data.vehicleType || "CAR"
+          }))
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile", err)
+      }
+    }
+    fetchProfile()
+  }, [])
+
+  const updateProfileSetting = async (key, value) => {
+    try {
+      // Optimistic Update
+      setSettings(prev => ({ ...prev, [key]: value }));
+
+      // API Update
+      if (key === 'vehicleType') {
+        await api.put("/users/profile", { vehicleType: value });
+        toast.success("Preference saved");
+      }
+    } catch (err) {
+      console.error("Failed to update setting", err);
+      toast.error("Failed to save preference");
+    }
+  }
 
   const handleToggle = (key) => {
     setSettings({ ...settings, [key]: !settings[key] })
@@ -137,15 +171,14 @@ export default function Settings() {
             <div className="relative">
               <select
                 value={settings.vehicleType}
-                onChange={(e) =>
-                  setSettings({ ...settings, vehicleType: e.target.value })
-                }
+                onChange={(e) => updateProfileSetting('vehicleType', e.target.value)}
                 className="pl-4 pr-10 py-2 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 appearance-none cursor-pointer"
               >
-                <option>Car</option>
-                <option>Bike</option>
-                <option>Bus</option>
-                <option>Electric Vehicle</option>
+                <option value="CAR">Car</option>
+                <option value="BIKE">Bike</option>
+                <option value="BUS">Bus</option>
+                <option value="TRUCK">Truck</option>
+                <option value="EV">Electric Vehicle</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>

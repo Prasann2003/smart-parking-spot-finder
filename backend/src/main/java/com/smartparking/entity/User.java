@@ -82,4 +82,7 @@ public class User implements UserDetails {
     private String upiId;
     private String gstNumber;
     private String panNumber;
+
+    // Preferences
+    private String vehicleType;
 }
