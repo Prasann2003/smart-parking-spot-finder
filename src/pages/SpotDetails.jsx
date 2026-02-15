@@ -15,7 +15,9 @@ import {
     FaUmbrella,
     FaBolt,
     FaMoneyBillWave,
-    FaArrowLeft
+    FaArrowLeft,
+    FaHeart,
+    FaRegHeart
 } from "react-icons/fa"
 
 export default function SpotDetails() {
@@ -24,6 +26,7 @@ export default function SpotDetails() {
     const [spot, setSpot] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
+    const [isSaved, setIsSaved] = useState(false)
 
     useEffect(() => {
         const fetchSpotDetails = async () => {
@@ -42,6 +45,28 @@ export default function SpotDetails() {
             fetchSpotDetails()
         }
     }, [id])
+
+    // Check if saved
+    useEffect(() => {
+        if (id) {
+            api.get("/user/saved-spots/ids")
+                .then(res => {
+                    if (res.data.includes(parseInt(id)) || res.data.includes(id)) {
+                        setIsSaved(true)
+                    }
+                })
+                .catch(err => console.error(err))
+        }
+    }, [id])
+
+    const toggleSave = async () => {
+        try {
+            await api.post(`/user/saved-spots/toggle/${id}`)
+            setIsSaved(!isSaved)
+        } catch (err) {
+            console.error(err)
+        }
+    }
 
     if (loading) return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -137,8 +162,14 @@ export default function SpotDetails() {
                                 {/* HEADER */}
                                 <div className="border-b border-gray-100 dark:border-gray-700 pb-8">
                                     <div>
-                                        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white leading-tight mb-3">
+                                        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white leading-tight mb-3 flex justify-between items-center">
                                             {spot.name}
+                                            <button
+                                                onClick={toggleSave}
+                                                className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                                            >
+                                                {isSaved ? <FaHeart className="text-red-500 text-3xl" /> : <FaRegHeart className="text-gray-400 text-3xl" />}
+                                            </button>
                                         </h1>
                                         <p className="text-gray-500 dark:text-gray-400 text-lg flex items-start gap-2">
                                             <FaMapMarkerAlt className="text-red-500 mt-1 flex-shrink-0" />
@@ -256,7 +287,7 @@ export default function SpotDetails() {
                                     <div className="mt-6 space-y-3">
                                         <div className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-300">
                                             <FaShieldAlt className="text-green-500 mt-1 flex-shrink-0" />
-                                            <span>Free cancellation up to <strong>15 days</strong> before booking</span>
+                                            <span>Free cancellation up to <strong>24 hours</strong> before booking</span>
                                         </div>
                                         <div className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-300">
                                             <FaBolt className="text-yellow-500 mt-1 flex-shrink-0" />

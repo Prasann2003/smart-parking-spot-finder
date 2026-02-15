@@ -1,7 +1,7 @@
 import { motion } from "framer-motion"
 import { logout, getCurrentUser } from "../utils/auth"
 import { useNavigate } from "react-router-dom"
-import { FaUser, FaListAlt, FaBell, FaCog, FaSignOutAlt } from "react-icons/fa"
+import { FaUser, FaListAlt, FaBell, FaCog, FaSignOutAlt, FaHeart } from "react-icons/fa"
 
 export default function MenuDropdown({ close }) {
   const navigate = useNavigate()
@@ -17,6 +17,7 @@ export default function MenuDropdown({ close }) {
   const menuItems = [
     { label: "Profile", path: "/profile", icon: <FaUser /> },
     ...(user?.role === "USER" ? [{ label: "My Bookings", path: "/bookings", icon: <FaListAlt /> }] : []),
+    ...(user?.role === "USER" ? [{ label: "Saved Parking Spots", path: "/saved-spots", icon: <FaHeart /> }] : []),
     { label: "Notifications", path: "/notifications", icon: <FaBell /> },
     { label: "Settings", path: "/settings", icon: <FaCog /> },
   ]

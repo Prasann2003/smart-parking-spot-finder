@@ -321,7 +321,7 @@ public class ParkingSpotService {
         return R * c;
     }
 
-    private ParkingSpotResponseDTO mapToDTO(ParkingSpot parkingSpot) {
+    public ParkingSpotResponseDTO mapToDTO(ParkingSpot parkingSpot) {
 
         // --- SELF-HEALING FOR LEGACY DATA ---
         // If rating is 0 but reviews might exist in DB, verify and sync.

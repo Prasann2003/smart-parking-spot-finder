@@ -178,12 +178,12 @@ public class BookingService {
                         throw new RuntimeException("Booking is already cancelled");
                 }
 
-                // Rule: Cancel allowed only if start time is < 48 hours away
+                // Rule: Cancel allowed only if start time is > 24 hours away
                 long hoursUntilStart = Duration.between(java.time.LocalDateTime.now(), booking.getStartTime())
                                 .toHours();
-                if (hoursUntilStart > 48) {
+                if (hoursUntilStart < 24) {
                         throw new RuntimeException(
-                                        "Cancellation is only allowed within 48 hours of the booking start time.");
+                                        "Cancellation is only allowed up to 24 hours before the booking start time.");
                 }
 
                 booking.setStatus(Booking.BookingStatus.CANCELLED);

@@ -26,7 +26,9 @@ import {
   FaImages,
   FaInfoCircle,
   FaCalendarAlt,
-  FaCheckCircle
+  FaCheckCircle,
+  FaHeart,
+  FaRegHeart
 } from "react-icons/fa"
 
 export default function Dashboard() {
@@ -81,6 +83,8 @@ function DriverDashboard({ user, navigate }) {
   const [rejectionReason, setRejectionReason] = useState("")
   const [daysLeft, setDaysLeft] = useState(0)
 
+  const [savedSpotIds, setSavedSpotIds] = useState([]) // [NEW] Track saved spots
+
   /* FETCH DASHBOARD DATA */
 
   useEffect(() => {
@@ -114,6 +118,38 @@ function DriverDashboard({ user, navigate }) {
 
     fetchDashboardData()
   }, [])
+
+  // [NEW] Fetch Saved Spots IDs
+  useEffect(() => {
+    if (user.role === "USER") {
+      api.get("/user/saved-spots/ids")
+        .then(res => setSavedSpotIds(res.data))
+        .catch(err => console.error("Failed to fetch saved spots", err))
+
+      api.get("/user/saved-spots/count")
+        .then(res => setStats(prev => ({ ...prev, favorites: res.data.count })))
+        .catch(err => console.error("Failed to fetch saved count", err))
+    }
+  }, [])
+
+  const handleToggleFavorite = async (e, spotId) => {
+    e.stopPropagation()
+    try {
+      await api.post(`/user/saved-spots/toggle/${spotId}`)
+
+      let isSaving = !savedSpotIds.includes(spotId)
+
+      if (isSaving) {
+        setSavedSpotIds(prev => [...prev, spotId])
+        setStats(prev => ({ ...prev, favorites: prev.favorites + 1 }))
+      } else {
+        setSavedSpotIds(prev => prev.filter(id => id !== spotId))
+        setStats(prev => ({ ...prev, favorites: Math.max(0, prev.favorites - 1) }))
+      }
+    } catch (err) {
+      console.error("Toggle failed", err)
+    }
+  }
 
   /* SEARCH */
 
@@ -267,7 +303,14 @@ function DriverDashboard({ user, navigate }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <StatCard label="Nearby Spots" value={stats.nearbySpots} color="bg-emerald-500" icon={<FaMapMarkerAlt className="opacity-80" />} />
           <StatCard label="Active Bookings" value={stats.activeBookings} color="bg-indigo-500" icon={<FaClock className="opacity-80" />} />
-          <StatCard label="Favorites" value={stats.favorites} color="bg-pink-500" icon={<FaStar className="opacity-80" />} />
+          <StatCard
+            label="Favorites"
+            value={stats.favorites}
+            color="bg-pink-500"
+            icon={<FaStar className="opacity-80" />}
+            onClick={() => navigate('/saved-spots')}
+            className="cursor-pointer hover:shadow-xl transition-transform transform hover:scale-105"
+          />
           <StatCard label="Money Saved" value={`₹${stats.moneySaved}`} color="bg-purple-500" icon={<FaMoneyBillWave className="opacity-80" />} />
         </div>
 
@@ -377,8 +420,20 @@ function DriverDashboard({ user, navigate }) {
                           alt={spot.name}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
-                        <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-sm flex items-center gap-1">
-                          <FaStar className="text-yellow-500" /> {spot.averageRating ? spot.averageRating : "New"}
+                        <div className="absolute top-3 right-3 flex gap-2">
+                          <button
+                            onClick={(e) => handleToggleFavorite(e, spot._id || spot.id)}
+                            className="bg-white/90 backdrop-blur p-2 rounded-full shadow-sm hover:scale-110 transition z-10"
+                          >
+                            {savedSpotIds.includes(spot._id || spot.id) ? (
+                              <FaHeart className="text-red-500" />
+                            ) : (
+                              <FaRegHeart className="text-gray-400 hover:text-red-500" />
+                            )}
+                          </button>
+                          <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-sm flex items-center gap-1 h-8">
+                            <FaStar className="text-yellow-500" /> {spot.averageRating ? spot.averageRating : "New"}
+                          </div>
                         </div>
                       </div>
 
@@ -454,11 +509,12 @@ function DriverDashboard({ user, navigate }) {
 
 /* STAT CARD */
 
-function StatCard({ label, value, color, icon }) {
+function StatCard({ label, value, color, icon, onClick, className }) {
   return (
     <motion.div
       whileHover={{ y: -5 }}
-      className={`${color} text-white p-6 rounded-2xl shadow-lg relative overflow-hidden h-full min-h-[140px] flex flex-col justify-between`}
+      onClick={onClick}
+      className={`${color} text-white p-6 rounded-2xl shadow-lg relative overflow-hidden h-full min-h-[140px] flex flex-col justify-between ${className}`}
     >
       <div className="flast absolute -right-4 -bottom-4 text-8xl opacity-10 rotate-12 pointer-events-none">
         {icon}
