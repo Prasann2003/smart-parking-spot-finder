@@ -15,7 +15,6 @@ import {
   FaSearch,
   FaClock,
   FaTimesCircle,
-  FaMoneyBillWave,
   FaParking,
   FaStar,
   FaVideo,
@@ -76,7 +75,6 @@ function DriverDashboard({ user, navigate }) {
     nearbySpots: 0,
     activeBookings: 0,
     favorites: 0,
-    moneySaved: 0,
   })
 
   const [applicationStatus, setApplicationStatus] = useState("NONE")
@@ -300,9 +298,23 @@ function DriverDashboard({ user, navigate }) {
         )}
 
         {/* STATS */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <StatCard label="Nearby Spots" value={stats.nearbySpots} color="bg-emerald-500" icon={<FaMapMarkerAlt className="opacity-80" />} />
-          <StatCard label="Active Bookings" value={stats.activeBookings} color="bg-indigo-500" icon={<FaClock className="opacity-80" />} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard
+            label="Nearby Spots"
+            value={stats.nearbySpots}
+            color="bg-emerald-500"
+            icon={<FaMapMarkerAlt className="opacity-80" />}
+            onClick={() => document.getElementById('search-section').scrollIntoView({ behavior: 'smooth' })}
+            className="cursor-pointer hover:shadow-xl transition-transform transform hover:scale-105"
+          />
+          <StatCard
+            label="Active Bookings"
+            value={stats.activeBookings}
+            color="bg-indigo-500"
+            icon={<FaClock className="opacity-80" />}
+            onClick={() => navigate('/bookings')}
+            className="cursor-pointer hover:shadow-xl transition-transform transform hover:scale-105"
+          />
           <StatCard
             label="Favorites"
             value={stats.favorites}
@@ -311,11 +323,10 @@ function DriverDashboard({ user, navigate }) {
             onClick={() => navigate('/saved-spots')}
             className="cursor-pointer hover:shadow-xl transition-transform transform hover:scale-105"
           />
-          <StatCard label="Money Saved" value={`₹${stats.moneySaved}`} color="bg-purple-500" icon={<FaMoneyBillWave className="opacity-80" />} />
         </div>
 
         {/* UNIFIED SEARCH SECTION */}
-        <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-3xl shadow-xl space-y-6 border border-gray-100 dark:border-gray-700">
+        <div id="search-section" className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-3xl shadow-xl space-y-6 border border-gray-100 dark:border-gray-700">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
             <div>
               <h2 className="text-2xl font-bold dark:text-white flex items-center gap-3">

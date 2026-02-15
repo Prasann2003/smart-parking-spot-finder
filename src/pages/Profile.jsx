@@ -100,9 +100,7 @@ export default function Profile() {
                 <div className="w-40 h-40 rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 flex items-center justify-center text-white text-6xl font-bold shadow-xl ring-4 ring-white dark:ring-gray-700">
                   {profile.name?.charAt(0).toUpperCase()}
                 </div>
-                <div className="absolute bottom-2 right-2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-md text-gray-500 cursor-pointer hover:text-indigo-600 transition">
-                  <FaUserCircle />
-                </div>
+
               </div>
 
               <div>
@@ -113,11 +111,11 @@ export default function Profile() {
               <div className="bg-gray-50 dark:bg-gray-700/50 px-6 py-3 rounded-2xl w-full">
                 <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-2">Current Role</p>
                 <div className="flex justify-center">
-                  {profile.role === "provider" ? (
+                  {profile.role?.toLowerCase() === "provider" ? (
                     <span className="text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 px-4 py-1.5 rounded-full flex items-center gap-2 font-bold text-sm">
                       <FaBuilding /> Parking Provider
                     </span>
-                  ) : profile.role === "admin" ? (
+                  ) : profile.role?.toLowerCase() === "admin" ? (
                     <span className="text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400 px-4 py-1.5 rounded-full flex items-center gap-2 font-bold text-sm">
                       <FaUserShield /> Admin
                     </span>

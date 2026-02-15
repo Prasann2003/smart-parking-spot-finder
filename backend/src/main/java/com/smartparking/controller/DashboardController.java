@@ -37,7 +37,6 @@ public class DashboardController {
         stats.put("activeBookings", bookingRepository.countActiveBookings(user,
                 LocalDateTime.now())); // simplified
         stats.put("favorites", savedSpotService.countSavedSpots(user));
-        stats.put("moneySaved", 0);
         return ResponseEntity.ok(stats);
     }
 
