@@ -17,7 +17,10 @@ import {
     FaMoneyBillWave,
     FaArrowLeft,
     FaHeart,
-    FaRegHeart
+    FaRegHeart,
+    FaMotorcycle,
+    FaBus,
+    FaTruck
 } from "react-icons/fa"
 
 export default function SpotDetails() {
@@ -221,7 +224,12 @@ export default function SpotDetails() {
                                                         <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                                                             <td className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-3">
                                                                 <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400">
-                                                                    <FaCar />
+                                                                    {config.vehicleType === "BIKE" && <FaMotorcycle />}
+                                                                    {config.vehicleType === "CAR" && <FaCar />}
+                                                                    {config.vehicleType === "EV" && <FaBolt />}
+                                                                    {config.vehicleType === "BUS" && <FaBus />}
+                                                                    {config.vehicleType === "TRUCK" && <FaTruck />}
+                                                                    {!["BIKE", "CAR", "EV", "BUS", "TRUCK"].includes(config.vehicleType) && <FaCar />}
                                                                 </div>
                                                                 {config.vehicleType}
                                                             </td>
