@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import Navbar from "../components/Navbar"
 import { useState, useEffect } from "react"
 import indiaData from "../utils/indiaData"
@@ -69,7 +69,6 @@ function DriverDashboard({ user, navigate }) {
   const [showResults, setShowResults] = useState(false)
   const [error, setError] = useState("")
   const [userLocation, setUserLocation] = useState(null)
-  const [selectedSpot, setSelectedSpot] = useState(null)
 
   const [stats, setStats] = useState({
     nearbySpots: 0,
@@ -370,7 +369,7 @@ function DriverDashboard({ user, navigate }) {
                       key={spot._id || spot.id}
                       whileHover={{ y: -5 }}
                       className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col h-full cursor-pointer"
-                      onClick={() => setSelectedSpot(spot)}
+                      onClick={() => navigate(`/spot/${spot._id || spot.id}`)}
                     >
                       <div className="h-48 w-full overflow-hidden relative group">
                         <img
@@ -444,313 +443,14 @@ function DriverDashboard({ user, navigate }) {
           </div>
         )}
 
-        {/* DETAILS MODAL */}
-        <AnimatePresence>
-          {selectedSpot && (
-            <ParkingDetailModal
-              spot={selectedSpot}
-              onClose={() => setSelectedSpot(null)}
-              navigate={navigate}
-            />
-          )}
-        </AnimatePresence>
+
 
       </motion.div>
     </div>
   )
 }
 
-/* =====================================================
-   PARKING DETAIL MODAL
-===================================================== */
-function ParkingDetailModal({ spot, onClose, navigate }) {
-  const images = spot.imageUrls || []
-  const displayImages = [
-    images[0] ? `http://localhost:8080${images[0]}` : null,
-    images[1] ? `http://localhost:8080${images[1]}` : null,
-    images[2] ? `http://localhost:8080${images[2]}` : null
-  ]
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative"
-      >
-        {/* CLOSE BUTTON */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 bg-white/90 dark:bg-black/50 p-2 rounded-full hover:bg-white dark:hover:bg-black transition shadow-sm"
-        >
-          <FaTimes className="text-gray-800 dark:text-white" />
-        </button>
-
-        {/* SCROLLABLE CONTENT */}
-        <div className="overflow-y-auto flex-1 custom-scrollbar">
-
-          {/* 1. IMAGE GALLERY SECTION */}
-          <div className="h-64 md:h-96 w-full grid grid-cols-4 gap-2 p-2 bg-gray-50">
-            <div className="col-span-4 md:col-span-2 relative rounded-xl overflow-hidden bg-gray-200 group">
-              {displayImages[0] ? (
-                <img src={displayImages[0]} alt="Main" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-                  <FaMapMarkerAlt className="text-4xl mb-2 opacity-50" />
-                  <span className="text-sm font-medium">Main View</span>
-                </div>
-              )}
-            </div>
-            <div className="col-span-2 md:col-span-1 flex flex-col gap-2">
-              <div className="h-full relative rounded-xl overflow-hidden bg-gray-200 group">
-                {displayImages[1] ? (
-                  <img src={displayImages[1]} alt="Side" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-                    <FaCar className="text-2xl mb-2 opacity-50" />
-                    <span className="text-sm font-medium">Side View</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="col-span-2 md:col-span-1 flex flex-col gap-2">
-              <div className="h-full relative rounded-xl overflow-hidden bg-gray-200 group">
-                {displayImages[2] ? (
-                  <img src={displayImages[2]} alt="Surroundings" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-                    <FaVideo className="text-2xl mb-2 opacity-50" />
-                    <span className="text-sm font-medium">Surroundings</span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end justify-center pb-4 text-white text-xs font-bold md:hidden">
-                  + View All
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 md:p-8">
-            <div className="flex flex-col lg:flex-row gap-8 lg:items-start">
-
-              {/* LEFT COLUMN: DETAILS (65%) */}
-              <div className="flex-1 space-y-8">
-
-                {/* HEADER */}
-                <div className="border-b border-gray-100 dark:border-gray-700 pb-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white leading-tight">
-                        {spot.name}
-                      </h2>
-                      <p className="text-gray-500 dark:text-gray-400 mt-2 text-lg flex items-center gap-2">
-                        <FaMapMarkerAlt className="text-red-500 flex-shrink-0" />
-                        {spot.address}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-3 mt-4">
-                    <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full text-sm font-bold flex items-center gap-2">
-                      <FaParking /> {spot.parkingType}
-                    </span>
-                    {spot.averageRating > 0 && (
-                      <span className="px-3 py-1 bg-yellow-50 text-yellow-700 border border-yellow-100 rounded-full text-sm font-bold flex items-center gap-2">
-                        <FaStar className="text-yellow-500" /> {spot.averageRating} <span className="text-xs font-normal text-gray-500">({spot.totalReviews} reviews)</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* AMENITIES */}
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <FaShieldAlt className="text-indigo-500" /> Amenities
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <AmenityTag active={spot.cctv} label="CCTV" icon={<FaVideo />} />
-                    <AmenityTag active={spot.covered} label="Covered" icon={<FaUmbrella />} />
-                    <AmenityTag active={spot.guard} label="Guard" icon={<FaShieldAlt />} />
-                    <AmenityTag active={spot.evCharging} label="EV Charge" icon={<FaBolt />} />
-                  </div>
-                </div>
-
-                {/* PRICING TABLE */}
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                    <FaMoneyBillWave className="text-emerald-500" /> Vehicle Pricing
-                  </h3>
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-                    <table className="w-full text-left bg-white dark:bg-gray-800">
-                      <thead className="bg-gray-50 dark:bg-gray-700 text-xs uppercase text-gray-500 font-bold border-b border-gray-200 dark:border-gray-700">
-                        <tr>
-                          <th className="px-6 py-3">Vehicle</th>
-                          <th className="px-6 py-3">Capacity</th>
-                          <th className="px-6 py-3">Price</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                        {spot.vehicleConfigs && spot.vehicleConfigs.length > 0 ? (
-                          spot.vehicleConfigs.map((config, idx) => (
-                            <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                              <td className="px-6 py-4 font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                                <FaCar className="text-gray-400" /> {config.vehicleType}
-                              </td>
-                              <td className="px-6 py-4 text-gray-600 dark:text-gray-400">{config.capacity}</td>
-                              <td className="px-6 py-4 font-bold text-emerald-600">₹{config.pricePerHour}/hr</td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td className="px-6 py-4 font-semibold text-gray-700">Standard</td>
-                            <td className="px-6 py-4 text-gray-600">{spot.totalCapacity}</td>
-                            <td className="px-6 py-4 font-bold text-emerald-600">₹{spot.pricePerHour}/hr</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* REVIEWS SECTION */}
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                      <FaStar className="text-yellow-500" /> Recent Reviews
-                    </h3>
-                    {spot.totalReviews > 3 && (
-                      <button
-                        onClick={() => navigate(`/spot/${spot.id}/reviews`)}
-                        className="text-indigo-600 hover:text-indigo-800 text-sm font-bold hover:underline"
-                      >
-                        View All ({spot.totalReviews})
-                      </button>
-                    )}
-                  </div>
-                  <ReviewsList spotId={spot.id} limit={3} />
-
-                  {/* Always show View All if reviews exist but button above didn't catch (e.g. exactly 3 or manual check) 
-                      Actually let's just make ReviewsList show only 3, and a button below if needed.
-                  */}
-                  {spot.totalReviews > 0 && spot.totalReviews <= 3 && (
-                    <button
-                      onClick={() => navigate(`/spot/${spot.id}/reviews`)}
-                      className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold mt-2"
-                    >
-                      View Full Page
-                    </button>
-                  )}
-                </div>
-
-              </div>
-
-              {/* RIGHT COLUMN: BOOKING FORM (35%) */}
-              <div className="lg:w-80 xl:w-96 flex-shrink-0">
-                <div className="sticky top-8 border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl">
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      <span className="text-gray-500 dark:text-gray-400 text-sm font-bold uppercase tracking-wider">Price</span>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-black text-gray-900 dark:text-white">
-                          ₹{spot.vehicleConfigs?.[0]?.pricePerHour || 0}
-                        </span>
-                        <span className="text-gray-500 font-medium">/ hour</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => navigate(`/book/${spot.id}`)}
-                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-indigo-500/30 transition-all active:scale-95 flex items-center justify-center gap-2"
-                  >
-                    Book This Spot
-                  </button>
-
-                  <div className="mt-4 flex items-center justify-center gap-2 text-xs text-green-600 font-bold bg-green-50 py-2 rounded-lg">
-                    <FaShieldAlt /> Free cancellation up to 15 days before
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
-/* =====================================================
-   REVIEWS LIST COMPONENT
-===================================================== */
-function ReviewsList({ spotId, limit }) {
-  const [reviews, setReviews] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        // If limit is small (e.g. 3), we can still use the normal endpoint or the paged one.
-        // For simplicity reusing the list endpoint and slicing client side for the modal 
-        // OR using paged endpoint with small size. 
-        // Let's use the list endpoint as it's already there
-        const res = await api.get(`/ratings/spot/${spotId}`)
-        console.log("🔍 Reviews Response for spot", spotId, ":", res.data)
-        setReviews(res.data)
-      } catch (err) {
-        console.error("Failed to fetch reviews", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchReviews()
-  }, [spotId])
-
-  if (loading) return <div className="text-center py-4 text-gray-500">Loading reviews...</div>
-
-  if (reviews.length === 0) {
-    return (
-      <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-8 text-center">
-        <p className="text-gray-500 dark:text-gray-400 font-medium">No reviews yet.</p>
-        <p className="text-sm text-gray-400">Be the first to rate this spot!</p>
-      </div>
-    )
-  }
-
-  const displayReviews = limit ? reviews.slice(0, limit) : reviews;
-
-  return (
-    <div className="space-y-4">
-      {displayReviews.map((review) => (
-        <div key={review.id} className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <p className="font-bold text-gray-900 dark:text-white text-sm">{review.userName || "User"}</p>
-              <div className="flex text-yellow-500 text-xs mt-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <FaStar key={i} className={i < review.ratingValue ? "" : "text-gray-300 dark:text-gray-600"} />
-                ))}
-              </div>
-            </div>
-            <span className="text-xs text-gray-400">{new Date(review.createdAt).toLocaleDateString()}</span>
-          </div>
-          <p className="text-gray-600 dark:text-gray-300 text-sm italic">"{review.reviewComment}"</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-
-function AmenityTag({ active, label, icon }) {
-  if (!active) return null
-  return (
-    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium">
-      <span className="text-indigo-500">{icon}</span> {label}
-    </div>
-  )
-}
 
 /* STAT CARD */
 

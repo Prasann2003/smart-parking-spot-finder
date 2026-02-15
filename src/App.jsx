@@ -16,6 +16,7 @@ import MyBookings from "./pages/MyBookings"
 import Notifications from "./pages/Notifications"
 import Settings from "./pages/Settings"
 import ReviewsPage from "./pages/ReviewsPage"
+import SpotDetails from "./pages/SpotDetails"
 
 import ProtectedRoute from "./components/ProtectedRoute"
 
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="/add-parking" element={<AddParking />} />
         <Route path="/edit-parking/:id" element={<EditParking />} />
         <Route path="/spot/:id/reviews" element={<ReviewsPage />} />
+        <Route path="/spot/:id" element={<SpotDetails />} />
       </Route>
 
     </Routes>

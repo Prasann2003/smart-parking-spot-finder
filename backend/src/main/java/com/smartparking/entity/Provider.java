@@ -44,6 +44,7 @@ public class Provider {
         APPROVED,
         REJECTED
     }
+
     public static Provider fromApplication(ProviderApplication application) {
         if (application == null) {
             throw new IllegalArgumentException("ProviderApplication cannot be null");

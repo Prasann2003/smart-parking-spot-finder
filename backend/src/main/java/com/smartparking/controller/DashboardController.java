@@ -29,13 +29,11 @@ public class DashboardController {
 
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> getSummary(
-            Authentication auth
-    ) {
+            Authentication auth) {
         Map<String, Object> stats = new HashMap<>();
         stats.put("nearbySpots", parkingSpotRepository.count()); // simplified
         stats.put("activeBookings", bookingRepository.countActiveBookings(getUser(auth),
-                LocalDateTime.now()
-        )); // simplified
+                LocalDateTime.now())); // simplified
         stats.put("favorites", 0);
         stats.put("moneySaved", 0);
         return ResponseEntity.ok(stats);
