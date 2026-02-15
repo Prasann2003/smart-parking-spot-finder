@@ -26,15 +26,17 @@ public class DashboardController {
     private final ParkingSpotRepository parkingSpotRepository;
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
+    private final com.smartparking.service.SavedSpotService savedSpotService;
 
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> getSummary(
             Authentication auth) {
+        User user = getUser(auth);
         Map<String, Object> stats = new HashMap<>();
         stats.put("nearbySpots", parkingSpotRepository.count()); // simplified
-        stats.put("activeBookings", bookingRepository.countActiveBookings(getUser(auth),
+        stats.put("activeBookings", bookingRepository.countActiveBookings(user,
                 LocalDateTime.now())); // simplified
-        stats.put("favorites", 0);
+        stats.put("favorites", savedSpotService.countSavedSpots(user));
         stats.put("moneySaved", 0);
         return ResponseEntity.ok(stats);
     }

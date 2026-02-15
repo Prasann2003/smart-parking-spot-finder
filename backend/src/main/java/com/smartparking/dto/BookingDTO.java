@@ -44,4 +44,8 @@ public class BookingDTO {
     // Rating
     private boolean isRated;
     private Integer ratingValue;
+
+    // Financials (Commission)
+    private Double platformFee;
+    private Double providerEarnings;
 }

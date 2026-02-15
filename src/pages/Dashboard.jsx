@@ -91,7 +91,7 @@ function DriverDashboard({ user, navigate }) {
     const fetchDashboardData = async () => {
       try {
         const summaryRes = await api.get("/dashboard/summary")
-        setStats(summaryRes.data)
+        setStats(prev => ({ ...prev, ...summaryRes.data }))
 
         const activityRes = await api.get("/dashboard/activity")
 
@@ -141,10 +141,10 @@ function DriverDashboard({ user, navigate }) {
 
       if (isSaving) {
         setSavedSpotIds(prev => [...prev, spotId])
-        setStats(prev => ({ ...prev, favorites: prev.favorites + 1 }))
+        setStats(prev => ({ ...prev, favorites: (prev.favorites || 0) + 1 }))
       } else {
         setSavedSpotIds(prev => prev.filter(id => id !== spotId))
-        setStats(prev => ({ ...prev, favorites: Math.max(0, prev.favorites - 1) }))
+        setStats(prev => ({ ...prev, favorites: Math.max(0, (prev.favorites || 0) - 1) }))
       }
     } catch (err) {
       console.error("Toggle failed", err)

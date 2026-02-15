@@ -104,8 +104,12 @@ public class ProviderController {
     }
 
     private double calculateTotalEarnings(List<BookingDTO> bookings) {
-        return bookings.stream().mapToDouble(BookingDTO::getTotalPrice).sum();
+        return bookings.stream()
+                .filter(b -> "CONFIRMED".equals(b.getStatus()) || "COMPLETED".equals(b.getStatus()))
+                .mapToDouble(b -> b.getProviderEarnings() != null ? b.getProviderEarnings() : b.getTotalPrice())
+                .sum();
     }
+
     private double calculateTodayEarnings(List<BookingDTO> bookings) {
 
         LocalDate today = LocalDate.now();
@@ -113,10 +117,10 @@ public class ProviderController {
         return bookings.stream()
                 .filter(booking -> booking.getCreatedAt() != null)
                 .filter(booking -> booking.getCreatedAt().toLocalDate().equals(today))
-                .mapToDouble(BookingDTO::getTotalPrice)
+                .filter(b -> "CONFIRMED".equals(b.getStatus()) || "COMPLETED".equals(b.getStatus()))
+                .mapToDouble(b -> b.getProviderEarnings() != null ? b.getProviderEarnings() : b.getTotalPrice())
                 .sum();
     }
-
 
     @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> addProviderWithSpot(@ModelAttribute ParkingProviderApplicationDto dto) {

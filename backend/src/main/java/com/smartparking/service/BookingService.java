@@ -79,8 +79,13 @@ public class BookingService {
 
                 // CREATE PAYMENT RECORD
                 if (dto.getPaymentMethod() != null) {
+                        double platformFee = totalPrice * 0.15;
+                        double providerEarnings = totalPrice - platformFee;
+
                         com.smartparking.entity.Payment payment = com.smartparking.entity.Payment.builder()
                                         .amount(totalPrice)
+                                        .platformFee(platformFee)
+                                        .providerEarnings(providerEarnings)
                                         .paymentMethod(com.smartparking.entity.Payment.PaymentMethod
                                                         .valueOf(dto.getPaymentMethod()))
                                         .status(com.smartparking.entity.Payment.PaymentStatus.SUCCESS)
@@ -151,6 +156,10 @@ public class BookingService {
                                                 : "N/A")
                                 .isRated(booking.getRating() != null)
                                 .ratingValue(booking.getRating() != null ? booking.getRating().getRatingValue() : null)
+                                .platformFee(booking.getPayment() != null ? booking.getPayment().getPlatformFee() : 0.0)
+                                .providerEarnings(booking.getPayment() != null
+                                                ? booking.getPayment().getProviderEarnings()
+                                                : 0.0)
                                 .build();
         }
 

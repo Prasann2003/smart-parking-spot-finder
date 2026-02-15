@@ -21,6 +21,10 @@ public class Payment {
 
     private Double amount;
 
+    private Double platformFee;
+
+    private Double providerEarnings;
+
     @Enumerated(EnumType.STRING)
     private PaymentMethod paymentMethod;
 
