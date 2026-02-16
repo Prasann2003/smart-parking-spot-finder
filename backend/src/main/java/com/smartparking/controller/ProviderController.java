@@ -36,12 +36,21 @@ public class ProviderController {
 
     @GetMapping("/parkings")
     public ResponseEntity<List<ParkingSpotResponseDTO>> getMyParkingSpots(@RequestParam String email) {
+        System.out.println("DEBUG: Fetching spots for email: " + email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+        System.out.println("DEBUG: User ID: " + user.getId());
 
         Optional<Provider> provider = providerRepository.findByUser(user);
-        return provider.map(value -> ResponseEntity.ok(parkingSpotService.getParkingSpotsByOwner(value.getId())))
-                .orElseGet(() -> ResponseEntity.ok(List.of()));
+        if (provider.isPresent()) {
+            System.out.println("DEBUG: Provider ID found: " + provider.get().getId());
+            List<ParkingSpotResponseDTO> spots = parkingSpotService.getParkingSpotsByOwner(provider.get().getId());
+            System.out.println("DEBUG: Spots count linked to provider: " + spots.size());
+            return ResponseEntity.ok(spots);
+        } else {
+            System.out.println("DEBUG: No Provider entity found for user: " + email);
+            return ResponseEntity.ok(List.of());
+        }
 
     }
 
@@ -78,21 +87,27 @@ public class ProviderController {
 
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> getDashboardStats(@RequestParam String email) {
-        System.out.println("Fetching Provider Dashboard for: " + email);
+        System.out.println("DEBUG: Fetching Provider Dashboard for: " + email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
         Optional<Provider> provider = providerRepository.findByUser(user);
         if (provider.isEmpty()) {
+            System.out.println("DEBUG: Provider not found for user: " + email);
             return ResponseEntity
                     .ok(Map.of("totalParkings", 0, "activeBookings", 0, "todayEarnings", 0, "monthlyEarnings", 0));
         }
 
         List<ParkingSpotResponseDTO> spots = parkingSpotService.getParkingSpotsByOwner(provider.get().getId());
-        List<BookingDTO> bookings = bookingService.getBookingsByOwner(user.getId()); // This might need fix
+        System.out.println("DEBUG: Found " + spots.size() + " spots for provider " + provider.get().getId());
 
-        double todayEarnings = calculateTodayEarnings(bookings); // consistent with frontend placeholder
+        List<BookingDTO> bookings = bookingService.getBookingsByOwner(user.getId());
+        System.out.println("DEBUG: Found " + bookings.size() + " bookings for provider");
+
+        double todayEarnings = calculateTodayEarnings(bookings);
         double monthlyEarnings = calculateTotalEarnings(bookings);
+
+        System.out.println("DEBUG: Calculated Earnings - Today: " + todayEarnings + ", Monthly: " + monthlyEarnings);
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalParkings", spots.size());
@@ -106,7 +121,13 @@ public class ProviderController {
     private double calculateTotalEarnings(List<BookingDTO> bookings) {
         return bookings.stream()
                 .filter(b -> "CONFIRMED".equals(b.getStatus()) || "COMPLETED".equals(b.getStatus()))
-                .mapToDouble(b -> b.getProviderEarnings() != null ? b.getProviderEarnings() : b.getTotalPrice())
+                .mapToDouble(b -> {
+                    Double earnings = b.getProviderEarnings();
+                    if (earnings == null) {
+                        earnings = b.getTotalPrice();
+                    }
+                    return earnings != null ? earnings : 0.0;
+                })
                 .sum();
     }
 
@@ -118,12 +139,33 @@ public class ProviderController {
                 .filter(booking -> booking.getCreatedAt() != null)
                 .filter(booking -> booking.getCreatedAt().toLocalDate().equals(today))
                 .filter(b -> "CONFIRMED".equals(b.getStatus()) || "COMPLETED".equals(b.getStatus()))
-                .mapToDouble(b -> b.getProviderEarnings() != null ? b.getProviderEarnings() : b.getTotalPrice())
+                .mapToDouble(b -> {
+                    Double earnings = b.getProviderEarnings();
+                    if (earnings == null) {
+                        earnings = b.getTotalPrice();
+                    }
+                    return earnings != null ? earnings : 0.0;
+                })
                 .sum();
     }
 
     @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> addProviderWithSpot(@ModelAttribute ParkingProviderApplicationDto dto) {
+    public ResponseEntity<?> addProviderWithSpot(
+            @ModelAttribute @jakarta.validation.Valid ParkingProviderApplicationDto dto,
+            org.springframework.validation.BindingResult result) {
+        if (result.hasErrors()) {
+            java.util.List<String> errors = result.getAllErrors().stream()
+                    .map(e -> e.getDefaultMessage())
+                    .collect(java.util.stream.Collectors.toList());
+
+            System.out.println("DEBUG: Validation Errors: " + errors);
+            result.getAllErrors().forEach(error -> {
+                System.out.println("Field: " + ((org.springframework.validation.FieldError) error).getField() + " - "
+                        + error.getDefaultMessage());
+            });
+
+            return ResponseEntity.badRequest().body(Map.of("message", "Validation Failed", "errors", errors));
+        }
         providerService.saveApplication(dto);
         return ResponseEntity.ok(Map.of("message", "Application submitted successfully!"));
     }

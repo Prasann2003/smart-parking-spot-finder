@@ -156,14 +156,58 @@ export default function BecomeProvider() {
       }
 
       const formData = new FormData()
-      // Append complex object as JSON string
-      formData.append("application", JSON.stringify(form))
 
-      if (images.parkingArea.file) formData.append("parkingArea", images.parkingArea.file)
-      if (images.entryGate.file) formData.append("entryGate", images.entryGate.file)
-      if (images.surrounding.file) formData.append("surrounding", images.surrounding.file)
+      // Simple Fields
+      formData.append("name", form.name)
+      formData.append("phoneNumber", form.phone) // Mapped to phoneNumber
+      formData.append("email", form.email)
+      formData.append("governmentId", form.governmentId) // Check if DTO has this
+      formData.append("state", form.state)
+      formData.append("district", form.district)
+      // Address string logic? DTO has 'address'. Form has address1, address2
+      const fullAddress = `${form.address1}, ${form.address2}`
+      formData.append("address", fullAddress)
+      formData.append("pincode", form.pincode)
+      if (form.mapsLink) formData.append("googleMapsLink", form.mapsLink)
 
-      await api.post("/provider/apply", formData, {
+      formData.append("parkingType", form.parkingType)
+      // Derive 'covered' from parkingType
+      const isCovered = ["Covered", "Basement"].includes(form.parkingType);
+      formData.append("covered", isCovered);
+
+      formData.append("cctv", form.cctv)
+      formData.append("guard", form.guard)
+      formData.append("evCharging", form.evCharging)
+      formData.append("monthlyPlan", form.monthlyPlan)
+
+      // Handle Optionals and Formatting
+      if (form.weekendSurcharge) formData.append("weekendSurcharge", parseFloat(form.weekendSurcharge) || 0)
+      if (form.monthlyDiscountPercent) formData.append("monthlyDiscountPercent", parseFloat(form.monthlyDiscountPercent) || 0)
+
+      formData.append("bankAccount", form.bankAccount || "")
+      formData.append("upiId", form.upi || "")
+      if (form.gst) formData.append("gstNumber", form.gst)
+      formData.append("panNumber", form.pan || "")
+
+      // Vehicle Configs (List)
+      const vehicleConfigsList = form.vehicleTypes.map(type => ({
+        vehicleType: type,
+        capacity: parseInt(form.vehicleConfigs[type]?.capacity || "0"),
+        pricePerHour: parseFloat(form.vehicleConfigs[type]?.price || "0")
+      }));
+
+      vehicleConfigsList.forEach((config, index) => {
+        formData.append(`vehicleConfigs[${index}].vehicleType`, config.vehicleType);
+        formData.append(`vehicleConfigs[${index}].capacity`, config.capacity);
+        formData.append(`vehicleConfigs[${index}].pricePerHour`, config.pricePerHour);
+      });
+
+      // Files
+      if (images.parkingArea.file) formData.append("parkingAreaImage", images.parkingArea.file)
+      if (images.entryGate.file) formData.append("entryGateImage", images.entryGate.file)
+      if (images.surrounding.file) formData.append("surroundingAreaImage", images.surrounding.file)
+
+      await api.post("/provider/add", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
 
@@ -171,7 +215,11 @@ export default function BecomeProvider() {
       navigate("/dashboard")
     } catch (error) {
       console.error(error)
-      toast.error(error.response?.data?.message || "Submission failed")
+      const message = error.response?.data?.message || "Submission failed";
+      const validationErrors = error.response?.data?.errors
+        ? "\n" + error.response.data.errors.join("\n")
+        : "";
+      toast.error(message + validationErrors, { duration: 5000, style: { minWidth: '300px' } });
     } finally {
       setLoading(false)
     }

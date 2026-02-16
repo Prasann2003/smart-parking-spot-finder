@@ -427,6 +427,10 @@ public class ParkingSpotService {
                 .ownerId(ownerId)
                 .ownerName(ownerName)
                 .phoneNumber(phoneNumber)
+                .availableSlots(parkingSpot.getTotalCapacity() != null
+                        ? Math.max(0, parkingSpot.getTotalCapacity() - (int) bookingRepository
+                                .countCurrentBookingsForSpot(parkingSpot.getId(), java.time.LocalDateTime.now()))
+                        : 0)
                 .build();
     }
 

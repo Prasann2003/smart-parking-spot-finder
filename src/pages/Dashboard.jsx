@@ -1,6 +1,6 @@
 import { motion } from "framer-motion"
 import Navbar from "../components/Navbar"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import indiaData from "../utils/indiaData"
 import { getCurrentUser } from "../utils/auth"
 import api from "../utils/api"
@@ -83,26 +83,39 @@ function DriverDashboard({ user, navigate }) {
 
   const [savedSpotIds, setSavedSpotIds] = useState([]) // [NEW] Track saved spots
 
+  const isMounted = useRef(true)
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
   /* FETCH DASHBOARD DATA */
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const summaryRes = await api.get("/dashboard/summary")
-        setStats(prev => ({ ...prev, ...summaryRes.data }))
+        if (isMounted.current) {
+          setStats(prev => ({ ...prev, ...summaryRes.data }))
+        }
 
         const activityRes = await api.get("/dashboard/activity")
+        // Handle activityRes if needed, though previously unused or implicit
 
         if (user.role === "USER") {
           try {
             const statusRes = await api.get(
               `/provider/application-status?email=${user.email}`
             )
-            setApplicationStatus(statusRes.data.status)
-            if (statusRes.data.status === "REJECTED") {
-              setRejectionReason(statusRes.data.rejectionReason)
-              if (statusRes.data.daysLeft) {
-                setDaysLeft(parseInt(statusRes.data.daysLeft))
+            if (isMounted.current) {
+              setApplicationStatus(statusRes.data.status)
+              if (statusRes.data.status === "REJECTED") {
+                setRejectionReason(statusRes.data.rejectionReason)
+                if (statusRes.data.daysLeft) {
+                  setDaysLeft(parseInt(statusRes.data.daysLeft))
+                }
               }
             }
           } catch (e) {
@@ -121,11 +134,15 @@ function DriverDashboard({ user, navigate }) {
   useEffect(() => {
     if (user.role === "USER") {
       api.get("/user/saved-spots/ids")
-        .then(res => setSavedSpotIds(res.data))
+        .then(res => {
+          if (isMounted.current) setSavedSpotIds(res.data)
+        })
         .catch(err => console.error("Failed to fetch saved spots", err))
 
       api.get("/user/saved-spots/count")
-        .then(res => setStats(prev => ({ ...prev, favorites: res.data.count })))
+        .then(res => {
+          if (isMounted.current) setStats(prev => ({ ...prev, favorites: res.data.count }))
+        })
         .catch(err => console.error("Failed to fetch saved count", err))
     }
   }, [])
@@ -164,18 +181,22 @@ function DriverDashboard({ user, navigate }) {
         `/parking/search?state=${search.state}&district=${search.district}`
       )
 
-      setParkingSpots(res.data)
+      if (isMounted.current) {
+        setParkingSpots(res.data)
 
-      setStats((prev) => ({
-        ...prev,
-        nearbySpots: res.data.length,
-      }))
+        setStats((prev) => ({
+          ...prev,
+          nearbySpots: res.data.length,
+        }))
+      }
     } catch {
-      setError("Unable to fetch parking spots.")
-      setParkingSpots([])
+      if (isMounted.current) {
+        setError("Unable to fetch parking spots.")
+        setParkingSpots([])
+      }
     }
 
-    setLoading(false)
+    if (isMounted.current) setLoading(false)
   }
 
   /* FIND NEAR ME */
@@ -192,6 +213,7 @@ function DriverDashboard({ user, navigate }) {
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        if (!isMounted.current) return
         try {
           const { latitude, longitude } = position.coords
 
@@ -201,21 +223,27 @@ function DriverDashboard({ user, navigate }) {
             `/parking/nearby?lat=${latitude}&lng=${longitude}&radius=20`
           )
 
-          setParkingSpots(res.data)
+          if (isMounted.current) {
+            setParkingSpots(res.data)
 
-          setStats((prev) => ({
-            ...prev,
-            nearbySpots: res.data.length,
-          }))
+            setStats((prev) => ({
+              ...prev,
+              nearbySpots: res.data.length,
+            }))
+          }
         } catch {
-          setError("Unable to fetch nearby parking.")
+          if (isMounted.current) {
+            setError("Unable to fetch nearby parking.")
+          }
         }
 
-        setLoading(false)
+        if (isMounted.current) setLoading(false)
       },
       () => {
-        setError("Location permission denied.")
-        setLoading(false)
+        if (isMounted.current) {
+          setError("Location permission denied.")
+          setLoading(false)
+        }
       }
     )
   }

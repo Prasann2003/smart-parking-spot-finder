@@ -449,7 +449,7 @@ export default function Payment() {
               </div>
 
               <div className="bg-indigo-50 rounded-xl p-4 text-xs text-indigo-700 leading-relaxed">
-                <p><strong>Note:</strong> Free cancellation up to 15 days before booking time.</p>
+                <p><strong>Note:</strong> Free cancellation up to 24 hours before booking time.</p>
               </div>
 
             </div>

@@ -11,13 +11,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @SpringBootApplication
+@org.springframework.scheduling.annotation.EnableScheduling
 public class SmartParkingBackendApplication {
     @Value("${admin.email}")
     private String adminEmail;
 
     @Value("${admin.password}")
     private String adminPassword;
-
 
     public static void main(String[] args) {
         SpringApplication.run(SmartParkingBackendApplication.class, args);

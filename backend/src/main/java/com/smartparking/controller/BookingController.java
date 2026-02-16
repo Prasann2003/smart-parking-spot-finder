@@ -22,8 +22,21 @@ public class BookingController {
     }
 
     @GetMapping("/my-bookings")
-    public ResponseEntity<List<BookingDTO>> getUserBookings() {
-        return ResponseEntity.ok(bookingService.getUserBookings());
+    public ResponseEntity<org.springframework.data.domain.Page<BookingDTO>> getUserBookings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        org.springframework.data.domain.Sort.Direction sortDirection = direction.equalsIgnoreCase("asc")
+                ? org.springframework.data.domain.Sort.Direction.ASC
+                : org.springframework.data.domain.Sort.Direction.DESC;
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                org.springframework.data.domain.Sort.by(sortDirection, sortBy));
+
+        return ResponseEntity.ok(bookingService.getUserBookings(pageable, status));
     }
 
     @GetMapping("/check-availability")
@@ -39,7 +52,7 @@ public class BookingController {
         java.time.LocalDateTime start = java.time.LocalDateTime.parse(startTime, formatter);
         java.time.LocalDateTime end = java.time.LocalDateTime.parse(endTime, formatter);
 
-        return ResponseEntity.ok(bookingService.getAvailableSlots(parkingSpotId, vehicleType,start, end));
+        return ResponseEntity.ok(bookingService.getAvailableSlots(parkingSpotId, vehicleType, start, end));
     }
 
     @GetMapping("/{id}")

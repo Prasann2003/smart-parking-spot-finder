@@ -159,8 +159,11 @@ export default function EditParking() {
         }))
     }
 
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
     const handleSubmit = async (e) => {
         e.preventDefault()
+        if (isSubmitting) return;
 
         // Validation
         if (!formData.name || !formData.state || !formData.district || !formData.address || !formData.pincode) {
@@ -182,36 +185,46 @@ export default function EditParking() {
             }
         }
 
-        // Map configs map back to list
-        const vehicleConfigsList = formData.vehicleTypes.map(type => ({
-            vehicleType: type,
-            capacity: Number(formData.vehicleConfigs[type].capacity),
-            pricePerHour: Number(formData.vehicleConfigs[type].price)
-        }));
+        setIsSubmitting(true);
 
-        const payload = {
-            ...formData,
-            // Remove flat fields
-            totalCapacity: undefined,
-            pricePerHour: undefined,
-            // Add list
-            vehicleConfigs: vehicleConfigsList,
+        try {
+            // Map configs map back to list
+            const vehicleConfigsList = formData.vehicleTypes.map(type => ({
+                vehicleType: type,
+                capacity: Number(formData.vehicleConfigs[type].capacity),
+                pricePerHour: Number(formData.vehicleConfigs[type].price)
+            }));
 
-            // Ensure numbers
-            weekendSurcharge: formData.weekendSurcharge ? Number(formData.weekendSurcharge) : null,
-            monthlyDiscountPercent: formData.monthlyDiscountPercent ? Number(formData.monthlyDiscountPercent) : null,
-            latitude: formData.latitude ? Number(formData.latitude) : null,
-            longitude: formData.longitude ? Number(formData.longitude) : null,
-        }
+            const payload = {
+                ...formData,
+                // Remove flat fields
+                totalCapacity: undefined,
+                pricePerHour: undefined,
+                // Add list
+                vehicleConfigs: vehicleConfigsList,
 
-        // Remove the internal map from payload if not needed by backend (it is ignored if unknown property usually, but cleaner to remove)
-        delete payload.vehicleConfigsMap;
+                // Ensure numbers
+                weekendSurcharge: formData.weekendSurcharge ? Number(formData.weekendSurcharge) : null,
+                monthlyDiscountPercent: formData.monthlyDiscountPercent ? Number(formData.monthlyDiscountPercent) : null,
+                latitude: formData.latitude ? Number(formData.latitude) : null,
+                longitude: formData.longitude ? Number(formData.longitude) : null,
+            }
 
-        console.log("Sending Payload:", JSON.stringify(payload, null, 2)) // Debug log
+            // Remove the internal map from payload if not needed by backend (it is ignored if unknown property usually, but cleaner to remove)
+            delete payload.vehicleConfigsMap;
 
-        const res = await updateSpot(id, payload)
-        if (res) {
-            navigate("/dashboard")
+            console.log("Sending Payload:", JSON.stringify(payload, null, 2)) // Debug log
+
+            const res = await updateSpot(id, payload)
+            if (res) {
+                toast.success("Parking spot updated successfully!");
+                navigate("/dashboard")
+            }
+        } catch (error) {
+            console.error("Update failed:", error);
+            toast.error("Failed to update parking spot. Please try again.");
+        } finally {
+            setIsSubmitting(false);
         }
     }
 
@@ -357,10 +370,27 @@ export default function EditParking() {
                         </div>
                     </div>
 
-                    <button type="submit" className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition flex items-center justify-center gap-2">
-                        <FaSave /> Update Parking Spot
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className={`w-full py-4 text-white font-bold rounded-xl transition flex items-center justify-center gap-2 
+                        ${isSubmitting ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"}`}
+                    >
+                        {isSubmitting ? (
+                            <>
+                                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Updating...
+                            </>
+                        ) : (
+                            <>
+                                <FaSave /> Update Parking Spot
+                            </>
+                        )}
                     </button>
-                    <button type="button" onClick={() => navigate("/dashboard")} className="w-full py-3 text-gray-500 font-semibold hover:text-gray-700 transition flex items-center justify-center gap-2">
+                    <button type="button" onClick={() => navigate("/dashboard")} disabled={isSubmitting} className="w-full py-3 text-gray-500 font-semibold hover:text-gray-700 transition flex items-center justify-center gap-2">
                         <FaTimes /> Cancel
                     </button>
                 </form>

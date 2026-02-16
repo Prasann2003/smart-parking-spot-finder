@@ -48,4 +48,7 @@ public class BookingDTO {
     // Financials (Commission)
     private Double platformFee;
     private Double providerEarnings;
+
+    // Computed status for UI (e.g., ACTIVE vs CONFIRMED)
+    private String computedStatus;
 }

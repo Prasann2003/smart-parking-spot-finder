@@ -100,6 +100,44 @@ public class BookingService {
                 return mapToDTO(savedBooking);
         }
 
+        public org.springframework.data.domain.Page<BookingDTO> getUserBookings(
+                        org.springframework.data.domain.Pageable pageable,
+                        String filterStatus) {
+                String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
+                                .getUsername();
+                User user = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
+
+                org.springframework.data.jpa.domain.Specification<Booking> spec = (root, query, cb) -> {
+                        jakarta.persistence.criteria.Predicate p = cb.equal(root.get("user"), user);
+
+                        if (filterStatus != null && !filterStatus.isEmpty() && !filterStatus.equals("ALL")) {
+                                java.time.LocalDateTime now = java.time.LocalDateTime.now();
+                                if (filterStatus.equals("ACTIVE")) {
+                                        // Active means CONFIRMED and now between start and end
+                                        p = cb.and(p,
+                                                        cb.equal(root.get("status"), Booking.BookingStatus.CONFIRMED),
+                                                        cb.lessThanOrEqualTo(root.get("startTime"), now),
+                                                        cb.greaterThanOrEqualTo(root.get("endTime"), now));
+                                } else if (filterStatus.equals("UPCOMING")) {
+                                        p = cb.and(p,
+                                                        cb.equal(root.get("status"), Booking.BookingStatus.CONFIRMED),
+                                                        cb.greaterThan(root.get("startTime"), now));
+                                } else {
+                                        try {
+                                                p = cb.and(p, cb.equal(root.get("status"),
+                                                                Booking.BookingStatus.valueOf(filterStatus)));
+                                        } catch (IllegalArgumentException e) {
+                                                // Ignore invalid status
+                                        }
+                                }
+                        }
+                        return p;
+                };
+
+                return bookingRepository.findAll(spec, pageable).map(this::mapToDTO);
+        }
+
         public List<BookingDTO> getUserBookings() {
                 String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
                                 .getUsername();
@@ -116,6 +154,8 @@ public class BookingService {
                                 .map(this::mapToDTO)
                                 .collect(Collectors.toList());
         }
+
+        // ... existing getAvailableSlots ...
 
         public int getAvailableSlots(Long spotId, com.smartparking.entity.VehicleType vehicleType,
                         java.time.LocalDateTime startTime,
@@ -135,31 +175,61 @@ public class BookingService {
         }
 
         private BookingDTO mapToDTO(Booking booking) {
-                String paymentMethod = booking.getPayment() != null ? booking.getPayment().getPaymentMethod().name()
-                                : "N/A";
+                String paymentMethod = "N/A";
+                Double platformFee = 0.0;
+                Double providerEarnings = 0.0;
+                if (booking.getPayment() != null) {
+                        if (booking.getPayment().getPaymentMethod() != null) {
+                                paymentMethod = booking.getPayment().getPaymentMethod().name();
+                        }
+                        platformFee = booking.getPayment().getPlatformFee();
+                        providerEarnings = booking.getPayment().getProviderEarnings();
+                }
+
+                String spotName = "Unknown Spot";
+                Long spotId = null;
+                if (booking.getParkingSpot() != null) {
+                        spotName = booking.getParkingSpot().getName();
+                        spotId = booking.getParkingSpot().getId();
+                }
+
+                String userName = "Unknown User";
+                String userEmail = "No Email";
+                String userPhone = "N/A";
+                if (booking.getUser() != null) {
+                        userName = booking.getUser().getName();
+                        userEmail = booking.getUser().getEmail();
+                        userPhone = booking.getUser().getPhoneNumber() != null ? booking.getUser().getPhoneNumber()
+                                        : "N/A";
+                }
+
+                String computedStatus = booking.getStatus() != null ? booking.getStatus().name() : "UNKNOWN";
+                if (booking.getStatus() == Booking.BookingStatus.CONFIRMED) {
+                        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+                        if (now.isAfter(booking.getStartTime()) && now.isBefore(booking.getEndTime())) {
+                                computedStatus = "ACTIVE";
+                        }
+                }
 
                 return BookingDTO.builder()
                                 .id(booking.getId())
-                                .parkingSpotId(booking.getParkingSpot().getId())
+                                .parkingSpotId(spotId)
                                 .startTime(booking.getStartTime())
                                 .endTime(booking.getEndTime())
                                 .totalPrice(booking.getTotalPrice())
-                                .status(booking.getStatus().name())
-                                .parkingSpotName(booking.getParkingSpot().getName())
+                                .status(booking.getStatus() != null ? booking.getStatus().name() : "UNKNOWN")
+                                .computedStatus(computedStatus)
+                                .parkingSpotName(spotName)
                                 .paymentMethod(paymentMethod)
                                 .createdAt(booking.getCreatedAt())
-                                .vehicleType(booking.getVehicleType()) // Map vehicle type
-                                .userName(booking.getUser().getName())
-                                .userEmail(booking.getUser().getEmail())
-                                .userPhone(booking.getUser().getPhoneNumber() != null
-                                                ? booking.getUser().getPhoneNumber()
-                                                : "N/A")
+                                .vehicleType(booking.getVehicleType())
+                                .userName(userName)
+                                .userEmail(userEmail)
+                                .userPhone(userPhone)
                                 .isRated(booking.getRating() != null)
                                 .ratingValue(booking.getRating() != null ? booking.getRating().getRatingValue() : null)
-                                .platformFee(booking.getPayment() != null ? booking.getPayment().getPlatformFee() : 0.0)
-                                .providerEarnings(booking.getPayment() != null
-                                                ? booking.getPayment().getProviderEarnings()
-                                                : 0.0)
+                                .platformFee(platformFee)
+                                .providerEarnings(providerEarnings)
                                 .build();
         }
 

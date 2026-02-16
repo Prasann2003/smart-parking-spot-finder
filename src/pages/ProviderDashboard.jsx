@@ -132,8 +132,8 @@ export default function ProviderDashboard() {
                 >
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="text-xl font-bold text-gray-800 line-clamp-1" title={spot.name}>{spot.name}</h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${spot.status === "APPROVED" ? "bg-green-100 text-green-700" :
-                      spot.status === "REJECTED" ? "bg-red-100 text-red-700" :
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${spot.status === "ACTIVE" ? "bg-green-100 text-green-700" :
+                      spot.status === "BLOCKED" ? "bg-red-100 text-red-700" :
                         "bg-yellow-100 text-yellow-700"
                       }`}>
                       {spot.status}
@@ -159,14 +159,14 @@ export default function ProviderDashboard() {
                       <div className="flex justify-between items-center">
                         <span className="text-gray-500">Capacity</span>
                         <span className="font-bold text-gray-800 flex items-center gap-1">
-                          <FaParking className="text-blue-600" /> {spot.totalSlots || 0} Slots
+                          <FaParking className="text-blue-600" /> {spot.totalCapacity || 0} Slots
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-500">Status</span>
                         <span className="font-bold flex items-center gap-1">
                           {spot.availableSlots > 0
-                            ? <span className="text-green-600 flex items-center gap-1"><FaCheckCircle /> Available</span>
+                            ? <span className="text-green-600 flex items-center gap-1"><FaCheckCircle /> Available ({spot.availableSlots})</span>
                             : <span className="text-red-500 flex items-center gap-1"><FaTimesCircle /> Full</span>}
                         </span>
                       </div>
