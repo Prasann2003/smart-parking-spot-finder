@@ -31,8 +31,19 @@ public class ParkingController {
     }
 
     @PostMapping(value = "/add", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<String> addParkingSpot(
-            @ModelAttribute ParkingSpotDTO parkingSpotDTO) {
+    public ResponseEntity<?> addParkingSpot(
+            @ModelAttribute @jakarta.validation.Valid ParkingSpotDTO parkingSpotDTO,
+            org.springframework.validation.BindingResult result) {
+
+        if (result.hasErrors()) {
+            java.util.List<String> errors = result.getAllErrors().stream()
+                    .map(e -> e.getDefaultMessage())
+                    .collect(java.util.stream.Collectors.toList());
+
+            System.out.println("DEBUG: AddParking Validation Errors: " + errors);
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Validation Failed", "errors", errors));
+        }
+
         parkingSpotService.save(parkingSpotDTO);
         return ResponseEntity.ok("success");
     }

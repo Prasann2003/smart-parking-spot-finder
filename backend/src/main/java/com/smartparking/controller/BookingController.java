@@ -52,6 +52,8 @@ public class BookingController {
         java.time.LocalDateTime start = java.time.LocalDateTime.parse(startTime, formatter);
         java.time.LocalDateTime end = java.time.LocalDateTime.parse(endTime, formatter);
 
+        System.out.println("DEBUG: Checking availability for spot " + parkingSpotId + " from " + start + " to " + end);
+
         return ResponseEntity.ok(bookingService.getAvailableSlots(parkingSpotId, vehicleType, start, end));
     }
 

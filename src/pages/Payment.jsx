@@ -68,119 +68,116 @@ export default function Payment() {
   // Calculate Price & Check Availability
   useEffect(() => {
     if (startTime && endTime && spot && selectedVehicleType) {
-      const start = new Date(startTime)
-      const end = new Date(endTime)
-      const diffMs = end - start
-      const totalHours = diffMs / (1000 * 60 * 60)
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      const diffMs = end - start;
+      const totalHours = diffMs / (1000 * 60 * 60);
 
       // Find config for price
       let pricePerHour = 0;
       let capacity = 0;
+
       if (spot.vehicleConfigs) {
-        const config = spot.vehicleConfigs.find(c => c.vehicleType === selectedVehicleType);
+        const config = spot.vehicleConfigs.find(
+          c => c.vehicleType === selectedVehicleType
+        );
         pricePerHour = config ? Number(config.pricePerHour) : 0;
         capacity = config ? config.capacity : 0;
       } else {
-        pricePerHour = spot.pricePerHour ? Number(spot.pricePerHour) : 0;
+        pricePerHour = spot.pricePerHour
+          ? Number(spot.pricePerHour)
+          : 0;
         capacity = spot.totalCapacity || 0;
       }
 
       // Dynamic Price Calculation
       if (totalHours > 0) {
-        let finalPrice = 0;
 
-        // Validation: Check if we should apply monthly logic
+        const HOURS_IN_30_DAYS = 30 * 24;
+
+        // Round up partial hour
+        const roundedHours = Math.ceil(totalHours);
+
         const isMonthlyPlanAvailable = spot.monthlyPlan;
-        const monthlyDiscountPercent = (isMonthlyPlanAvailable && spot.monthlyDiscountPercent)
-          ? Number(spot.monthlyDiscountPercent)
-          : 0;
+        const monthlyDiscountPercent =
+          (isMonthlyPlanAvailable && spot.monthlyDiscountPercent)
+            ? Number(spot.monthlyDiscountPercent)
+            : 0;
 
-        // Validation: Check weekend surcharge
-        const weekendSurcharge = spot.weekendSurcharge ? Number(spot.weekendSurcharge) : 0;
+        const weekendSurcharge =
+          spot.weekendSurcharge
+            ? Number(spot.weekendSurcharge)
+            : 0;
 
-        // Pricing Strategy: 30-Day Blocks
-        // We calculate hour by hour to be precise with weekends inside the blocks
+        // ✅ Weekend surcharge ONLY if start date is weekend
+        const startDay = start.getDay(); // 0 = Sunday, 6 = Saturday
+        let effectivePricePerHour = pricePerHour;
 
-        let currentBlockCost = 0;
-        let hoursInCurrentBlock = 0;
-        const HOURS_IN_30_DAYS = 30 * 24; // 720 hours
-
-        // Iterate through each hour of the booking
-        let currentPointer = new Date(start);
-        // We use a loop for the number of hours. 
-        // Note: For very long duration (years), this loop might be heavy, but for parking (months), it's negligible.
-        // Math.ceil to treat partial hour as full hour if needed, but usually we calculate exact or floor. 
-        // Current logic uses exact float hours for base, but surcharge is usually per started hour.
-        // For consistency with "basePrice = hours * price", we will use the exact duration logic but apply surcharge to "weekend hours".
-
-        // To accurately apply surcharge to specific hours, we need to know how many of the requested hours fall on Sat/Sun.
-        // Simplified approach: Iterate hour by hour.
-
-        for (let i = 0; i < Math.ceil(totalHours); i++) {
-          // Check if this specific hour is a weekend
-          // currentPointer is start + i hours
-          const checkTime = new Date(start.getTime() + i * 60 * 60 * 1000);
-          const day = checkTime.getDay(); // 0 = Sunday, 6 = Saturday
-          const isWeekend = (day === 0 || day === 6);
-
-          // Base price for this hour
-          // If it's the last partial hour, we could prorate, but standard parking is usually per hour or part thereof.
-          // keeping it simple: full price for the hour. 
-          // BUT the original logic was `hours * pricePerHour` (float). 
-          // To stick to strict "Option 2", we should accumulate cost.
-
-          let hourlyCost = pricePerHour;
-          if (isWeekend) {
-            hourlyCost += weekendSurcharge;
-          }
-
-          currentBlockCost += hourlyCost;
-          hoursInCurrentBlock++;
-
-          // Check if we completed a 30-day block
-          if (hoursInCurrentBlock >= HOURS_IN_30_DAYS) {
-            // Apply discount to this block
-            if (monthlyDiscountPercent > 0) {
-              finalPrice += currentBlockCost * (1 - monthlyDiscountPercent / 100);
-            } else {
-              finalPrice += currentBlockCost;
-            }
-
-            // Reset for next block
-            currentBlockCost = 0;
-            hoursInCurrentBlock = 0;
-          }
+        if (startDay === 0 || startDay === 6) {
+          effectivePricePerHour += weekendSurcharge;
         }
 
-        // Add remaining unfinished block (no discount)
-        finalPrice += currentBlockCost;
+        let finalPrice = 0;
+
+        // ✅ Apply monthly discount only if eligible
+        if (
+          isMonthlyPlanAvailable &&
+          monthlyDiscountPercent > 0 &&
+          roundedHours >= HOURS_IN_30_DAYS
+        ) {
+          const fullMonths = Math.floor(
+            roundedHours / HOURS_IN_30_DAYS
+          );
+          const remainingHours =
+            roundedHours % HOURS_IN_30_DAYS;
+
+          const discountedMonthCost =
+            HOURS_IN_30_DAYS *
+            effectivePricePerHour *
+            (1 - monthlyDiscountPercent / 100);
+
+          finalPrice =
+            (fullMonths * discountedMonthCost) +
+            (remainingHours * effectivePricePerHour);
+
+        } else {
+          finalPrice =
+            roundedHours * effectivePricePerHour;
+        }
 
         setTotalPrice(Math.round(finalPrice));
 
-        // Check Availability
+        // Check Availability (unchanged)
         const checkAvailability = async () => {
-          setCheckingAvailability(true)
+          setCheckingAvailability(true);
           try {
-            const formattedStart = startTime.replace("T", " ") + ":00"
-            const formattedEnd = endTime.replace("T", " ") + ":00"
+            const formattedStart =
+              startTime.replace("T", " ") + ":00";
+            const formattedEnd =
+              endTime.replace("T", " ") + ":00";
 
-            const res = await api.get(`/bookings/check-availability?parkingSpotId=${spot.id}&startTime=${formattedStart}&endTime=${formattedEnd}&vehicleType=${selectedVehicleType}`)
-            setAvailableSlots(res.data)
+            const res = await api.get(
+              `/bookings/check-availability?parkingSpotId=${spot.id}&startTime=${formattedStart}&endTime=${formattedEnd}&vehicleType=${selectedVehicleType}`
+            );
+
+            setAvailableSlots(res.data);
           } catch (err) {
-            console.error("Availability check failed", err)
-            setAvailableSlots(0) // Assume 0 on error
+            console.error("Availability check failed", err);
+            setAvailableSlots(0);
           } finally {
-            setCheckingAvailability(false)
+            setCheckingAvailability(false);
           }
-        }
-        checkAvailability()
+        };
+
+        checkAvailability();
 
       } else {
-        setTotalPrice(0)
-        setAvailableSlots(null)
+        setTotalPrice(0);
+        setAvailableSlots(null);
       }
     }
-  }, [startTime, endTime, spot, selectedVehicleType])
+  }, [startTime, endTime, spot, selectedVehicleType]);
+
 
 
   if (!spot) {

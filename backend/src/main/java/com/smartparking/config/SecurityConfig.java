@@ -40,7 +40,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/api/public/**", "/actuator/**", "/api/images/**",
                                 "/uploads/**")
                         .permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/parking/**", "/api/ratings/**")
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/parking/**", "/api/ratings/**",
+                                "/api/bookings/check-availability")
                         .permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/provider/application-status", "/api/provider/add")

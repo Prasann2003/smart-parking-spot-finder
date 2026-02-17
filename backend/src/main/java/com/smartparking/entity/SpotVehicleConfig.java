@@ -2,6 +2,7 @@ package com.smartparking.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,6 +28,7 @@ public class SpotVehicleConfig {
     private Integer capacity;
 
     @Column(nullable = false)
+    @DecimalMin(value = "0.0", message = "Price cannot be negative")
     private Double pricePerHour;
 
     @ManyToOne(fetch = FetchType.LAZY)

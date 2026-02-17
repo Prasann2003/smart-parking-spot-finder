@@ -153,14 +153,18 @@ export default function AddParking() {
         if (files.surroundingImage) data.append("surroundingImage", files.surroundingImage)
 
         try {
-            await api.post("/provider/add", data, {
+            await api.post("/parking/add", data, {
                 headers: { "Content-Type": "multipart/form-data" }
             })
             toast.success("Application Submitted Successfully!")
             navigate("/dashboard")
         } catch (err) {
             console.error(err)
-            toast.error("Failed to submit application.")
+            const message = err.response?.data?.message || "Failed to submit application.";
+            const validationErrors = err.response?.data?.errors
+                ? "\n" + err.response.data.errors.join("\n")
+                : "";
+            toast.error(message + validationErrors, { duration: 5000, style: { minWidth: '300px' } });
         }
     }
 

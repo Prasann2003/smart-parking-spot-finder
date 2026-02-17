@@ -4,7 +4,6 @@ import com.smartparking.dto.BookingDTO;
 import com.smartparking.entity.Booking;
 import com.smartparking.entity.ParkingSpot;
 import com.smartparking.entity.User;
-import com.smartparking.exception.NotFoundException;
 import com.smartparking.repository.BookingRepository;
 import com.smartparking.repository.ParkingSpotRepository;
 import com.smartparking.repository.PaymentRepository;
@@ -274,6 +273,65 @@ public class BookingService {
                 bookingRepository.save(booking);
         }
 
+        // private double calculateDynamicPrice(
+        // java.time.LocalDateTime start,
+        // java.time.LocalDateTime end,
+        // double pricePerHour,
+        // Double weekendSurcharge,
+        // Double monthlyDiscountPercent,
+        // boolean isMonthlyPlan) {
+        //
+        // long totalMinutes = Duration.between(start, end).toMinutes();
+        // long totalHours = totalMinutes / 60;
+        // if (totalMinutes % 60 > 0)
+        // totalHours++;
+        //
+        // if (totalHours < 1)
+        // totalHours = 1;
+        //
+        // double finalPrice = 0;
+        // double currentBlockCost = 0;
+        // int hoursInCurrentBlock = 0;
+        // long HOURS_IN_30_DAYS = 30 * 24; // 720 hours
+        //
+        // double actualWeekendSurcharge = (weekendSurcharge != null) ? weekendSurcharge
+        // : 0.0;
+        // boolean canApplyDiscount = isMonthlyPlan
+        // && (monthlyDiscountPercent != null && monthlyDiscountPercent > 0);
+        //
+        // // We use a loop for the number of hours.
+        // java.time.LocalDateTime currentPointer = start;
+        //
+        // for (int i = 0; i < totalHours; i++) {
+        // java.time.DayOfWeek day = currentPointer.getDayOfWeek();
+        // boolean isWeekend = (day == java.time.DayOfWeek.SATURDAY || day ==
+        // java.time.DayOfWeek.SUNDAY);
+        //
+        // double hourlyCost = pricePerHour;
+        // if (isWeekend) {
+        // hourlyCost += actualWeekendSurcharge;
+        // }
+        //
+        // currentBlockCost += hourlyCost;
+        // hoursInCurrentBlock++;
+        //
+        // if (hoursInCurrentBlock >= HOURS_IN_30_DAYS) {
+        // if (canApplyDiscount) {
+        // finalPrice += currentBlockCost * (1 - monthlyDiscountPercent / 100.0);
+        // } else {
+        // finalPrice += currentBlockCost;
+        // }
+        // currentBlockCost = 0;
+        // hoursInCurrentBlock = 0;
+        // }
+        //
+        // currentPointer = currentPointer.plusHours(1);
+        // }
+        //
+        // finalPrice += currentBlockCost;
+        //
+        // return Math.round(finalPrice);
+        // }
         private double calculateDynamicPrice(
                         java.time.LocalDateTime start,
                         java.time.LocalDateTime end,
@@ -290,45 +348,42 @@ public class BookingService {
                 if (totalHours < 1)
                         totalHours = 1;
 
-                double finalPrice = 0;
-                double currentBlockCost = 0;
-                int hoursInCurrentBlock = 0;
                 long HOURS_IN_30_DAYS = 30 * 24; // 720 hours
 
-                double actualWeekendSurcharge = (weekendSurcharge != null) ? weekendSurcharge : 0.0;
-                boolean canApplyDiscount = isMonthlyPlan
-                                && (monthlyDiscountPercent != null && monthlyDiscountPercent > 0);
+                // ✅ Weekend surcharge ONLY if start date is weekend
+                java.time.DayOfWeek startDay = start.getDayOfWeek();
+                boolean isWeekendStart = (startDay == java.time.DayOfWeek.SATURDAY
+                                || startDay == java.time.DayOfWeek.SUNDAY);
 
-                // We use a loop for the number of hours.
-                java.time.LocalDateTime currentPointer = start;
+                double effectivePricePerHour = pricePerHour;
 
-                for (int i = 0; i < totalHours; i++) {
-                        java.time.DayOfWeek day = currentPointer.getDayOfWeek();
-                        boolean isWeekend = (day == java.time.DayOfWeek.SATURDAY || day == java.time.DayOfWeek.SUNDAY);
-
-                        double hourlyCost = pricePerHour;
-                        if (isWeekend) {
-                                hourlyCost += actualWeekendSurcharge;
-                        }
-
-                        currentBlockCost += hourlyCost;
-                        hoursInCurrentBlock++;
-
-                        if (hoursInCurrentBlock >= HOURS_IN_30_DAYS) {
-                                if (canApplyDiscount) {
-                                        finalPrice += currentBlockCost * (1 - monthlyDiscountPercent / 100.0);
-                                } else {
-                                        finalPrice += currentBlockCost;
-                                }
-                                currentBlockCost = 0;
-                                hoursInCurrentBlock = 0;
-                        }
-
-                        currentPointer = currentPointer.plusHours(1);
+                if (isWeekendStart && weekendSurcharge != null) {
+                        effectivePricePerHour += weekendSurcharge;
                 }
 
-                finalPrice += currentBlockCost;
+                double finalPrice = 0;
+
+                boolean canApplyDiscount = isMonthlyPlan
+                                && monthlyDiscountPercent != null
+                                && monthlyDiscountPercent > 0
+                                && totalHours >= HOURS_IN_30_DAYS;
+
+                if (canApplyDiscount) {
+
+                        long fullMonths = totalHours / HOURS_IN_30_DAYS;
+                        long remainingHours = totalHours % HOURS_IN_30_DAYS;
+
+                        double oneMonthCost = HOURS_IN_30_DAYS * effectivePricePerHour;
+                        oneMonthCost *= (1 - monthlyDiscountPercent / 100.0);
+
+                        finalPrice = (fullMonths * oneMonthCost)
+                                        + (remainingHours * effectivePricePerHour);
+
+                } else {
+                        finalPrice = totalHours * effectivePricePerHour;
+                }
 
                 return Math.round(finalPrice);
         }
+
 }
