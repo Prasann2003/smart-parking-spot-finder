@@ -20,11 +20,11 @@ export default function ParkingMap({ userLocation, parkingSpots }) {
   if (!userLocation) return null
 
   return (
-    <div className="rounded-3xl overflow-hidden shadow-2xl border">
+    <div className="h-full w-full">
       <MapContainer
         center={[userLocation.lat, userLocation.lng]}
         zoom={12}
-        style={{ height: "500px", width: "100%" }}
+        style={{ height: "100%", width: "100%" }}
       >
         <TileLayer
           attribution='© OpenStreetMap contributors'

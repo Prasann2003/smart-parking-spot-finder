@@ -255,7 +255,7 @@ function DriverDashboard({ user, navigate }) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="max-w-7xl mx-auto pt-24 px-4 sm:px-6 space-y-10 pb-12"
+        className="w-full pt-24 pb-12 px-6 lg:px-12 space-y-8"
       >
         {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
@@ -353,8 +353,9 @@ function DriverDashboard({ user, navigate }) {
           />
         </div>
 
+
         {/* UNIFIED SEARCH SECTION */}
-        <div id="search-section" className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-3xl shadow-xl space-y-6 border border-gray-100 dark:border-gray-700">
+        <div id="search-section" className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl space-y-6 border border-gray-100 dark:border-gray-700">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-100 dark:border-gray-700 pb-4">
             <div>
               <h2 className="text-2xl font-bold dark:text-white flex items-center gap-3">
@@ -371,7 +372,7 @@ function DriverDashboard({ user, navigate }) {
             </button>
           </div>
 
-          <div className="grid md:grid-cols-12 gap-4">
+          <div className="grid md:grid-cols-12 gap-6">
             <div className="md:col-span-5">
               <label className="block text-xs font-semibold text-gray-500 uppercase mb-1 ml-1">State</label>
               <select
@@ -420,7 +421,7 @@ function DriverDashboard({ user, navigate }) {
           </div>
         </div>
 
-        {/* RESULTS */}
+        {/* RESULTS - REDESIGNED SPLIT LAYOUT */}
         {showResults && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -444,87 +445,91 @@ function DriverDashboard({ user, navigate }) {
                 <button onClick={handleFindNearMe} className="mt-4 text-indigo-600 hover:underline">Try searching nearby?</button>
               </div>
             ) : (
-              <>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {parkingSpots.map((spot) => (
-                    <motion.div
-                      key={spot._id || spot.id}
-                      whileHover={{ y: -5 }}
-                      className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col h-full cursor-pointer"
-                      onClick={() => navigate(`/spot/${spot._id || spot.id}`)}
-                    >
-                      <div className="h-48 w-full overflow-hidden relative group">
-                        <img
-                          src={spot.imageUrls?.[0] ? `http://localhost:8080${spot.imageUrls[0]}` : "https://via.placeholder.com/400x300?text=No+Image"}
-                          alt={spot.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="absolute top-3 right-3 flex gap-2">
-                          <button
-                            onClick={(e) => handleToggleFavorite(e, spot._id || spot.id)}
-                            className="bg-white/90 backdrop-blur p-2 rounded-full shadow-sm hover:scale-110 transition z-10"
-                          >
-                            {savedSpotIds.includes(spot._id || spot.id) ? (
-                              <FaHeart className="text-red-500" />
-                            ) : (
-                              <FaRegHeart className="text-gray-400 hover:text-red-500" />
-                            )}
-                          </button>
-                          <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-sm flex items-center gap-1 h-8">
-                            <FaStar className="text-yellow-500" /> {spot.averageRating ? spot.averageRating : "New"}
-                          </div>
-                        </div>
-                      </div>
+              <div className={`grid gap-8 items-start relative ${userLocation ? 'lg:grid-cols-[70%_30%]' : 'grid-cols-1'}`}>
 
-                      <div className="p-5 flex-1 flex flex-col">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold dark:text-white line-clamp-1" title={spot.name}>
-                            {spot.name}
-                          </h3>
-                          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 line-clamp-2" title={spot.address}>
-                            <FaMapMarkerAlt className="inline-block mr-1 text-gray-400" /> {spot.address}
-                          </p>
-
-                          <div className="mt-4 grid grid-cols-2 gap-3">
-                            <div className="bg-indigo-50 dark:bg-gray-700 p-2 rounded-lg text-center">
-                              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Starts From</p>
-                              <p className="text-indigo-700 dark:text-indigo-300 font-bold text-sm">
-                                {spot.vehicleConfigs && spot.vehicleConfigs.length > 0
-                                  ? `₹${Math.min(...spot.vehicleConfigs.map(c => c.pricePerHour))}/hr`
-                                  : `₹${spot.pricePerHour || 0}/hr`
-                                }
-                              </p>
-                            </div>
-                            <div className="bg-emerald-50 dark:bg-gray-700 p-2 rounded-lg text-center">
-                              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Total Spots</p>
-                              <p className="text-emerald-700 dark:text-emerald-300 font-bold text-sm">
-                                {spot.totalSlots || spot.totalCapacity}
-                              </p>
+                {/* LEFT COLUMN: RESULTS */}
+                <div className="w-full">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 min-[1400px]:grid-cols-3 gap-6">
+                    {parkingSpots.map((spot) => (
+                      <motion.div
+                        key={spot._id || spot.id}
+                        whileHover={{ y: -5 }}
+                        className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col h-full cursor-pointer"
+                        onClick={() => navigate(`/spot/${spot._id || spot.id}`)}
+                      >
+                        <div className="h-48 w-full overflow-hidden relative group">
+                          <img
+                            src={spot.imageUrls?.[0] ? `http://localhost:8080${spot.imageUrls[0]}` : "https://via.placeholder.com/400x300?text=No+Image"}
+                            alt={spot.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />
+                          <div className="absolute top-3 right-3 flex gap-2">
+                            <button
+                              onClick={(e) => handleToggleFavorite(e, spot._id || spot.id)}
+                              className="bg-white/90 backdrop-blur p-2 rounded-full shadow-sm hover:scale-110 transition z-10"
+                            >
+                              {savedSpotIds.includes(spot._id || spot.id) ? (
+                                <FaHeart className="text-red-500" />
+                              ) : (
+                                <FaRegHeart className="text-gray-400 hover:text-red-500" />
+                              )}
+                            </button>
+                            <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-sm flex items-center gap-1 h-8">
+                              <FaStar className="text-yellow-500" /> {spot.averageRating ? spot.averageRating : "New"}
                             </div>
                           </div>
                         </div>
 
-                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center gap-2 text-xs text-gray-500">
-                          <div className="flex gap-2 text-lg">
-                            {spot.cctv && <span title="CCTV" className="text-gray-400 hover:text-indigo-500 transition"><FaVideo /></span>}
-                            {spot.evCharging && <span title="EV Charging" className="text-gray-400 hover:text-green-500 transition"><FaBolt /></span>}
-                            {spot.covered && <span title="Covered" className="text-gray-400 hover:text-blue-500 transition"><FaUmbrella /></span>}
+                        <div className="p-5 flex-1 flex flex-col">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-bold dark:text-white line-clamp-1" title={spot.name}>
+                              {spot.name}
+                            </h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 line-clamp-2" title={spot.address}>
+                              <FaMapMarkerAlt className="inline-block mr-1 text-gray-400" /> {spot.address}
+                            </p>
+
+                            <div className="mt-4 grid grid-cols-2 gap-3">
+                              <div className="bg-indigo-50 dark:bg-gray-700 p-2 rounded-lg text-center">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Starts From</p>
+                                <p className="text-indigo-700 dark:text-indigo-300 font-bold text-sm">
+                                  {spot.vehicleConfigs && spot.vehicleConfigs.length > 0
+                                    ? `₹${Math.min(...spot.vehicleConfigs.map(c => c.pricePerHour))}/hr`
+                                    : `₹${spot.pricePerHour || 0}/hr`
+                                  }
+                                </p>
+                              </div>
+                              <div className="bg-emerald-50 dark:bg-gray-700 p-2 rounded-lg text-center">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Total Spots</p>
+                                <p className="text-emerald-700 dark:text-emerald-300 font-bold text-sm">
+                                  {spot.totalSlots || spot.totalCapacity}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                          <button
-                            className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition font-medium text-sm"
-                          >
-                            View Details
-                          </button>
+
+                          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center gap-2 text-xs text-gray-500">
+                            <div className="flex gap-2 text-lg">
+                              {spot.cctv && <span title="CCTV" className="text-gray-400 hover:text-indigo-500 transition"><FaVideo /></span>}
+                              {spot.evCharging && <span title="EV Charging" className="text-gray-400 hover:text-green-500 transition"><FaBolt /></span>}
+                              {spot.covered && <span title="Covered" className="text-gray-400 hover:text-blue-500 transition"><FaUmbrella /></span>}
+                            </div>
+                            <button
+                              className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition font-medium text-sm"
+                            >
+                              View Details
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
 
+                {/* RIGHT COLUMN: MAP (Sticky) */}
                 {userLocation && (
-                  <div className="mt-12 bg-white p-4 rounded-3xl shadow-xl">
-                    <h2 className="text-xl font-bold mb-4 px-2">Map View</h2>
-                    <div className="rounded-2xl overflow-hidden border border-gray-200">
+                  <div className="w-full lg:sticky lg:top-24 h-[400px] lg:h-[calc(100vh-120px)] bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div className="h-full w-full">
                       <ParkingMap
                         userLocation={userLocation}
                         parkingSpots={parkingSpots}
@@ -532,7 +537,7 @@ function DriverDashboard({ user, navigate }) {
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </div>
         )}
@@ -560,7 +565,7 @@ function StatCard({ label, value, color, icon, onClick, className }) {
       </div>
 
       <div className="relative z-10">
-        <p className="text-sm font-medium opacity-90 uppercase tracking-wide">{label}</p>
+        <p className="text-sm font-bold opacity-90 uppercase tracking-wide">{label}</p>
         <h3 className="text-3xl font-bold mt-2 tracking-tight">{value}</h3>
       </div>
     </motion.div>
