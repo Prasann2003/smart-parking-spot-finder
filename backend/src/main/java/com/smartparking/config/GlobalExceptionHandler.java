@@ -45,4 +45,12 @@ public class GlobalExceptionHandler {
         error.put("error", ex.getMessage());
         return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
+
+    @ExceptionHandler(org.springframework.dao.PessimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, String>> handlePessimisticLockingFailureException(
+            org.springframework.dao.PessimisticLockingFailureException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "The parking spot is currently being booked by someone else. Please try again.");
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
 }

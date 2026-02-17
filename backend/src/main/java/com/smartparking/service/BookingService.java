@@ -33,7 +33,8 @@ public class BookingService {
                 User user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-                ParkingSpot parkingSpot = parkingSpotRepository.findById(dto.getParkingSpotId())
+                // Use Pessimistic Lock to prevent double booking
+                ParkingSpot parkingSpot = parkingSpotRepository.findByIdWithLock(dto.getParkingSpotId())
                                 .orElseThrow(() -> new RuntimeException("Parking Spot not found"));
 
                 // FIND VEHICLE CONFIG
