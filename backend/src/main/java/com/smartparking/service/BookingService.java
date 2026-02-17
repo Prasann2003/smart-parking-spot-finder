@@ -138,6 +138,30 @@ public class BookingService {
                 return bookingRepository.findAll(spec, pageable).map(this::mapToDTO);
         }
 
+        public org.springframework.data.domain.Page<BookingDTO> getProviderBookings(
+                        org.springframework.data.domain.Pageable pageable,
+                        Long providerId,
+                        Long spotId,
+                        String status) {
+
+                org.springframework.data.jpa.domain.Specification<Booking> spec = (root, query, cb) -> {
+                        jakarta.persistence.criteria.Predicate p = cb.equal(
+                                        root.get("parkingSpot").get("provider").get("id"), providerId);
+
+                        if (spotId != null) {
+                                p = cb.and(p, cb.equal(root.get("parkingSpot").get("id"), spotId));
+                        }
+
+                        if (status != null && !status.isEmpty() && !status.equals("ALL")) {
+                                p = cb.and(p, cb.equal(root.get("status"), Booking.BookingStatus.valueOf(status)));
+                        }
+
+                        return p;
+                };
+
+                return bookingRepository.findAll(spec, pageable).map(this::mapToDTO);
+        }
+
         public List<BookingDTO> getUserBookings() {
                 String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
                                 .getUsername();

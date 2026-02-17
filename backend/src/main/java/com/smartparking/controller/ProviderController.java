@@ -76,13 +76,29 @@ public class ProviderController {
     public ResponseEntity<List<BookingDTO>> getMySpotBookings(@RequestParam String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        // BookingService needs update to handle Provider? Or standard User ID is
-        // enough?
-        // If BookingService searches by Spot -> Owner, it might fail if Spot.owner is
-        // removed.
-        // I will assume for now BookingService needs a fix, but let's look at
-        // BookingService first.
         return ResponseEntity.ok(bookingService.getBookingsByOwner(user.getId()));
+    }
+
+    @GetMapping("/bookings-paginated")
+    public ResponseEntity<org.springframework.data.domain.Page<BookingDTO>> getMySpotBookingsPaginated(
+            @RequestParam String email,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long spotId,
+            @RequestParam(required = false) String status) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Optional<Provider> provider = providerRepository.findByUser(user);
+        if (provider.isEmpty()) {
+            return ResponseEntity.ok(org.springframework.data.domain.Page.empty());
+        }
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                page, size, org.springframework.data.domain.Sort.by("startTime").descending());
+
+        return ResponseEntity.ok(bookingService.getProviderBookings(pageable, provider.get().getId(), spotId, status));
     }
 
     @GetMapping("/dashboard")

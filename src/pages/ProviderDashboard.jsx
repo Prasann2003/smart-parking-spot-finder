@@ -229,7 +229,7 @@ export default function ProviderDashboard() {
             </div>
           ) : (
             <div className="space-y-4">
-              {recentBookings.map((booking) => (
+              {recentBookings.slice(0, 5).map((booking) => (
                 <div
                   key={booking.id}
                   className="bg-gray-50 hover:bg-white p-5 rounded-2xl transition-all hover:shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-gray-200"
@@ -260,6 +260,13 @@ export default function ProviderDashboard() {
                   </span>
                 </div>
               ))}
+
+              <button
+                onClick={() => navigate("/provider/bookings")}
+                className="w-full py-3 mt-4 bg-indigo-50 text-indigo-600 font-semibold rounded-xl hover:bg-indigo-100 transition flex items-center justify-center gap-2"
+              >
+                View All Bookings <FaClipboardList />
+              </button>
             </div>
           )}
         </div>
