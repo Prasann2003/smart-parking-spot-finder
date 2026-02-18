@@ -20,8 +20,8 @@ export default function AdminLogin() {
         toast.success("Welcome Admin!")
         navigate("/dashboard")
       } else {
-        toast.error("Access Denied: Not an Admin")
-        // Optional: Logout if not admin
+        toast.error("Only Admin can login using this")
+        // Logout immediately if not admin
         localStorage.removeItem("token")
         localStorage.removeItem("currentUser")
       }

@@ -26,63 +26,91 @@ public class AdminController {
     private final ProviderRepository providerRepository;
     private final ParkingProviderApplicationRepository parkingProviderApplicationRepository;
 
+    @GetMapping("/provider-applications-paginated")
+    public ResponseEntity<org.springframework.data.domain.Page<Map<String, Object>>> getApplicationsPaginated(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                org.springframework.data.domain.Sort.by("id").descending());
+        org.springframework.data.domain.Page<ProviderApplication> appPage;
+
+        if (status != null && !status.isEmpty() && !status.equalsIgnoreCase("ALL")) {
+            try {
+                ProviderApplication.ApplicationStatus appStatus = ProviderApplication.ApplicationStatus
+                        .valueOf(status.toUpperCase());
+                appPage = parkingProviderApplicationRepository.findByStatus(appStatus, pageable);
+            } catch (IllegalArgumentException e) {
+                // Fallback to all if invalid status
+                appPage = parkingProviderApplicationRepository.findAll(pageable);
+            }
+        } else {
+            appPage = parkingProviderApplicationRepository.findAll(pageable);
+        }
+
+        org.springframework.data.domain.Page<Map<String, Object>> responsePage = appPage
+                .map(this::mapApplicationToResponse);
+        return ResponseEntity.ok(responsePage);
+    }
+
+    private Map<String, Object> mapApplicationToResponse(ProviderApplication app) {
+        Map<String, Object> map = new HashMap<>();
+
+        map.put("id", app.getId());
+        map.put("status", app.getStatus());
+        map.put("name", app.getName());
+        map.put("submissionDate", "N/A"); // or app.getCreatedAt() later
+
+        // user block (mapped from application fields)
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("id", app.getOwnerId());
+        userMap.put("email", null); // not stored in application
+        userMap.put("phoneNumber", app.getPhoneNumber());
+        userMap.put("name", app.getName());
+
+        map.put("user", userMap);
+
+        // parkingSpot block (mapped from application)
+        Map<String, Object> spotMap = new HashMap<>();
+        spotMap.put("name", app.getName());
+        spotMap.put("address", app.getAddress());
+        spotMap.put("totalCapacity", app.getTotalCapacity());
+        spotMap.put("pricePerHour", app.getPricePerHour());
+        spotMap.put("vehicleConfigs", app.getVehicleConfigs());
+        spotMap.put("parkingType", app.getParkingType());
+
+        // Sanitize image URLs for frontend items
+        if (app.getImageUrls() != null) {
+            List<String> sanitizedImages = app.getImageUrls().stream()
+                    .map(url -> {
+                        if (url.startsWith("D:\\Infosys\\upload")) {
+                            String relative = url.substring("D:\\Infosys\\upload".length());
+                            return "/uploads" + relative.replace("\\", "/");
+                        } else if (url.startsWith("/api/images")) {
+                            return url;
+                        } else if (!url.startsWith("/uploads") && !url.startsWith("http")) {
+                            return "/uploads/" + url;
+                        }
+                        return url;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+            spotMap.put("imageUrls", sanitizedImages);
+        } else {
+            spotMap.put("imageUrls", java.util.Collections.emptyList());
+        }
+
+        map.put("parkingSpot", spotMap);
+
+        return map;
+    }
+
     @GetMapping("/provider-applications")
     public ResponseEntity<List<Map<String, Object>>> getPendingApplications() {
         List<ProviderApplication> applications = parkingProviderApplicationRepository
                 .findByStatus(ProviderApplication.ApplicationStatus.PENDING);
 
-        List<Map<String, Object>> response = applications.stream().map(app -> {
-
-            Map<String, Object> map = new HashMap<>();
-
-            map.put("id", app.getId());
-            map.put("status", app.getStatus());
-            map.put("name", app.getName());
-            map.put("submissionDate", "N/A"); // or app.getCreatedAt() later
-
-            // user block (mapped from application fields)
-            Map<String, Object> userMap = new HashMap<>();
-            userMap.put("id", app.getOwnerId());
-            userMap.put("email", null); // not stored in application
-            userMap.put("phoneNumber", app.getPhoneNumber());
-            userMap.put("name", app.getName());
-
-            map.put("user", userMap);
-
-            // parkingSpot block (mapped from application)
-            Map<String, Object> spotMap = new HashMap<>();
-            spotMap.put("name", app.getName());
-            spotMap.put("address", app.getAddress());
-            spotMap.put("totalCapacity", app.getTotalCapacity());
-            spotMap.put("pricePerHour", app.getPricePerHour());
-            spotMap.put("vehicleConfigs", app.getVehicleConfigs());
-            spotMap.put("parkingType", app.getParkingType());
-
-            // Sanitize image URLs for frontend items
-            if (app.getImageUrls() != null) {
-                List<String> sanitizedImages = app.getImageUrls().stream()
-                        .map(url -> {
-                            if (url.startsWith("D:\\Infosys\\upload")) {
-                                String relative = url.substring("D:\\Infosys\\upload".length());
-                                return "/uploads" + relative.replace("\\", "/");
-                            } else if (url.startsWith("/api/images")) {
-                                return url;
-                            } else if (!url.startsWith("/uploads") && !url.startsWith("http")) {
-                                return "/uploads/" + url;
-                            }
-                            return url;
-                        })
-                        .collect(java.util.stream.Collectors.toList());
-                spotMap.put("imageUrls", sanitizedImages);
-            } else {
-                spotMap.put("imageUrls", java.util.Collections.emptyList());
-            }
-
-            map.put("parkingSpot", spotMap);
-
-            return map;
-
-        }).toList();
+        List<Map<String, Object>> response = applications.stream().map(this::mapApplicationToResponse).toList();
 
         return ResponseEntity.ok(response);
 

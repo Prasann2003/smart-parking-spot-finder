@@ -74,7 +74,7 @@ export default function Home() {
                 onClick={() => navigate("/auth")}
                 className="px-8 py-4 border border-white/30 hover:bg-white/10 rounded-xl font-semibold transition flex items-center gap-2"
               >
-                <FaSignInAlt /> User Login
+                <FaSignInAlt /> Login
               </button>
             </div>
 

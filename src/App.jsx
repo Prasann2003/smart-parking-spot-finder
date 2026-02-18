@@ -12,6 +12,7 @@ import EditParking from "./pages/EditParking"
 import ForgotPassword from "./pages/ForgotPassword"
 import ProviderDashboard from "./pages/ProviderDashboard"
 import ProviderBookings from "./pages/ProviderBookings"
+import ProviderApplications from "./pages/ProviderApplications"
 
 import Profile from "./pages/Profile"
 import MyBookings from "./pages/MyBookings"
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/provider/dashboard" element={<ProviderDashboard />} />
         <Route path="/provider/bookings" element={<ProviderBookings />} />
+        <Route path="/admin/applications" element={<ProviderApplications />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/add-parking" element={<AddParking />} />
         <Route path="/edit-parking/:id" element={<EditParking />} />
