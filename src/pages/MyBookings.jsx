@@ -152,8 +152,8 @@ export default function MyBookings() {
               key={f.value}
               onClick={() => { setFilterStatus(f.value); setPage(0); }}
               className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${filterStatus === f.value
-                  ? "bg-indigo-600 text-white shadow-md transform scale-105"
-                  : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                ? "bg-indigo-600 text-white shadow-md transform scale-105"
+                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
             >
               {f.label}
@@ -249,8 +249,8 @@ export default function MyBookings() {
                     {/* ACTIONS */}
                     <div className="flex flex-col sm:flex-row lg:flex-col justify-center items-stretch gap-3 min-w-[160px] lg:border-l lg:border-gray-100 dark:border-gray-700 lg:pl-8">
 
-                      {/* Only show Rate for COMPLETED bookings */}
-                      {booking.status === "COMPLETED" && !booking.isRated && (
+                      {/* Only show Rate for COMPLETED bookings where spot still exists */}
+                      {booking.status === "COMPLETED" && !booking.isRated && booking.parkingSpotId && (
                         <button
                           onClick={() => openRatingModal(bookingId)}
                           className="px-5 py-3 rounded-xl bg-yellow-50 hover:bg-yellow-100 text-yellow-700 font-semibold transition text-sm text-center flex items-center justify-center gap-2"

@@ -109,6 +109,8 @@ public class ParkingSpotService {
         spot.setPincode(dto.getPincode());
         spot.setGoogleMapsLink(dto.getGoogleMapsLink());
         // Latitude and Longitude set above
+        spot.setLatitude(dto.getLatitude());
+        spot.setLongitude(dto.getLongitude());
 
         // Details
         // spot.setTotalCapacity(dto.getTotalCapacity()); // Calculated

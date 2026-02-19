@@ -18,4 +18,6 @@ public interface ParkingProviderApplicationRepository extends JpaRepository<Prov
 
     org.springframework.data.domain.Page<ProviderApplication> findByStatus(ProviderApplication.ApplicationStatus status,
             org.springframework.data.domain.Pageable pageable);
+
+    void deleteByUserId(Long userId);
 }

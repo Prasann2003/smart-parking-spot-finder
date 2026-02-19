@@ -8,18 +8,11 @@ import { toast } from "react-hot-toast"
 import {
   FaUserShield,
   FaPalette,
-  FaBell,
   FaCar,
   FaExclamationTriangle,
   FaCog,
   FaLock,
-  FaSignOutAlt,
   FaMoon,
-  FaPaintBrush,
-  FaEnvelope,
-  FaSms,
-  FaMobileAlt,
-  FaDownload,
   FaTrashAlt
 } from "react-icons/fa"
 
@@ -29,10 +22,6 @@ export default function Settings() {
   const [showPasswordModal, setShowPasswordModal] = useState(false)
 
   const [settings, setSettings] = useState({
-    emailNotif: true,
-    smsNotif: false,
-    pushNotif: true,
-    autoBook: false,
     vehicleType: "CAR",
     accentColor: "Indigo",
   })
@@ -71,9 +60,7 @@ export default function Settings() {
     }
   }
 
-  const handleToggle = (key) => {
-    setSettings({ ...settings, [key]: !settings[key] })
-  }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
@@ -105,12 +92,6 @@ export default function Settings() {
             </button>
           </SettingRow>
 
-          <SettingRow label={<span className="flex items-center gap-3"><FaSignOutAlt className="text-gray-400" /> Auto Logout After Inactivity</span>}>
-            <Toggle
-              enabled={settings.autoLogout}
-              onClick={() => handleToggle("autoLogout")}
-            />
-          </SettingRow>
         </Section>
 
         {/* APPEARANCE */}
@@ -121,51 +102,9 @@ export default function Settings() {
               onClick={toggleTheme}
             />
           </SettingRow>
-
-          <SettingRow label={<span className="flex items-center gap-3"><FaPaintBrush className="text-gray-400" /> Accent Color</span>}>
-            <div className="relative">
-              <select
-                value={settings.accentColor}
-                onChange={(e) =>
-                  setSettings({ ...settings, accentColor: e.target.value })
-                }
-                className="pl-4 pr-10 py-2 rounded-lg border border-gray-300 bg-white text-gray-800 focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 appearance-none cursor-pointer"
-              >
-                <option>Indigo</option>
-                <option>Emerald</option>
-                <option>Purple</option>
-                <option>Pink</option>
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
-              </div>
-            </div>
-          </SettingRow>
         </Section>
 
-        {/* NOTIFICATIONS */}
-        <Section title="Notifications" icon={<FaBell className="text-yellow-500" />}>
-          <SettingRow label={<span className="flex items-center gap-3"><FaEnvelope className="text-gray-400" /> Email Notifications</span>}>
-            <Toggle
-              enabled={settings.emailNotif}
-              onClick={() => handleToggle("emailNotif")}
-            />
-          </SettingRow>
 
-          <SettingRow label={<span className="flex items-center gap-3"><FaSms className="text-gray-400" /> SMS Alerts</span>}>
-            <Toggle
-              enabled={settings.smsNotif}
-              onClick={() => handleToggle("smsNotif")}
-            />
-          </SettingRow>
-
-          <SettingRow label={<span className="flex items-center gap-3"><FaMobileAlt className="text-gray-400" /> Push Notifications</span>}>
-            <Toggle
-              enabled={settings.pushNotif}
-              onClick={() => handleToggle("pushNotif")}
-            />
-          </SettingRow>
-        </Section>
 
         {/* PARKING */}
         {/* PARKING PREFERENCES (USER ONLY) */}
@@ -189,24 +128,27 @@ export default function Settings() {
                 </div>
               </div>
             </SettingRow>
-
-            <SettingRow label={<span className="flex items-center gap-3"><FaCar className="text-gray-400" /> Auto-book Nearest Parking</span>}>
-              <Toggle
-                enabled={settings.autoBook}
-                onClick={() => handleToggle("autoBook")}
-              />
-            </SettingRow>
           </Section>
         )}
 
         {/* DANGER */}
         <Section title="Danger Zone" icon={<FaExclamationTriangle className="text-red-500" />}>
-          <SettingRow label={<span className="flex items-center gap-3"><FaDownload className="text-gray-400" /> Download My Data</span>}>
-            <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition">Download</button>
-          </SettingRow>
-
           <SettingRow label={<span className="flex items-center gap-3"><FaTrashAlt className="text-red-400" /> Delete Account</span>}>
-            <button className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg transition-colors font-medium">
+            <button
+              onClick={() => {
+                if (window.confirm("Are you sure? This will delete all your data, cancel active bookings, and cannot be undone.")) {
+                  api.delete("/users/profile")
+                    .then(() => {
+                      toast.success("Account deleted successfully");
+                      localStorage.clear();
+                      window.location.href = "/";
+                    })
+                    .catch(err => {
+                      toast.error(err.response?.data?.message || "Failed to delete account");
+                    });
+                }
+              }}
+              className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-4 py-2 rounded-lg transition-colors font-medium">
               Delete Account
             </button>
           </SettingRow>
@@ -354,3 +296,5 @@ function Toggle({ enabled, onClick }) {
     </div>
   )
 }
+
+

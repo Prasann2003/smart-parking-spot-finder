@@ -19,4 +19,8 @@ public interface SavedSpotRepository extends JpaRepository<SavedSpot, Long> {
     long countByUser(User user);
 
     Optional<SavedSpot> findByUserAndParkingSpot(User user, ParkingSpot parkingSpot);
+
+    void deleteByUserId(Long userId);
+
+    void deleteByParkingSpotId(Long parkingSpotId);
 }

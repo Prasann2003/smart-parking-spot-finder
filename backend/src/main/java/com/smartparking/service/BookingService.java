@@ -26,6 +26,7 @@ public class BookingService {
         private final ParkingSpotRepository parkingSpotRepository;
         private final UserRepository userRepository;
         private final PaymentRepository paymentRepository;
+        private final com.smartparking.repository.NotificationRepository notificationRepository;
 
         public BookingDTO createBooking(BookingDTO dto) {
                 String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
@@ -409,6 +410,64 @@ public class BookingService {
                 }
 
                 return Math.round(finalPrice);
+        }
+
+        public void cancelAndUnlinkUserBookings(Long userId) {
+                List<Booking> userBookings = bookingRepository.findByUserId(userId);
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+                for (Booking booking : userBookings) {
+                        // If booking is active/upcoming, cancel and refund
+                        if (booking.getStatus() == Booking.BookingStatus.CONFIRMED
+                                        && booking.getEndTime().isAfter(now)) {
+                                booking.setStatus(Booking.BookingStatus.CANCELLED);
+                                if (booking.getPayment() != null) {
+                                        booking.getPayment()
+                                                        .setStatus(com.smartparking.entity.Payment.PaymentStatus.REFUNDED);
+                                }
+                        }
+                        // Unlink User
+                        booking.setUser(null);
+                        bookingRepository.save(booking);
+                }
+        }
+
+        public void cancelAndUnlinkSpotBookings(Long spotId) {
+                List<Booking> spotBookings = bookingRepository.findByParkingSpotId(spotId);
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+                for (Booking booking : spotBookings) {
+                        // If booking is active/upcoming, cancel and refund
+                        if (booking.getStatus() == Booking.BookingStatus.CONFIRMED
+                                        && booking.getEndTime().isAfter(now)) {
+                                booking.setStatus(Booking.BookingStatus.CANCELLED);
+                                if (booking.getPayment() != null) {
+                                        booking.getPayment()
+                                                        .setStatus(com.smartparking.entity.Payment.PaymentStatus.REFUNDED);
+                                }
+
+                                // Notify User
+                                if (booking.getUser() != null) {
+                                        com.smartparking.entity.Notification notification = com.smartparking.entity.Notification
+                                                        .builder()
+                                                        .user(booking.getUser())
+                                                        .title("Booking Cancelled")
+                                                        .message("Your booking at "
+                                                                        + (booking.getParkingSpot() != null
+                                                                                        ? booking.getParkingSpot()
+                                                                                                        .getName()
+                                                                                        : "Unknown Spot")
+                                                                        + " has been cancelled because the provider is no longer available. A refund has been initiated.")
+                                                        .type("danger")
+                                                        .isRead(false)
+                                                        .build();
+                                        notificationRepository.save(notification);
+                                }
+                        }
+                        // Unlink Spot
+                        booking.setParkingSpot(null);
+                        bookingRepository.save(booking);
+                }
         }
 
 }

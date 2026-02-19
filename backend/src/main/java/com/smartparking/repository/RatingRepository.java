@@ -24,4 +24,8 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
 
         @org.springframework.data.jpa.repository.Query("SELECT COALESCE(AVG(r.ratingValue), 0.0) FROM Rating r WHERE r.parkingSpot.id = :spotId")
         Double getAverageRating(Long spotId);
+
+        void deleteByUserId(Long userId);
+
+        void deleteByParkingSpotId(Long parkingSpotId);
 }

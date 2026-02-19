@@ -25,4 +25,10 @@ public class UserController {
     public ResponseEntity<User> updateProfile(Principal principal, @RequestBody UpdateProfileDTO dto) {
         return ResponseEntity.ok(userService.updateProfile(principal.getName(), dto));
     }
+
+    @DeleteMapping("/profile")
+    public ResponseEntity<String> deleteAccount(Principal principal) {
+        userService.deleteAccount(principal.getName());
+        return ResponseEntity.ok("Account deleted successfully");
+    }
 }

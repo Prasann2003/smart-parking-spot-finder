@@ -11,6 +11,12 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final com.smartparking.repository.RatingRepository ratingRepository;
+    private final com.smartparking.repository.SavedSpotRepository savedSpotRepository;
+    private final com.smartparking.repository.ProviderRepository providerRepository;
+    private final com.smartparking.repository.ParkingSpotRepository parkingSpotRepository;
+    private final com.smartparking.repository.ParkingProviderApplicationRepository providerApplicationRepository;
+    private final BookingService bookingService;
 
     public User updateProfile(String email, UpdateProfileDTO dto) {
         User user = userRepository.findByEmail(email)
@@ -53,5 +59,41 @@ public class UserService {
                 .pincode(user.getPincode())
                 .vehicleType(user.getVehicleType())
                 .build();
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteAccount(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.getRole() == com.smartparking.entity.Role.ADMIN) {
+            throw new RuntimeException("Admins cannot delete their account");
+        }
+
+        // 1. Cancel and Unlink User Bookings
+        bookingService.cancelAndUnlinkUserBookings(user.getId());
+
+        // 2. Delete User Ratings & Favorites
+        ratingRepository.deleteByUserId(user.getId());
+        savedSpotRepository.deleteByUserId(user.getId());
+
+        // 3. If Provider, cascading delete
+        if (user.getRole() == com.smartparking.entity.Role.PROVIDER) {
+            providerRepository.findByUser(user).ifPresent(provider -> {
+                // For each spot
+                parkingSpotRepository.findByProviderId(provider.getId()).forEach(spot -> {
+                    bookingService.cancelAndUnlinkSpotBookings(spot.getId());
+                    ratingRepository.deleteByParkingSpotId(spot.getId());
+                    savedSpotRepository.deleteByParkingSpotId(spot.getId());
+                    parkingSpotRepository.delete(spot);
+                });
+                providerRepository.delete(provider);
+            });
+
+            providerApplicationRepository.deleteByUserId(user.getId());
+        }
+
+        // 4. Delete User
+        userRepository.delete(user);
     }
 }
