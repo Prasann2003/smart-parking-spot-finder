@@ -249,7 +249,8 @@ public class AdminController {
         long cancelledBookings = bookingRepository
                 .countByStatus(com.smartparking.entity.Booking.BookingStatus.CANCELLED);
 
-        Double revenue = bookingRepository.calculateTotalRevenue();
+        Double totalRevenue = bookingRepository.calculateTotalRevenue();
+        Double platformEarnings = bookingRepository.calculateTotalPlatformEarnings();
 
         long pendingApps = providerRepository
                 .findByVerificationStatus(Provider.VerificationStatus.PENDING).size();
@@ -263,7 +264,39 @@ public class AdminController {
                 "totalSpots", totalSpots,
                 "activeBookings", activeBookings,
                 "cancelledBookings", cancelledBookings,
-                "totalRevenue", revenue != null ? revenue : 0.0,
+                "totalRevenue", totalRevenue != null ? totalRevenue : 0.0,
+                "platformEarnings", platformEarnings != null ? platformEarnings : 0.0,
                 "systemAlerts", alerts));
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<org.springframework.data.domain.Page<Map<String, Object>>> getUsers(
+            @RequestParam(required = false) String role,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                org.springframework.data.domain.Sort.by("id").descending());
+
+        org.springframework.data.domain.Page<User> userPage;
+
+        if (role != null && !role.isEmpty() && !role.equalsIgnoreCase("ALL")) {
+            userPage = userRepository.findByRole(Role.valueOf(role.toUpperCase()), pageable);
+        } else {
+            userPage = userRepository.findAll(pageable);
+        }
+
+        org.springframework.data.domain.Page<Map<String, Object>> responsePage = userPage.map(user -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", user.getId());
+            map.put("name", user.getName());
+            map.put("email", user.getEmail());
+            map.put("phoneNumber", user.getPhoneNumber());
+            map.put("role", user.getRole().name());
+            map.put("createdAt", user.getCreatedAt());
+            return map;
+        });
+
+        return ResponseEntity.ok(responsePage);
     }
 }

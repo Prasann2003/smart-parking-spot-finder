@@ -1,9 +1,9 @@
 import { motion } from "framer-motion"
 import { logout, getCurrentUser } from "../utils/auth"
 import { useNavigate } from "react-router-dom"
-import { FaUser, FaListAlt, FaBell, FaCog, FaSignOutAlt, FaHeart } from "react-icons/fa"
+import { FaUser, FaListAlt, FaBell, FaCog, FaSignOutAlt, FaHeart, FaUsers } from "react-icons/fa"
 
-export default function MenuDropdown({ close }) {
+export default function MenuDropdown({ close, unreadCount = 0 }) {
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -26,7 +26,7 @@ export default function MenuDropdown({ close }) {
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="absolute right-0 mt-4 w-56 bg-white dark:bg-gray-800 text-black dark:text-gray-200 rounded-xl shadow-xl overflow-hidden z-50 border dark:border-gray-700"
+      className="absolute right-0 mt-4 w-64 bg-white dark:bg-gray-800 text-black dark:text-gray-200 rounded-xl shadow-xl overflow-hidden z-50 border dark:border-gray-700"
     >
       {menuItems.map((item) => (
         <button
@@ -35,10 +35,17 @@ export default function MenuDropdown({ close }) {
             navigate(item.path)
             close()
           }}
-          className="w-full text-left px-5 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-3"
+          className="w-full text-left px-5 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center justify-between"
         >
-          <span className="text-gray-500 dark:text-gray-400">{item.icon}</span>
-          {item.label}
+          <div className="flex items-center gap-3">
+            <span className="text-gray-500 dark:text-gray-400">{item.icon}</span>
+            {item.label}
+          </div>
+          {item.path === "/notifications" && unreadCount > 0 && (
+            <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full z-10">
+              {unreadCount} NEW
+            </span>
+          )}
         </button>
       ))}
 

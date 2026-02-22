@@ -10,4 +10,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     long countByRole(com.smartparking.entity.Role role);
+
+    org.springframework.data.domain.Page<User> findByRole(com.smartparking.entity.Role role,
+            org.springframework.data.domain.Pageable pageable);
 }

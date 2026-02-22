@@ -297,6 +297,27 @@ public class BookingService {
                 }
 
                 bookingRepository.save(booking);
+
+                // Notify Provider
+                if (booking.getParkingSpot() != null && booking.getParkingSpot().getProvider() != null
+                                && booking.getParkingSpot().getProvider().getUser() != null) {
+
+                        String userName = booking.getUser() != null ? booking.getUser().getName() : "a user";
+
+                        com.smartparking.entity.Notification notification = com.smartparking.entity.Notification
+                                        .builder()
+                                        .user(booking.getParkingSpot().getProvider().getUser())
+                                        .title("Booking Cancelled")
+                                        .message("A booking at " + booking.getParkingSpot().getName()
+                                                        + " for " + booking.getVehicleType()
+                                                        + " has been cancelled by " + userName + ". "
+                                                        + (booking.getPayment() != null ? "A refund has been initiated."
+                                                                        : ""))
+                                        .type("danger")
+                                        .isRead(false)
+                                        .build();
+                        notificationRepository.save(notification);
+                }
         }
 
         // private double calculateDynamicPrice(

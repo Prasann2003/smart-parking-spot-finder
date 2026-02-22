@@ -134,13 +134,18 @@ export default function AdminDashboard() {
          STATS CARDS
       ========================== */}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-        <StatCard label="Total Users" value={stats.totalUsers} icon={<FaUsers />} color="bg-blue-600" />
-        <StatCard label="Providers" value={stats.totalProviders} icon={<FaUser />} color="bg-indigo-600" />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-6">
+        <div onClick={() => navigate("/admin/users")} className="cursor-pointer transition-transform hover:scale-105">
+          <StatCard label="Total Users" value={stats.totalUsers} icon={<FaUsers />} color="bg-blue-600" />
+        </div>
+        <div onClick={() => navigate("/admin/users?role=PROVIDER")} className="cursor-pointer transition-transform hover:scale-105">
+          <StatCard label="Providers" value={stats.totalProviders} icon={<FaUser />} color="bg-indigo-600" />
+        </div>
         <StatCard label="Parking Spots" value={stats.totalSpots} icon={<FaParking />} color="bg-purple-600" />
         <StatCard label="Active Bookings" value={stats.activeBookings} icon={<FaClipboardList />} color="bg-pink-600" />
         <StatCard label="Cancelled" value={stats.cancelledBookings} icon={<FaBan />} color="bg-red-500" />
-        <StatCard label="Revenue" value={`₹${stats.totalRevenue}`} icon={<FaMoneyBillWave />} color="bg-emerald-600" />
+        <StatCard label="Total Revenue" value={`₹${Number(stats.totalRevenue || 0).toFixed(2)}`} icon={<FaMoneyBillWave />} color="bg-emerald-600" />
+        <StatCard label="Platform Earnings" value={`₹${Number(stats.platformEarnings || 0).toFixed(2)}`} icon={<FaUniversity />} color="bg-teal-600" />
       </div>
 
       {/* =========================

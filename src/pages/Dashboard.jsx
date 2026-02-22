@@ -66,13 +66,10 @@ export default function Dashboard() {
 function DriverDashboard({ user, navigate }) {
   const [search, setSearch] = useState({ state: "", district: "" })
   const [loading, setLoading] = useState(false)
-  const [parkingSpots, setParkingSpots] = useState([])
-  const [showResults, setShowResults] = useState(false)
   const [error, setError] = useState("")
-  const [userLocation, setUserLocation] = useState(null)
 
   const [stats, setStats] = useState({
-    nearbySpots: 0,
+    nearbySpots: "?",
     activeBookings: 0,
     favorites: 0,
   })
@@ -98,7 +95,9 @@ function DriverDashboard({ user, navigate }) {
       try {
         const summaryRes = await api.get("/dashboard/summary")
         if (isMounted.current) {
-          setStats(prev => ({ ...prev, ...summaryRes.data }))
+          // Exclude nearbySpots from summaryRes since we calculate it dynamically now
+          const { nearbySpots, ...otherStats } = summaryRes.data;
+          setStats(prev => ({ ...prev, ...otherStats }))
         }
 
         const activityRes = await api.get("/dashboard/activity")
@@ -147,6 +146,30 @@ function DriverDashboard({ user, navigate }) {
     }
   }, [])
 
+  // [NEW] Fetch real nearby spots count if location was previously cached
+  useEffect(() => {
+    const fetchNearbyCount = async () => {
+      const cachedLat = localStorage.getItem("userLat")
+      const cachedLng = localStorage.getItem("userLng")
+
+      if (cachedLat && cachedLng) {
+        try {
+          const res = await api.get(`/parking/nearby/count?lat=${cachedLat}&lng=${cachedLng}&radius=20`)
+          if (isMounted.current) {
+            setStats(prev => ({ ...prev, nearbySpots: res.data }))
+          }
+        } catch (err) {
+          console.error("Failed to fetch nearby spots count", err)
+          if (isMounted.current) {
+            setStats(prev => ({ ...prev, nearbySpots: "?" }))
+          }
+        }
+      }
+    }
+
+    fetchNearbyCount()
+  }, [])
+
   const handleToggleFavorite = async (e, spotId) => {
     e.stopPropagation()
     try {
@@ -168,35 +191,9 @@ function DriverDashboard({ user, navigate }) {
 
   /* SEARCH */
 
-  const handleSearch = async () => {
+  const handleSearch = () => {
     if (!search.state || !search.district) return
-
-    setLoading(true)
-    setShowResults(true)
-    setError("")
-    setUserLocation(null)
-
-    try {
-      const res = await api.get(
-        `/parking/search?state=${search.state}&district=${search.district}`
-      )
-
-      if (isMounted.current) {
-        setParkingSpots(res.data)
-
-        setStats((prev) => ({
-          ...prev,
-          nearbySpots: res.data.length,
-        }))
-      }
-    } catch {
-      if (isMounted.current) {
-        setError("Unable to fetch parking spots.")
-        setParkingSpots([])
-      }
-    }
-
-    if (isMounted.current) setLoading(false)
+    navigate(`/search-results?type=location&state=${encodeURIComponent(search.state)}&district=${encodeURIComponent(search.district)}`)
   }
 
   /* FIND NEAR ME */
@@ -208,36 +205,19 @@ function DriverDashboard({ user, navigate }) {
     }
 
     setLoading(true)
-    setShowResults(true)
     setError("")
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
+      (position) => {
         if (!isMounted.current) return
-        try {
-          const { latitude, longitude } = position.coords
+        const { latitude, longitude } = position.coords
 
-          setUserLocation({ lat: latitude, lng: longitude })
+        // Cache coordinates so we don't have to ask again on dashboard load
+        localStorage.setItem("userLat", latitude);
+        localStorage.setItem("userLng", longitude);
 
-          const res = await api.get(
-            `/parking/nearby?lat=${latitude}&lng=${longitude}&radius=20`
-          )
-
-          if (isMounted.current) {
-            setParkingSpots(res.data)
-
-            setStats((prev) => ({
-              ...prev,
-              nearbySpots: res.data.length,
-            }))
-          }
-        } catch {
-          if (isMounted.current) {
-            setError("Unable to fetch nearby parking.")
-          }
-        }
-
-        if (isMounted.current) setLoading(false)
+        navigate(`/search-results?type=nearby&lat=${latitude}&lng=${longitude}&radius=20`)
+        setLoading(false)
       },
       () => {
         if (isMounted.current) {
@@ -420,129 +400,6 @@ function DriverDashboard({ user, navigate }) {
             </div>
           </div>
         </div>
-
-        {/* RESULTS - REDESIGNED SPLIT LAYOUT */}
-        {showResults && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold dark:text-white flex items-center gap-2">
-                <FaMapMarkerAlt className="text-emerald-500" />
-                {parkingSpots.length} Spots Found
-              </h3>
-            </div>
-
-            {loading ? (
-              <div className="p-12 text-center text-gray-500 bg-white/50 rounded-2xl animate-pulse">
-                Looking for parking spots...
-              </div>
-            ) : error ? (
-              <div className="p-6 bg-red-50 text-red-600 rounded-2xl border border-red-100 text-center">
-                {error}
-              </div>
-            ) : parkingSpots.length === 0 ? (
-              <div className="p-12 text-center bg-white/50 rounded-2xl">
-                <p className="text-gray-500 text-lg">No parking spots found in this area.</p>
-                <button onClick={handleFindNearMe} className="mt-4 text-indigo-600 hover:underline">Try searching nearby?</button>
-              </div>
-            ) : (
-              <div className={`grid gap-8 items-start relative ${userLocation ? 'lg:grid-cols-[70%_30%]' : 'grid-cols-1'}`}>
-
-                {/* LEFT COLUMN: RESULTS */}
-                <div className="w-full">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 min-[1400px]:grid-cols-3 gap-6">
-                    {parkingSpots.map((spot) => (
-                      <motion.div
-                        key={spot._id || spot.id}
-                        whileHover={{ y: -5 }}
-                        className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col h-full cursor-pointer"
-                        onClick={() => navigate(`/spot/${spot._id || spot.id}`)}
-                      >
-                        <div className="h-48 w-full overflow-hidden relative group">
-                          <img
-                            src={spot.imageUrls?.[0] ? `http://localhost:8080${spot.imageUrls[0]}` : "https://via.placeholder.com/400x300?text=No+Image"}
-                            alt={spot.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                          <div className="absolute top-3 right-3 flex gap-2">
-                            <button
-                              onClick={(e) => handleToggleFavorite(e, spot._id || spot.id)}
-                              className="bg-white/90 backdrop-blur p-2 rounded-full shadow-sm hover:scale-110 transition z-10"
-                            >
-                              {savedSpotIds.includes(spot._id || spot.id) ? (
-                                <FaHeart className="text-red-500" />
-                              ) : (
-                                <FaRegHeart className="text-gray-400 hover:text-red-500" />
-                              )}
-                            </button>
-                            <div className="bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold text-gray-800 shadow-sm flex items-center gap-1 h-8">
-                              <FaStar className="text-yellow-500" /> {spot.averageRating ? spot.averageRating : "New"}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="p-5 flex-1 flex flex-col">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-bold dark:text-white line-clamp-1" title={spot.name}>
-                              {spot.name}
-                            </h3>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 line-clamp-2" title={spot.address}>
-                              <FaMapMarkerAlt className="inline-block mr-1 text-gray-400" /> {spot.address}
-                            </p>
-
-                            <div className="mt-4 grid grid-cols-2 gap-3">
-                              <div className="bg-indigo-50 dark:bg-gray-700 p-2 rounded-lg text-center">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Starts From</p>
-                                <p className="text-indigo-700 dark:text-indigo-300 font-bold text-sm">
-                                  {spot.vehicleConfigs && spot.vehicleConfigs.length > 0
-                                    ? `₹${Math.min(...spot.vehicleConfigs.map(c => c.pricePerHour))}/hr`
-                                    : `₹${spot.pricePerHour || 0}/hr`
-                                  }
-                                </p>
-                              </div>
-                              <div className="bg-emerald-50 dark:bg-gray-700 p-2 rounded-lg text-center">
-                                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Total Spots</p>
-                                <p className="text-emerald-700 dark:text-emerald-300 font-bold text-sm">
-                                  {spot.totalSlots || spot.totalCapacity}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center gap-2 text-xs text-gray-500">
-                            <div className="flex gap-2 text-lg">
-                              {spot.cctv && <span title="CCTV" className="text-gray-400 hover:text-indigo-500 transition"><FaVideo /></span>}
-                              {spot.evCharging && <span title="EV Charging" className="text-gray-400 hover:text-green-500 transition"><FaBolt /></span>}
-                              {spot.covered && <span title="Covered" className="text-gray-400 hover:text-blue-500 transition"><FaUmbrella /></span>}
-                            </div>
-                            <button
-                              className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition font-medium text-sm"
-                            >
-                              View Details
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* RIGHT COLUMN: MAP (Sticky) */}
-                {userLocation && (
-                  <div className="w-full lg:sticky lg:top-24 h-[400px] lg:h-[calc(100vh-120px)] bg-white rounded-3xl shadow-lg border border-gray-200 overflow-hidden">
-                    <div className="h-full w-full">
-                      <ParkingMap
-                        userLocation={userLocation}
-                        parkingSpots={parkingSpots}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-
 
       </motion.div>
     </div>

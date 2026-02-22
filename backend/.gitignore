@@ -55,6 +55,7 @@ application-local.properties
 application-dev.yml
 application-dev.yaml
 application-dev.properties
+run-backend.bat
 
 ########################################
 # Test / Coverage

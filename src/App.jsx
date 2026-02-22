@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/ForgotPassword"
 import ProviderDashboard from "./pages/ProviderDashboard"
 import ProviderBookings from "./pages/ProviderBookings"
 import ProviderApplications from "./pages/ProviderApplications"
+import AdminUsers from "./pages/AdminUsers"
 
 import Profile from "./pages/Profile"
 import MyBookings from "./pages/MyBookings"
@@ -21,6 +22,7 @@ import Settings from "./pages/Settings"
 import ReviewsPage from "./pages/ReviewsPage"
 import SpotDetails from "./pages/SpotDetails"
 import SavedSpots from "./pages/SavedSpots"
+import SearchResults from "./pages/SearchResults"
 
 import ProtectedRoute from "./components/ProtectedRoute"
 
@@ -52,11 +54,13 @@ export default function App() {
         <Route path="/provider/dashboard" element={<ProviderDashboard />} />
         <Route path="/provider/bookings" element={<ProviderBookings />} />
         <Route path="/admin/applications" element={<ProviderApplications />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/add-parking" element={<AddParking />} />
         <Route path="/edit-parking/:id" element={<EditParking />} />
         <Route path="/spot/:id/reviews" element={<ReviewsPage />} />
         <Route path="/spot/:id" element={<SpotDetails />} />
+        <Route path="/search-results" element={<SearchResults />} />
         <Route path="/saved-spots" element={<SavedSpots />} />
       </Route>
 

@@ -11,6 +11,8 @@ import com.smartparking.repository.*;
 import com.smartparking.util.GoogleMapsUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -286,16 +288,20 @@ public class ParkingSpotService {
         return mapToDTO(updatedSpot);
     }
 
-    public List<ParkingSpotResponseDTO> getNearbyParkingSpots(double userLat, double userLng, double radiusKm) {
+    public Page<ParkingSpotResponseDTO> getNearbyParkingSpots(double userLat, double userLng, double radiusKm,
+            Boolean cctv, Boolean covered, Boolean evCharging, Boolean guard,
+            Pageable pageable) {
         System.out.println("🔍 Finding nearby spots (DB Query). User Lat: " + userLat + ", Lng: " + userLng
                 + ", Radius: " + radiusKm);
-        List<ParkingSpot> nearbySpots = parkingSpotRepository.findNearbySpots(userLat, userLng, radiusKm);
-        System.out.println("✅ Found " + nearbySpots.size() + " spots within radius.");
+        Page<ParkingSpot> nearbySpotsPage = parkingSpotRepository.findNearbySpots(userLat, userLng, radiusKm, cctv,
+                covered, evCharging, guard, pageable);
+        System.out.println("✅ Found " + nearbySpotsPage.getTotalElements() + " total spots within radius.");
 
-        return nearbySpots.stream()
-                .filter(spot -> spot.getStatus() == ParkingSpot.ParkingStatus.ACTIVE)
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+        return nearbySpotsPage.map(this::mapToDTO);
+    }
+
+    public long getNearbySpotsCount(double userLat, double userLng, double radiusKm) {
+        return parkingSpotRepository.countNearbySpots(userLat, userLng, radiusKm);
     }
 
     public List<ParkingSpotResponseDTO> getAllParkingSpots() {
@@ -304,11 +310,13 @@ public class ParkingSpotService {
                 .collect(Collectors.toList());
     }
 
-    public List<ParkingSpotResponseDTO> searchParkingSpots(String state, String district) {
+    public Page<ParkingSpotResponseDTO> searchParkingSpots(String state, String district,
+            Boolean cctv, Boolean covered, Boolean evCharging, Boolean guard,
+            Pageable pageable) {
         return parkingSpotRepository
-                .findByStateAndDistrictAndStatus(state, district, ParkingSpot.ParkingStatus.ACTIVE).stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .findByStateAndDistrictAndStatus(state, district, ParkingSpot.ParkingStatus.ACTIVE, cctv, covered,
+                        evCharging, guard, pageable)
+                .map(this::mapToDTO);
     }
 
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {

@@ -5,6 +5,9 @@ import com.smartparking.dto.ParkingSpotResponseDTO;
 import com.smartparking.service.ParkingSpotService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,18 +57,67 @@ public class ParkingController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ParkingSpotResponseDTO>> searchParkingSpots(@RequestParam String state,
-            @RequestParam String district) {
-        System.out.println("Searching for spots in State: " + state + ", District: " + district);
-        return ResponseEntity.ok(parkingSpotService.searchParkingSpots(state, district));
+    public ResponseEntity<Page<ParkingSpotResponseDTO>> searchParkingSpots(
+            @RequestParam String state,
+            @RequestParam String district,
+            @RequestParam(required = false) Boolean cctv,
+            @RequestParam(required = false) Boolean covered,
+            @RequestParam(required = false) Boolean evCharging,
+            @RequestParam(required = false) Boolean guard,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "id,desc") String[] sort) { // Accept
+                                                                                       // sort
+        System.out.println("Searching for spots in State: " + state + ", District: " + district + " | Page: " + page);
+
+        // Convert sort array (e.g. ["averageRating,desc"]) to Sort object
+        org.springframework.data.domain.Sort sortObj = org.springframework.data.domain.Sort.by(
+                sort[1].equalsIgnoreCase("asc") ? org.springframework.data.domain.Sort.Direction.ASC
+                        : org.springframework.data.domain.Sort.Direction.DESC,
+                sort[0]);
+
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+        return ResponseEntity
+                .ok(parkingSpotService.searchParkingSpots(state, district, cctv, covered, evCharging, guard, pageable));
     }
 
     @GetMapping("/nearby")
-    public ResponseEntity<List<ParkingSpotResponseDTO>> getNearbyParkingSpots(
+    public ResponseEntity<Page<ParkingSpotResponseDTO>> getNearbyParkingSpots(
+            @RequestParam double lat,
+            @RequestParam double lng,
+            @RequestParam double radius,
+            @RequestParam(required = false) Boolean cctv,
+            @RequestParam(required = false) Boolean covered,
+            @RequestParam(required = false) Boolean evCharging,
+            @RequestParam(required = false) Boolean guard,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "id,desc") String[] sort) {
+
+        // If user wants to sort by "distance", we can't do it via Pageable easily
+        // without returning distance in select.
+        // We'll map "distance" to default or leave PageRequest default, and handle
+        // "rating" sorting natively
+        org.springframework.data.domain.Sort sortObj = org.springframework.data.domain.Sort.unsorted();
+        if (sort != null && sort.length >= 2 && !sort[0].equalsIgnoreCase("distance")) {
+            sortObj = org.springframework.data.domain.Sort.by(
+                    sort[1].equalsIgnoreCase("asc") ? org.springframework.data.domain.Sort.Direction.ASC
+                            : org.springframework.data.domain.Sort.Direction.DESC,
+                    sort[0]);
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+        return ResponseEntity
+                .ok(parkingSpotService.getNearbyParkingSpots(lat, lng, radius, cctv, covered, evCharging, guard,
+                        pageable));
+    }
+
+    @GetMapping("/nearby/count")
+    public ResponseEntity<Long> getNearbySpotsCount(
             @RequestParam double lat,
             @RequestParam double lng,
             @RequestParam double radius) {
-        return ResponseEntity.ok(parkingSpotService.getNearbyParkingSpots(lat, lng, radius));
+        return ResponseEntity.ok(parkingSpotService.getNearbySpotsCount(lat, lng, radius));
     }
 
     @GetMapping("/{id}")
