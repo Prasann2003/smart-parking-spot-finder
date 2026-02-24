@@ -188,6 +188,7 @@ public class ProviderService {
                         }
 
                         application.setName(dto.getName());
+                        application.setParkingName(dto.getParkingName());
                         application.setDescription(dto.getDescription());
                         application.setState(dto.getState());
                         application.setDistrict(dto.getDistrict());
@@ -254,6 +255,7 @@ public class ProviderService {
 
                         application = ProviderApplication.builder()
                                         .name(dto.getName())
+                                        .parkingName(dto.getParkingName())
                                         .description(dto.getDescription())
                                         .state(dto.getState())
                                         .district(dto.getDistrict())
@@ -292,7 +294,7 @@ public class ProviderService {
         private void createActiveSpot(Provider provider, ParkingProviderApplicationDto dto, List<String> imageUrls) {
                 ParkingSpot spot = new ParkingSpot();
                 spot.setProvider(provider);
-                spot.setName(dto.getName());
+                spot.setName(dto.getParkingName()); // Changed to parkingName
                 spot.setDescription(dto.getDescription());
                 spot.setState(dto.getState());
                 spot.setDistrict(dto.getDistrict());

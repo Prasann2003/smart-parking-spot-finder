@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
+import com.smartparking.entity.ParkingType;
 
 @Data
 @Builder
@@ -20,6 +21,9 @@ public class ParkingProviderApplicationDto {
 
     @NotBlank(message = "Name is required")
     private String name;
+
+    @NotBlank(message = "Parking Name is required")
+    private String parkingName;
 
     private String ownerName;
 
@@ -54,8 +58,8 @@ public class ParkingProviderApplicationDto {
 
     // private java.util.Set<String> vehicleTypes; // REMOVED
 
-    @NotBlank(message = "Parking type is required")
-    private String parkingType;
+    @NotNull(message = "Parking type is required")
+    private ParkingType parkingType;
 
     private boolean monthlyPlan;
     private Double weekendSurcharge;

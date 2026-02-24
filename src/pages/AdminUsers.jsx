@@ -198,14 +198,14 @@ export default function AdminUsers() {
                                 <button
                                     onClick={handlePrevPage}
                                     disabled={page === 0}
-                                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+                                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-50 transition flex items-center gap-2"
                                 >
                                     <FaChevronLeft /> Prev
                                 </button>
                                 <button
                                     onClick={handleNextPage}
                                     disabled={page >= totalPages - 1}
-                                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
+                                    className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-50 transition flex items-center gap-2"
                                 >
                                     Next <FaChevronRight />
                                 </button>

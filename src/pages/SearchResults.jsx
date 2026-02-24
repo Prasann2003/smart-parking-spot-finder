@@ -273,7 +273,7 @@ export default function SearchResults() {
                                     <button
                                         onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
                                         disabled={currentPage === 0}
-                                        className="p-2.5 bg-white dark:bg-gray-800 text-indigo-600 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                                        className="p-2.5 bg-white dark:bg-gray-800 text-indigo-600 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                                     >
                                         <FaChevronLeft />
                                     </button>
@@ -283,7 +283,7 @@ export default function SearchResults() {
                                     <button
                                         onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
                                         disabled={currentPage === totalPages - 1}
-                                        className="p-2.5 bg-white dark:bg-gray-800 text-indigo-600 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                                        className="p-2.5 bg-white dark:bg-gray-800 text-indigo-600 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                                     >
                                         <FaChevronRight />
                                     </button>

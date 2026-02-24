@@ -137,7 +137,7 @@ public class AdminController {
 
         // parkingSpot block
         Map<String, Object> spotMap = new HashMap<>();
-        spotMap.put("name", app.getName());
+        spotMap.put("name", app.getParkingName());
         spotMap.put("address", app.getAddress());
         spotMap.put("totalCapacity", app.getTotalCapacity());
         map.put("parkingSpot", spotMap);

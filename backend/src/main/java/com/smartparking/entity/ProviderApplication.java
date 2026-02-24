@@ -28,6 +28,9 @@ public class ProviderApplication {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private String parkingName;
+
     @Column(length = 1000)
     private String description;
 
@@ -63,7 +66,8 @@ public class ProviderApplication {
     // private Set<String> vehicleTypes; // REMOVED
 
     @Column(nullable = false)
-    private String parkingType;
+    @Convert(converter = ParkingTypeConverter.class)
+    private ParkingType parkingType;
 
     private boolean monthlyPlan;
 

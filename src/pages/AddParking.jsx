@@ -29,9 +29,11 @@ export default function AddParking() {
 
     const [formData, setFormData] = useState({
         name: "",
+        description: "",
         state: "",
         district: "",
-        address: "",
+        address1: "",
+        address2: "",
         pincode: "",
         googleMapsLink: "",
         latitude: "",
@@ -111,7 +113,7 @@ export default function AddParking() {
         e.preventDefault()
 
         // Validate
-        if (!formData.name || !formData.address || !files.parkingAreaImage || !files.gateImage) {
+        if (!formData.name || !formData.address1 || !files.parkingAreaImage || !files.gateImage) {
             toast.error("Please fill required fields and upload images")
             return
         }
@@ -132,12 +134,15 @@ export default function AddParking() {
 
         const data = new FormData()
         Object.keys(formData).forEach(key => {
-            if (key === "vehicleTypes" || key === "vehicleConfigs") {
+            if (key === "vehicleTypes" || key === "vehicleConfigs" || key === "address1" || key === "address2") {
                 // Skip direct append
             } else {
                 data.append(key, formData[key])
             }
         })
+
+        const fullAddress = formData.address2 ? `${formData.address1}, ${formData.address2}` : formData.address1
+        data.append("address", fullAddress)
 
         // Append vehicleConfigs with indexed keys
         formData.vehicleTypes.forEach((type, index) => {
@@ -227,9 +232,20 @@ export default function AddParking() {
                                 </div>
                             </div>
 
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Address Line 1</label>
+                                    <input name="address1" placeholder="House/Flat No, Building Name" value={formData.address1} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all dark:text-white" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Address Line 2 (Optional)</label>
+                                    <input name="address2" placeholder="Street Name, Area, Landmark" value={formData.address2} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all dark:text-white" />
+                                </div>
+                            </div>
+
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Full Address</label>
-                                <textarea name="address" placeholder="House/Flat No, Street, Landmark" value={formData.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all dark:text-white min-h-[100px]" required />
+                                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Description (Optional)</label>
+                                <textarea name="description" placeholder="Short description of the parking area..." value={formData.description} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all dark:text-white min-h-[100px]" />
                             </div>
 
                             <div className="grid md:grid-cols-2 gap-6">

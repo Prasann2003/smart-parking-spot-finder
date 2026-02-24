@@ -66,7 +66,8 @@ public class ParkingSpot {
         @OneToMany(mappedBy = "parkingSpot", cascade = CascadeType.ALL, orphanRemoval = true)
         private List<SpotVehicleConfig> vehicleConfigs = new ArrayList<>();
 
-        private String parkingType;
+        @Convert(converter = ParkingTypeConverter.class)
+        private ParkingType parkingType;
         private boolean monthlyPlan;
 
         // Images (URLs / paths only)
@@ -107,7 +108,7 @@ public class ParkingSpot {
                 spot.setProvider(provider);
 
                 // Basic details
-                spot.setName(application.getName());
+                spot.setName(application.getParkingName());
                 spot.setDescription(application.getDescription());
 
                 // Address

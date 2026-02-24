@@ -4,6 +4,7 @@ import com.smartparking.entity.ParkingSpot;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import com.smartparking.entity.ParkingType;
 
 import java.util.List;
 import java.util.Set;
@@ -44,7 +45,7 @@ public class ParkingSpotResponseDTO {
     private boolean guard;
     private boolean evCharging;
 
-    private String parkingType;
+    private ParkingType parkingType;
 
     // ===== Ratings =====
     private Double averageRating;

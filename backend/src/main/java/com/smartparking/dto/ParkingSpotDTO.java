@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Date;
 import java.util.Set;
+import com.smartparking.entity.ParkingType;
 
 @Builder
 @Data
@@ -54,8 +55,8 @@ public class ParkingSpotDTO {
     private boolean guard;
     private boolean evCharging;
 
-    @NotBlank(message = "Parking type is required")
-    private String parkingType;
+    @NotNull(message = "Parking type is required")
+    private ParkingType parkingType;
 
     private Double latitude;
     private Double longitude;

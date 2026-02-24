@@ -22,7 +22,8 @@ import {
   FaIdCard,
   FaTruck,
   FaTrash,
-  FaExternalLinkAlt
+  FaExternalLinkAlt,
+  FaUmbrella
 } from "react-icons/fa"
 
 export default function BecomeProvider() {
@@ -38,6 +39,8 @@ export default function BecomeProvider() {
 
   const [form, setForm] = useState({
     name: "",
+    parkingName: "",
+    description: "",
     phone: "",
     email: "",
     governmentId: "",
@@ -49,7 +52,8 @@ export default function BecomeProvider() {
     mapsLink: "",
     vehicleTypes: [],
     vehicleConfigs: {}, // { CAR: { capacity: "", price: "" } }
-    parkingType: "Covered",
+    parkingType: "Public",
+    covered: false,
     cctv: false,
     guard: false,
     evCharging: false,
@@ -159,6 +163,8 @@ export default function BecomeProvider() {
 
       // Simple Fields
       formData.append("name", form.name)
+      formData.append("parkingName", form.parkingName)
+      if (form.description) formData.append("description", form.description)
       formData.append("phoneNumber", form.phone) // Mapped to phoneNumber
       formData.append("email", form.email)
       formData.append("governmentId", form.governmentId) // Check if DTO has this
@@ -171,9 +177,7 @@ export default function BecomeProvider() {
       if (form.mapsLink) formData.append("googleMapsLink", form.mapsLink)
 
       formData.append("parkingType", form.parkingType)
-      // Derive 'covered' from parkingType
-      const isCovered = ["Covered", "Basement"].includes(form.parkingType);
-      formData.append("covered", isCovered);
+      formData.append("covered", form.covered)
 
       formData.append("cctv", form.cctv)
       formData.append("guard", form.guard)
@@ -267,7 +271,8 @@ export default function BecomeProvider() {
               </h2>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <InputGroup label="Full Name" name="name" value={form.name} onChange={handleChange} placeholder="John Doe" />
+                <InputGroup label="Applicant Name" name="name" value={form.name} onChange={handleChange} placeholder="John Doe" />
+                <InputGroup label="Parking Area Name" name="parkingName" value={form.parkingName} onChange={handleChange} placeholder="City Center Mall Parking" icon={<FaMapMarkedAlt />} />
                 <InputGroup label="Phone Number" name="phone" value={form.phone} onChange={handleChange} placeholder="+91 98765 43210" />
                 <InputGroup label="Email Address" name="email" value={form.email} onChange={handleChange} type="email" placeholder="john@example.com" />
                 <InputGroup label="Government ID (Aadhaar/Voter ID)" name="governmentId" value={form.governmentId} onChange={handleChange} placeholder="XXXX-XXXX-XXXX" icon={<FaIdCard />} />
@@ -324,6 +329,17 @@ export default function BecomeProvider() {
                         <FaExternalLinkAlt />
                       </a>
                     )}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">Description (Optional)</label>
+                    <textarea
+                      name="description"
+                      value={form.description}
+                      onChange={handleChange}
+                      placeholder="Give a short description of the parking area, access instructions, etc."
+                      className="w-full bg-gray-900/50 border border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition text-white placeholder-gray-600 min-h-[100px]"
+                    />
                   </div>
                 </div>
               </div>
@@ -404,9 +420,9 @@ export default function BecomeProvider() {
                     onChange={handleChange}
                     className="w-full bg-gray-900/50 border border-gray-600 rounded-xl px-4 py-3 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition"
                   >
-                    <option value="Covered">Covered (Safe from rain/sun)</option>
-                    <option value="Open">Open Area</option>
-                    <option value="Basement">Basement</option>
+                    <option value="Public">Public</option>
+                    <option value="Private">Private</option>
+                    <option value="Commercial">Commercial</option>
                   </select>
                 </div>
                 <InputGroup label="Weekend Surcharge (₹/Hr Optional)" name="weekendSurcharge" value={form.weekendSurcharge} onChange={handleChange} placeholder="Ex: 20 (Added to base price)" />
@@ -417,6 +433,7 @@ export default function BecomeProvider() {
 
               <div className="flex flex-wrap gap-4">
                 {[
+                  { name: "covered", label: "Covered Parking", icon: <FaUmbrella /> },
                   { name: "cctv", label: "CCTV", icon: <FaShieldAlt /> },
                   { name: "guard", label: "Security Guard", icon: <FaUser /> },
                   { name: "evCharging", label: "EV Charging", icon: <FaBolt /> },

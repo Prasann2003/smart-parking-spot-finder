@@ -191,8 +191,18 @@ export default function SpotDetails() {
                                     </div>
                                 </div>
 
-                                {/* AMENITIES */}
+                                {/* DESCRIPTION */}
                                 <div>
+                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 mt-8 flex items-center gap-2">
+                                        <FaMapMarkerAlt className="text-indigo-500" /> About this Spot
+                                    </h3>
+                                    <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                                        {spot.description ? spot.description : "N/A - No description provided by the owner."}
+                                    </div>
+                                </div>
+
+                                {/* AMENITIES */}
+                                <div className="mt-8">
                                     <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
                                         <FaShieldAlt className="text-indigo-500" /> Amenities
                                     </h3>
