@@ -104,7 +104,7 @@ export default function AdminUsers() {
                         </select>
                         <div className="bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-100 whitespace-nowrap">
                             <span className="text-sm font-bold text-indigo-700 uppercase tracking-wide">
-                                Total Users: {totalElements}
+                                Total {roleFilter === "PROVIDER" ? "Providers" : roleFilter === "ADMIN" ? "Admins" : roleFilter === "USER" ? "Users" : "Users"}: {totalElements}
                             </span>
                         </div>
                     </div>

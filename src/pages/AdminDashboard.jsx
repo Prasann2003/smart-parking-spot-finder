@@ -138,7 +138,7 @@ export default function AdminDashboard() {
       ========================== */}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-6">
-        <div onClick={() => navigate("/admin/users")} className="cursor-pointer transition-transform hover:scale-105">
+        <div onClick={() => navigate("/admin/users?role=USER")} className="cursor-pointer transition-transform hover:scale-105">
           <StatCard label="Total Users" value={stats.totalUsers} icon={<FaUsers />} color="bg-blue-600" />
         </div>
         <div onClick={() => navigate("/admin/users?role=PROVIDER")} className="cursor-pointer transition-transform hover:scale-105">
