@@ -18,7 +18,7 @@ export default function MenuDropdown({ close, unreadCount = 0 }) {
     { label: "Profile", path: "/profile", icon: <FaUser /> },
     ...(user?.role === "USER" ? [{ label: "My Bookings", path: "/bookings", icon: <FaListAlt /> }] : []),
     ...(user?.role === "USER" ? [{ label: "Saved Parking Spots", path: "/saved-spots", icon: <FaHeart /> }] : []),
-    { label: "Notifications", path: "/notifications", icon: <FaBell /> },
+    ...(user?.role !== "ADMIN" ? [{ label: "Notifications", path: "/notifications", icon: <FaBell /> }] : []),
     { label: "Settings", path: "/settings", icon: <FaCog /> },
   ]
 

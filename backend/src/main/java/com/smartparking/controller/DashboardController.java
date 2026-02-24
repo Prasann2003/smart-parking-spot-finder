@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
@@ -28,6 +29,8 @@ public class DashboardController {
     private final UserRepository userRepository;
     private final com.smartparking.service.SavedSpotService savedSpotService;
 
+    private final com.smartparking.service.ParkingSpotService parkingSpotService;
+
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> getSummary(
             Authentication auth) {
@@ -38,6 +41,14 @@ public class DashboardController {
                 LocalDateTime.now())); // simplified
         stats.put("favorites", savedSpotService.countSavedSpots(user));
         return ResponseEntity.ok(stats);
+    }
+
+    @GetMapping("/nearby-spots-count")
+    public ResponseEntity<Long> getNearbySpotsCount(
+            @RequestParam double lat,
+            @RequestParam double lng,
+            @RequestParam(defaultValue = "20.0") double radius) {
+        return ResponseEntity.ok(parkingSpotService.getNearbySpotsCount(lat, lng, radius));
     }
 
     private User getUser(Authentication authentication) {

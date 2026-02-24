@@ -269,6 +269,14 @@ public class AdminController {
                 "systemAlerts", alerts));
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.smartparking.repository.PaymentRepository paymentRepository;
+
+    @GetMapping("/revenue-chart")
+    public ResponseEntity<List<com.smartparking.dto.MonthlyRevenueDTO>> getMonthlyRevenue() {
+        return ResponseEntity.ok(paymentRepository.getMonthlyRevenue());
+    }
+
     @GetMapping("/users")
     public ResponseEntity<org.springframework.data.domain.Page<Map<String, Object>>> getUsers(
             @RequestParam(required = false) String role,

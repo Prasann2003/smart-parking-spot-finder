@@ -154,7 +154,7 @@ function DriverDashboard({ user, navigate }) {
 
       if (cachedLat && cachedLng) {
         try {
-          const res = await api.get(`/parking/nearby/count?lat=${cachedLat}&lng=${cachedLng}&radius=20`)
+          const res = await api.get(`/dashboard/nearby-spots-count?lat=${cachedLat}&lng=${cachedLng}&radius=20`)
           if (isMounted.current) {
             setStats(prev => ({ ...prev, nearbySpots: res.data }))
           }
