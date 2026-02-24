@@ -2,7 +2,6 @@ import { Routes, Route } from "react-router-dom"
 
 import Home from "./pages/Home"
 import AuthPage from "./pages/AuthPage"
-import AdminLogin from "./pages/AdminLogin"
 import Dashboard from "./pages/Dashboard"
 import BecomeProvider from "./pages/BecomeProvider"
 import Payment from "./pages/Payment"
@@ -38,7 +37,6 @@ export default function App() {
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/become-provider" element={<BecomeProvider />} />
-      <Route path="/admin-login" element={<AdminLogin />} />
 
       {/* =========================
            🔐 PROTECTED ROUTES

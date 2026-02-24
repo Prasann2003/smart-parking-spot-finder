@@ -86,13 +86,6 @@ export default function Home() {
               >
                 <FaBuilding /> Become Provider
               </button>
-
-              <button
-                onClick={() => navigate("/admin-login")}
-                className="px-6 py-3 bg-gray-800 hover:bg-gray-700 border border-white/20 rounded-xl font-semibold transition flex items-center gap-2"
-              >
-                <FaUserShield /> Admin Login
-              </button>
             </div>
           </motion.div>
 
