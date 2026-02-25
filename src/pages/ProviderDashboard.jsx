@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { getCurrentUser } from "../utils/auth"
 import { useNavigate } from "react-router-dom"
 import api, { toggleStatus } from "../utils/api"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import {
   FaBuilding,
   FaPlus,
@@ -41,6 +42,7 @@ export default function ProviderDashboard() {
 
   const [parkings, setParkings] = useState([])
   const [recentBookings, setRecentBookings] = useState([])
+  const [chartData, setChartData] = useState([])
   const [loading, setLoading] = useState(true)
 
 
@@ -58,6 +60,9 @@ export default function ProviderDashboard() {
 
         const bookingRes = await api.get(`/provider/bookings?email=${email}`)
         setRecentBookings(bookingRes.data)
+
+        const chartRes = await api.get(`/provider/revenue-chart?email=${email}`)
+        setChartData(chartRes.data || [])
       } catch (err) {
         console.error("Provider Dashboard Error:", err)
       }
@@ -212,6 +217,42 @@ export default function ProviderDashboard() {
                   </div>
                 </motion.div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* REVENUE CHART */}
+        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-gray-800">
+            <FaMoneyBillWave className="text-emerald-500" /> Monthly Revenue Trend
+          </h2>
+
+          {chartData.length === 0 ? (
+            <p className="text-gray-500 italic pl-2">
+              No revenue data available yet.
+            </p>
+          ) : (
+            <div className="h-80 w-full mt-4" style={{ minHeight: "320px" }}>
+              <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+                <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis dataKey="month" stroke="#6B7280" tick={{ fill: '#6B7280' }} tickMargin={10} />
+                  <YAxis stroke="#6B7280" tick={{ fill: '#6B7280' }} tickFormatter={(value) => `₹${value}`} />
+                  <Tooltip
+                    formatter={(value) => [`₹${value}`, "Total Earnings"]}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: "20px" }} />
+                  <Line
+                    name="Total Earnings"
+                    type="monotone"
+                    dataKey="totalRevenue"
+                    stroke="#10B981"
+                    strokeWidth={3}
+                    activeDot={{ r: 8 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           )}
         </div>

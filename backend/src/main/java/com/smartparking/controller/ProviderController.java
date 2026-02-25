@@ -134,6 +134,21 @@ public class ProviderController {
         return ResponseEntity.ok(stats);
     }
 
+    @GetMapping("/revenue-chart")
+    public ResponseEntity<List<com.smartparking.dto.MonthlyRevenueDTO>> getProviderMonthlyRevenue(
+            @RequestParam String email) {
+        System.out.println("DEBUG: Fetching Provider Revenue Chart for: " + email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+
+        Optional<Provider> provider = providerRepository.findByUser(user);
+        if (provider.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        return ResponseEntity.ok(providerService.getProviderMonthlyRevenue(email));
+    }
+
     private double calculateTotalEarnings(List<BookingDTO> bookings) {
         return bookings.stream()
                 .filter(b -> "CONFIRMED".equals(b.getStatus()) || "COMPLETED".equals(b.getStatus()))

@@ -7,6 +7,7 @@ import com.smartparking.repository.ParkingProviderApplicationRepository;
 import com.smartparking.repository.ParkingSpotRepository;
 import com.smartparking.repository.ProviderRepository;
 import com.smartparking.repository.UserRepository;
+import com.smartparking.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -27,6 +28,7 @@ public class ProviderService {
         private final ParkingSpotRepository parkingSpotRepository;
         private final ImageStorageService imageStorageService;
         private final ParkingProviderApplicationRepository parkingProviderApplicationRepository;
+        private final PaymentRepository paymentRepository;
 
         // public void addProviderWithSpot(ParkingProviderApplicationDTO dto) {
         // String email = ((UserDetails)
@@ -362,5 +364,9 @@ public class ProviderService {
                 }
 
                 return java.util.Map.of("status", "NONE");
+        }
+
+        public java.util.List<com.smartparking.dto.MonthlyRevenueDTO> getProviderMonthlyRevenue(String email) {
+                return paymentRepository.getProviderMonthlyRevenue(email);
         }
 }
