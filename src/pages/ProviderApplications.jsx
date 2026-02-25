@@ -16,14 +16,17 @@ import {
     FaUser,
     FaMapMarkerAlt,
     FaParking,
-    FaList
+    FaList,
+    FaArrowLeft
 } from "react-icons/fa"
+import { useNavigate } from "react-router-dom"
 
 export default function ProviderApplications() {
     const [applications, setApplications] = useState([])
     const [loading, setLoading] = useState(true)
     const [totalElements, setTotalElements] = useState(0)
     const [totalPages, setTotalPages] = useState(0)
+    const navigate = useNavigate()
 
     // Filters
     const [page, setPage] = useState(0)
@@ -92,11 +95,20 @@ export default function ProviderApplications() {
 
             <main className="max-w-7xl mx-auto pt-24 px-4 pb-12">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                            <FaList className="text-indigo-600" /> Provider Applications
-                        </h1>
-                        <p className="text-gray-500 mt-1">Review and manage provider verification requests</p>
+                    <div className="flex items-start gap-4">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="mt-1 flex-shrink-0 p-2 hover:bg-gray-200 rounded-full transition"
+                            title="Back to Admin Dashboard"
+                        >
+                            <FaArrowLeft className="text-gray-600 text-xl" />
+                        </button>
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                                <FaList className="text-indigo-600" /> Provider Applications
+                            </h1>
+                            <p className="text-gray-500 mt-1">Review and manage provider verification requests</p>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-3">

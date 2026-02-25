@@ -3,10 +3,12 @@ import Navbar from "../components/Navbar"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { getCurrentUser, getProfile, updateProfile } from "../utils/auth"
-import { FaBuilding, FaUserShield, FaCar, FaUserCircle } from "react-icons/fa"
+import { FaBuilding, FaUserShield, FaCar, FaUserCircle, FaArrowLeft } from "react-icons/fa"
+import { useNavigate } from "react-router-dom"
 
 export default function Profile() {
   const user = getCurrentUser()
+  const navigate = useNavigate()
 
   const [profile, setProfile] = useState({
     name: "",
@@ -83,12 +85,23 @@ export default function Profile() {
             <div className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-10 -translate-y-10">
               <FaUserCircle className="text-9xl" />
             </div>
-            <h2 className="text-4xl font-bold mb-2 flex items-center gap-3 relative z-10">
-              My Profile
-            </h2>
-            <p className="text-indigo-100 relative z-10 text-lg">
-              Manage your personal information and address
-            </p>
+            <div className="relative z-10 flex items-start gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex-shrink-0 p-2 hover:bg-white/20 rounded-full transition text-white"
+                title="Go Back"
+              >
+                <FaArrowLeft className="text-xl" />
+              </button>
+              <div>
+                <h2 className="text-4xl font-bold mb-2 flex items-center gap-3">
+                  My Profile
+                </h2>
+                <p className="text-indigo-100 text-lg">
+                  Manage your personal information and address
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* BODY */}

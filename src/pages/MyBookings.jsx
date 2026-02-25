@@ -16,7 +16,8 @@ import {
   FaFilter,
   FaSortAmountDown,
   FaChevronLeft,
-  FaChevronRight
+  FaChevronRight,
+  FaArrowLeft
 } from "react-icons/fa"
 import RatingModal from "../components/RatingModal"
 
@@ -111,13 +112,22 @@ export default function MyBookings() {
         className="max-w-7xl mx-auto pt-24 px-4 sm:px-6 space-y-8 pb-12"
       >
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-indigo-200 pb-6">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-3">
-              My Bookings <FaCar className="text-indigo-600" />
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Track your real-time parking reservations
-            </p>
+          <div className="flex items-start gap-4">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="mt-1 flex-shrink-0 p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition"
+              title="Back to Dashboard"
+            >
+              <FaArrowLeft className="text-gray-600 dark:text-gray-400 text-xl" />
+            </button>
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-3">
+                My Bookings <FaCar className="text-indigo-600" />
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Track your real-time parking reservations
+              </p>
+            </div>
           </div>
 
           {/* SORT CONTROLS */}

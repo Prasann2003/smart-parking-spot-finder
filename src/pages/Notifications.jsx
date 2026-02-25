@@ -2,12 +2,14 @@ import Navbar from "../components/Navbar"
 import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import api from "../utils/api"
-import { FaBellSlash, FaCheckCircle, FaInfoCircle, FaFlagCheckered, FaExclamationCircle, FaBell } from "react-icons/fa"
+import { FaBellSlash, FaCheckCircle, FaInfoCircle, FaFlagCheckered, FaExclamationCircle, FaBell, FaArrowLeft } from "react-icons/fa"
+import { useNavigate } from "react-router-dom"
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const navigate = useNavigate()
 
   /* ===============================
      FETCH REAL NOTIFICATIONS
@@ -70,13 +72,22 @@ export default function Notifications() {
         className="max-w-6xl mx-auto mt-16 px-6"
       >
         {/* HEADER */}
-        <div className="mb-12">
-          <h2 className="text-4xl font-extrabold text-gray-800 mb-2">
-            Notifications
-          </h2>
-          <p className="text-gray-600">
-            Stay updated with real-time parking activity
-          </p>
+        <div className="mb-12 flex items-start gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-1 flex-shrink-0 p-2 hover:bg-white/50 rounded-full transition"
+            title="Go Back"
+          >
+            <FaArrowLeft className="text-gray-600 text-xl" />
+          </button>
+          <div>
+            <h2 className="text-4xl font-extrabold text-gray-800 mb-2">
+              Notifications
+            </h2>
+            <p className="text-gray-600">
+              Stay updated with real-time parking activity
+            </p>
+          </div>
         </div>
 
         {/* STATES */}

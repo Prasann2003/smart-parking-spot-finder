@@ -13,12 +13,15 @@ import {
   FaCog,
   FaLock,
   FaMoon,
-  FaTrashAlt
+  FaTrashAlt,
+  FaArrowLeft
 } from "react-icons/fa"
+import { useNavigate } from "react-router-dom"
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme()
   const user = getCurrentUser()
+  const navigate = useNavigate()
   const [showPasswordModal, setShowPasswordModal] = useState(false)
 
   const [settings, setSettings] = useState({
@@ -72,13 +75,22 @@ export default function Settings() {
         className="max-w-5xl mx-auto pt-24 px-6 space-y-8 pb-12"
       >
         {/* PARKING PAGE HEADER */}
-        <div className="border-b border-indigo-200 pb-6">
-          <h2 className="text-4xl font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-3">
-            <FaCog className="text-gray-600" /> Settings
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Customize your account experience
-          </p>
+        <div className="border-b border-indigo-200 pb-6 flex items-start gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="mt-1 flex-shrink-0 p-2 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-full transition"
+            title="Go Back"
+          >
+            <FaArrowLeft className="text-gray-600 dark:text-gray-400 text-xl" />
+          </button>
+          <div>
+            <h2 className="text-4xl font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-3">
+              <FaCog className="text-gray-600" /> Settings
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Customize your account experience
+            </p>
+          </div>
         </div>
 
         {/* ACCOUNT */}

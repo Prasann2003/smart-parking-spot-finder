@@ -13,11 +13,14 @@ import {
     FaChevronLeft,
     FaChevronRight,
     FaParking,
-    FaClock
+    FaClock,
+    FaArrowLeft
 } from "react-icons/fa"
+import { useNavigate } from "react-router-dom"
 
 export default function ProviderBookings() {
     const user = getCurrentUser()
+    const navigate = useNavigate()
     const [bookings, setBookings] = useState([])
     const [parkings, setParkings] = useState([])
     const [loading, setLoading] = useState(true)
@@ -83,9 +86,18 @@ export default function ProviderBookings() {
 
             <main className="max-w-7xl mx-auto pt-24 px-4 pb-12">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Booking Management</h1>
-                        <p className="text-gray-500 mt-1">Manage and track all your parking reservations</p>
+                    <div className="flex items-start gap-4">
+                        <button
+                            onClick={() => navigate('/provider-dashboard')}
+                            className="mt-1 flex-shrink-0 p-2 hover:bg-gray-200 rounded-full transition"
+                            title="Back to Dashboard"
+                        >
+                            <FaArrowLeft className="text-gray-600 text-xl" />
+                        </button>
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900">Booking Management</h1>
+                            <p className="text-gray-500 mt-1">Manage and track all your parking reservations</p>
+                        </div>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
