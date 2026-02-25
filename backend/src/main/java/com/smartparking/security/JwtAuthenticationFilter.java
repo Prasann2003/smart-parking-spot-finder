@@ -18,6 +18,7 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -56,9 +57,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
             // Token expired, but we allow the request to proceed (e.g., for /auth/login)
             // The security chain will block it if it requires authentication
-            System.out.println("JWT Expired: " + e.getMessage());
+            log.warn("JWT Expired: {}", e.getMessage());
         } catch (Exception e) {
-            System.out.println("JWT Error: " + e.getMessage());
+            log.error("JWT Error: {}", e.getMessage());
         }
         filterChain.doFilter(request, response);
     }

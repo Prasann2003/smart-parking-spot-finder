@@ -18,6 +18,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @org.springframework.transaction.annotation.Transactional
+@lombok.extern.slf4j.Slf4j
 public class RatingService {
 
     private final RatingRepository ratingRepository;
@@ -118,7 +119,7 @@ public class RatingService {
     public java.util.List<RatingResponseDTO> getReviewsBySpotId(Long spotId) {
         try {
             java.util.List<Rating> ratings = ratingRepository.findByParkingSpotId(spotId);
-            System.out.println("DEBUG SERVICE: Found " + ratings.size() + " ratings for spot " + spotId);
+            log.debug("SERVICE: Found {} ratings for spot {}", ratings.size(), spotId);
 
             return ratings.stream()
                     .map(rating -> {
@@ -132,15 +133,14 @@ public class RatingService {
                                     .createdAt(rating.getCreatedAt())
                                     .build();
                         } catch (Exception e) {
-                            System.err.println("ERROR mapping rating " + rating.getId() + ": " + e.getMessage());
+                            log.error("ERROR mapping rating {}: {}", rating.getId(), e.getMessage());
                             return null;
                         }
                     })
                     .filter(java.util.Objects::nonNull)
                     .collect(java.util.stream.Collectors.toList());
         } catch (Exception e) {
-            System.err.println("ERROR fetching reviews for spot " + spotId + ": " + e.getMessage());
-            e.printStackTrace();
+            log.error("ERROR fetching reviews for spot {}: {}", spotId, e.getMessage(), e);
             return java.util.Collections.emptyList();
         }
     }

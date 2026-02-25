@@ -16,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/parking")
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class ParkingController {
 
     private final ParkingSpotService parkingSpotService;
@@ -43,7 +44,7 @@ public class ParkingController {
                     .map(e -> e.getDefaultMessage())
                     .collect(java.util.stream.Collectors.toList());
 
-            System.out.println("DEBUG: AddParking Validation Errors: " + errors);
+            log.error("AddParking Validation Errors: {}", errors);
             return ResponseEntity.badRequest().body(java.util.Map.of("message", "Validation Failed", "errors", errors));
         }
 
@@ -68,7 +69,7 @@ public class ParkingController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false, defaultValue = "id,desc") String[] sort) { // Accept
                                                                                        // sort
-        System.out.println("Searching for spots in State: " + state + ", District: " + district + " | Page: " + page);
+        log.info("Searching for spots in State: {}, District: {} | Page: {}", state, district, page);
 
         // Convert sort array (e.g. ["averageRating,desc"]) to Sort object
         org.springframework.data.domain.Sort sortObj = org.springframework.data.domain.Sort.by(

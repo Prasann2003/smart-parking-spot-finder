@@ -12,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/bookings")
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class BookingController {
 
     private final BookingService bookingService;
@@ -52,7 +53,7 @@ public class BookingController {
         java.time.LocalDateTime start = java.time.LocalDateTime.parse(startTime, formatter);
         java.time.LocalDateTime end = java.time.LocalDateTime.parse(endTime, formatter);
 
-        System.out.println("DEBUG: Checking availability for spot " + parkingSpotId + " from " + start + " to " + end);
+        log.debug("Checking availability for spot {} from {} to {}", parkingSpotId, start, end);
 
         return ResponseEntity.ok(bookingService.getAvailableSlots(parkingSpotId, vehicleType, start, end));
     }

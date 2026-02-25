@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @SpringBootApplication
 @org.springframework.scheduling.annotation.EnableScheduling
+@lombok.extern.slf4j.Slf4j
 public class SmartParkingBackendApplication {
     @Value("${admin.email}")
     private String adminEmail;
@@ -34,7 +35,7 @@ public class SmartParkingBackendApplication {
                         .role(Role.ADMIN)
                         .build();
                 userRepository.save(admin);
-                System.out.println("✅ Admin user created: admin@smartparking.com / admin123");
+                log.info("✅ Admin user created: admin@smartparking.com / admin123");
             }
         };
     }

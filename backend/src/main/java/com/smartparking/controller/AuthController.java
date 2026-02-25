@@ -12,13 +12,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class AuthController {
 
     private final AuthService authService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        System.out.println("Processing registration for: " + request.getEmail());
+        log.info("Processing registration for: {}", request.getEmail());
         return ResponseEntity.ok(authService.register(request));
     }
 
@@ -32,7 +33,7 @@ public class AuthController {
             @RequestBody com.smartparking.dto.ChangePasswordDTO request) {
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication()
                 .getName();
-        System.out.println("Change Password Request for: " + email);
+        log.info("Change Password Request for: {}", email);
         authService.changePassword(email, request);
 
         java.util.Map<String, String> response = new java.util.HashMap<>();

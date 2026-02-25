@@ -12,6 +12,7 @@ import java.security.Principal;
 @RestController
 @RequestMapping("/api/ratings")
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class RatingController {
 
     private final RatingService ratingService;
@@ -25,7 +26,7 @@ public class RatingController {
     public ResponseEntity<java.util.List<com.smartparking.dto.RatingResponseDTO>> getReviews(
             @PathVariable Long spotId) {
         java.util.List<com.smartparking.dto.RatingResponseDTO> reviews = ratingService.getReviewsBySpotId(spotId);
-        System.out.println("DEBUG: Fetching reviews for spot " + spotId + ". Found: " + reviews.size());
+        log.debug("Fetching reviews for spot {}. Found: {}", spotId, reviews.size());
         return ResponseEntity.ok(reviews);
     }
 

@@ -18,6 +18,7 @@ import java.util.Map;
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 @org.springframework.transaction.annotation.Transactional
+@lombok.extern.slf4j.Slf4j
 public class AdminController {
 
     private final UserRepository userRepository;
@@ -240,7 +241,7 @@ public class AdminController {
 
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getAdminStats() {
-        System.out.println("Fetching Admin Stats...");
+        log.info("Fetching Admin Stats...");
         long totalUsers = userRepository.countByRole(com.smartparking.entity.Role.USER);
         long totalProviders = userRepository.countByRole(com.smartparking.entity.Role.PROVIDER);
         long totalSpots = parkingSpotRepository.count();

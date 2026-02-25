@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @org.springframework.transaction.annotation.Transactional
+@lombok.extern.slf4j.Slf4j
 public class ParkingSpotService {
 
     private final ParkingSpotRepository parkingSpotRepository;
@@ -92,9 +93,9 @@ public class ParkingSpotService {
             if (coordinates != null) {
                 dto.setLatitude(coordinates[0]);
                 dto.setLongitude(coordinates[1]);
-                System.out.println("✅ Extracted Coordinates: " + coordinates[0] + ", " + coordinates[1]);
+
             } else {
-                System.out.println("❌ Failed to extract coordinates from link: " + dto.getGoogleMapsLink());
+                log.warn("❌ Failed to extract coordinates from link: {}", dto.getGoogleMapsLink());
             }
         }
 
@@ -245,8 +246,7 @@ public class ParkingSpotService {
                 spot.setLatitude(coordinates[0]);
                 spot.setLongitude(coordinates[1]);
                 coordinatesUpdatedFromLink = true;
-                System.out.println(
-                        "✅ Updated coordinates from link in update: " + coordinates[0] + ", " + coordinates[1]);
+
             }
         }
 
@@ -291,11 +291,8 @@ public class ParkingSpotService {
     public Page<ParkingSpotResponseDTO> getNearbyParkingSpots(double userLat, double userLng, double radiusKm,
             Boolean cctv, Boolean covered, Boolean evCharging, Boolean guard,
             Pageable pageable) {
-        System.out.println("🔍 Finding nearby spots (DB Query). User Lat: " + userLat + ", Lng: " + userLng
-                + ", Radius: " + radiusKm);
         Page<ParkingSpot> nearbySpotsPage = parkingSpotRepository.findNearbySpots(userLat, userLng, radiusKm, cctv,
                 covered, evCharging, guard, pageable);
-        System.out.println("✅ Found " + nearbySpotsPage.getTotalElements() + " total spots within radius.");
 
         return nearbySpotsPage.map(this::mapToDTO);
     }
@@ -347,7 +344,7 @@ public class ParkingSpotService {
 
                 // Persist the correction so we don't query again
                 parkingSpotRepository.save(parkingSpot);
-                System.out.println("✅ Self-healed rating for spot " + parkingSpot.getId() + ": " + realAvg);
+                log.info("✅ Self-healed rating for spot {}: {}", parkingSpot.getId(), realAvg);
             }
         }
         // ------------------------------------

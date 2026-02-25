@@ -13,6 +13,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class StartupDebugLogger implements org.springframework.boot.CommandLineRunner {
 
     private final ParkingSpotRepository parkingSpotRepository;
@@ -21,28 +22,29 @@ public class StartupDebugLogger implements org.springframework.boot.CommandLineR
     @Override
     @Transactional
     public void run(String... args) throws Exception {
-        System.out.println("=================================================");
-        System.out.println("🔍 STARTUP DEBUG: Checking Database State");
-        System.out.println("=================================================");
+        log.info("=================================================");
+        log.info("🔍 STARTUP DEBUG: Checking Database State");
+        log.info("=================================================");
 
         long providerCount = providerRepository.count();
-        System.out.println("👤 Total Providers: " + providerCount);
+        log.info("👤 Total Providers: {}", providerCount);
         List<Provider> providers = providerRepository.findAll();
         for (Provider p : providers) {
-            System.out.println("   - Provider ID: " + p.getId() + " | Name: " + p.getFullName() +
-                    " | User: " + (p.getUser() != null ? p.getUser().getEmail() : "NULL") +
-                    " | Status: " + p.getVerificationStatus());
+            log.info("   - Provider ID: {} | Name: {} | User: {} | Status: {}",
+                    p.getId(), p.getFullName(),
+                    (p.getUser() != null ? p.getUser().getEmail() : "NULL"),
+                    p.getVerificationStatus());
         }
 
-        System.out.println("-------------------------------------------------");
-        System.out.println("🚗 Checking Parking Spots...");
+        log.info("-------------------------------------------------");
+        log.info("🚗 Checking Parking Spots...");
 
         List<ParkingSpot> allSpots = parkingSpotRepository.findAll();
         if (allSpots.isEmpty()) {
-            System.out.println("❌ No parking spots found in database!");
+            log.warn("❌ No parking spots found in database!");
         } else {
             for (ParkingSpot spot : allSpots) {
-                System.out.printf("   - Spot ID: %d | Name: %s | Status: %s | Lat: %s | Lng: %s | Owner: %s%n",
+                log.info("   - Spot ID: {} | Name: {} | Status: {} | Lat: {} | Lng: {} | Owner: {}",
                         spot.getId(),
                         spot.getName(),
                         spot.getStatus(),
@@ -52,10 +54,10 @@ public class StartupDebugLogger implements org.springframework.boot.CommandLineR
 
                 if (spot.getLatitude() == null || spot.getLatitude() == 0.0 ||
                         spot.getLongitude() == null || spot.getLongitude() == 0.0) {
-                    System.out.println("     ⚠️ WARNING: Invalid Coordinates!");
+                    log.warn("     ⚠️ WARNING: Invalid Coordinates!");
                 }
             }
         }
-        System.out.println("=================================================");
+        log.info("=================================================");
     }
 }

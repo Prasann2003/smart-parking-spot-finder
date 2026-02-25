@@ -6,12 +6,10 @@ import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class GoogleMapsUtil {
-
-    private static final Logger logger = LoggerFactory.getLogger(GoogleMapsUtil.class);
 
     public static double[] getCoordinates(String url) {
         if (url == null || url.trim().isEmpty()) {
@@ -31,7 +29,7 @@ public class GoogleMapsUtil {
         String currentUrl = shortUrl;
         try {
             for (int i = 0; i < 5; i++) { // Max 5 redirects
-                logger.info("Accessing URL to expand: {}", currentUrl);
+
                 URL url = new URL(currentUrl);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
@@ -47,15 +45,14 @@ public class GoogleMapsUtil {
                 connection.connect();
 
                 int responseCode = connection.getResponseCode();
-                logger.info("Response Code: {}", responseCode);
 
                 if (responseCode >= 300 && responseCode < 400) {
                     String newUrl = connection.getHeaderField("Location");
                     if (newUrl == null) {
-                        logger.warn("Redirect response missing Location header");
+                        log.warn("Redirect response missing Location header");
                         break;
                     }
-                    logger.info("Redirected to: {}", newUrl);
+
                     currentUrl = newUrl;
                 } else {
                     // Reached final destination (200 OK or error)
@@ -64,13 +61,12 @@ public class GoogleMapsUtil {
             }
             return currentUrl;
         } catch (IOException e) {
-            logger.error("Failed to expand URL: {}", shortUrl, e);
+            log.error("Failed to expand URL: {}", shortUrl, e);
             return shortUrl;
         }
     }
 
     private static double[] extractCoordinates(String url) {
-        logger.info("Extracting coordinates from: {}", url);
 
         // Pattern 0: !3d and !4d (Pin coordinates in data param) - Highest Priority
         // Example: data=!3m1!4b1!4m6!3m5!1s0x...!8m2!3d13.0552404!4d80.2785923
@@ -78,10 +74,10 @@ public class GoogleMapsUtil {
         Matcher m0 = p0.matcher(url);
         if (m0.find()) {
             try {
-                logger.info("Found pin coordinates in data param");
+
                 return new double[] { Double.parseDouble(m0.group(1)), Double.parseDouble(m0.group(2)) };
             } catch (NumberFormatException e) {
-                logger.error("Error parsing coordinates from pattern 0", e);
+                log.error("Error parsing coordinates from pattern 0", e);
             }
         }
 
@@ -92,7 +88,7 @@ public class GoogleMapsUtil {
             try {
                 return new double[] { Double.parseDouble(m1.group(1)), Double.parseDouble(m1.group(2)) };
             } catch (NumberFormatException e) {
-                logger.error("Error parsing coordinates from pattern 1", e);
+                log.error("Error parsing coordinates from pattern 1", e);
             }
         }
         // Pattern 2: ?q=lat,lng or &q=lat,lng or ?ll=lat,lng
@@ -103,7 +99,7 @@ public class GoogleMapsUtil {
             try {
                 return new double[] { Double.parseDouble(m2.group(1)), Double.parseDouble(m2.group(2)) };
             } catch (NumberFormatException e) {
-                logger.error("Error parsing coordinates from pattern 2", e);
+                log.error("Error parsing coordinates from pattern 2", e);
             }
         }
 
@@ -114,11 +110,11 @@ public class GoogleMapsUtil {
             try {
                 return new double[] { Double.parseDouble(m3.group(1)), Double.parseDouble(m3.group(2)) };
             } catch (NumberFormatException e) {
-                logger.error("Error parsing coordinates from pattern 3", e);
+                log.error("Error parsing coordinates from pattern 3", e);
             }
         }
 
-        logger.warn("Could not extract coordinates from URL: {}", url);
+        log.warn("Could not extract coordinates from URL: {}", url);
         return null;
     }
 }

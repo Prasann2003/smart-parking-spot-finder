@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class BookingScheduler {
 
     private final BookingRepository bookingRepository;
@@ -20,7 +21,7 @@ public class BookingScheduler {
         LocalDateTime now = LocalDateTime.now();
         int updatedCount = bookingRepository.updateExpiredBookings(now);
         if (updatedCount > 0) {
-            System.out.println("🔄 Auto-Completed " + updatedCount + " expired bookings at " + now);
+            log.info("🔄 Auto-Completed {} expired bookings at {}", updatedCount, now);
         }
     }
 }

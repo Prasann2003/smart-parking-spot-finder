@@ -26,6 +26,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @RequestMapping("/api/provider")
 @RequiredArgsConstructor
 @org.springframework.transaction.annotation.Transactional
+@lombok.extern.slf4j.Slf4j
 public class ProviderController {
 
     private final ParkingSpotService parkingSpotService;
@@ -36,19 +37,20 @@ public class ProviderController {
 
     @GetMapping("/parkings")
     public ResponseEntity<List<ParkingSpotResponseDTO>> getMyParkingSpots(@RequestParam String email) {
-        System.out.println("DEBUG: Fetching spots for email: " + email);
+        String loggedInEmail = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
+                .getUsername();
+        if (!email.equals(loggedInEmail)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        System.out.println("DEBUG: User ID: " + user.getId());
 
         Optional<Provider> provider = providerRepository.findByUser(user);
         if (provider.isPresent()) {
-            System.out.println("DEBUG: Provider ID found: " + provider.get().getId());
             List<ParkingSpotResponseDTO> spots = parkingSpotService.getParkingSpotsByOwner(provider.get().getId());
-            System.out.println("DEBUG: Spots count linked to provider: " + spots.size());
             return ResponseEntity.ok(spots);
         } else {
-            System.out.println("DEBUG: No Provider entity found for user: " + email);
             return ResponseEntity.ok(List.of());
         }
 
@@ -74,6 +76,12 @@ public class ProviderController {
 
     @GetMapping("/bookings")
     public ResponseEntity<List<BookingDTO>> getMySpotBookings(@RequestParam String email) {
+        String loggedInEmail = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
+                .getUsername();
+        if (!email.equals(loggedInEmail)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(bookingService.getBookingsByOwner(user.getId()));
@@ -86,6 +94,12 @@ public class ProviderController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long spotId,
             @RequestParam(required = false) String status) {
+
+        String loggedInEmail = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
+                .getUsername();
+        if (!email.equals(loggedInEmail)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -103,27 +117,28 @@ public class ProviderController {
 
     @GetMapping("/dashboard")
     public ResponseEntity<Map<String, Object>> getDashboardStats(@RequestParam String email) {
-        System.out.println("DEBUG: Fetching Provider Dashboard for: " + email);
+        String loggedInEmail = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
+                .getUsername();
+        if (!email.equals(loggedInEmail)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
         Optional<Provider> provider = providerRepository.findByUser(user);
         if (provider.isEmpty()) {
-            System.out.println("DEBUG: Provider not found for user: " + email);
+
             return ResponseEntity
                     .ok(Map.of("totalParkings", 0, "activeBookings", 0, "todayEarnings", 0, "monthlyEarnings", 0));
         }
 
         List<ParkingSpotResponseDTO> spots = parkingSpotService.getParkingSpotsByOwner(provider.get().getId());
-        System.out.println("DEBUG: Found " + spots.size() + " spots for provider " + provider.get().getId());
 
         List<BookingDTO> bookings = bookingService.getBookingsByOwner(user.getId());
-        System.out.println("DEBUG: Found " + bookings.size() + " bookings for provider");
 
         double todayEarnings = calculateTodayEarnings(bookings);
         double monthlyEarnings = calculateTotalEarnings(bookings);
-
-        System.out.println("DEBUG: Calculated Earnings - Today: " + todayEarnings + ", Monthly: " + monthlyEarnings);
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalParkings", spots.size());
@@ -137,7 +152,12 @@ public class ProviderController {
     @GetMapping("/revenue-chart")
     public ResponseEntity<List<com.smartparking.dto.MonthlyRevenueDTO>> getProviderMonthlyRevenue(
             @RequestParam String email) {
-        System.out.println("DEBUG: Fetching Provider Revenue Chart for: " + email);
+        String loggedInEmail = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
+                .getUsername();
+        if (!email.equals(loggedInEmail)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
@@ -189,10 +209,10 @@ public class ProviderController {
                     .map(e -> e.getDefaultMessage())
                     .collect(java.util.stream.Collectors.toList());
 
-            System.out.println("DEBUG: Validation Errors: " + errors);
+            log.debug("Validation Errors: {}", errors);
             result.getAllErrors().forEach(error -> {
-                System.out.println("Field: " + ((org.springframework.validation.FieldError) error).getField() + " - "
-                        + error.getDefaultMessage());
+                log.debug("Field: {} - {}", ((org.springframework.validation.FieldError) error).getField(),
+                        error.getDefaultMessage());
             });
 
             return ResponseEntity.badRequest().body(Map.of("message", "Validation Failed", "errors", errors));
