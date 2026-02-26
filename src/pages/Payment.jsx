@@ -38,6 +38,28 @@ export default function Payment() {
   const [availableSlots, setAvailableSlots] = useState(null)
   const [checkingAvailability, setCheckingAvailability] = useState(false)
 
+  // 45-day Max Booking Limits
+  const [minDateString, setMinDateString] = useState("")
+  const [maxDateString, setMaxDateString] = useState("")
+
+  useEffect(() => {
+    const now = new Date()
+    // Local ISO string hack to match datetime-local format YYYY-MM-DDTHH:mm
+    const toLocalISO = (date) => {
+      const offset = date.getTimezoneOffset() * 60000
+      const localISOTime = (new Date(date - offset)).toISOString().slice(0, 16)
+      return localISOTime
+    }
+
+    setMinDateString(toLocalISO(now))
+
+    // Max 45 days
+    const maxDate = new Date(now)
+    maxDate.setDate(now.getDate() + 45)
+    setMaxDateString(toLocalISO(maxDate))
+  }, [])
+
+
   // Initialize selected vehicle type if configs exist
   // Initialize selected vehicle type if configs exist
   useEffect(() => {
@@ -317,6 +339,9 @@ export default function Payment() {
                     type="datetime-local"
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
                     value={startTime}
+                    min={minDateString}
+                    max={maxDateString}
+                    disabled={paymentStatus === "SUCCESS" || processing}
                     onChange={(e) => setStartTime(e.target.value)}
                   />
                 </div>
@@ -326,6 +351,9 @@ export default function Payment() {
                     type="datetime-local"
                     className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
                     value={endTime}
+                    min={startTime || minDateString}
+                    max={maxDateString}
+                    disabled={paymentStatus === "SUCCESS" || processing}
                     onChange={(e) => setEndTime(e.target.value)}
                   />
                 </div>
@@ -344,10 +372,11 @@ export default function Payment() {
                     <button
                       key={config.vehicleType}
                       onClick={() => setSelectedVehicleType(config.vehicleType)}
+                      disabled={paymentStatus === "SUCCESS" || processing}
                       className={`relative p-4 rounded-xl border-2 text-left transition-all ${selectedVehicleType === config.vehicleType
                         ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
                         : 'border-gray-100 hover:border-gray-200 text-gray-600'
-                        }`}
+                        } ${paymentStatus === "SUCCESS" || processing ? 'opacity-70 cursor-not-allowed grayscale' : ''}`}
                     >
                       <div className="text-2xl mb-2">{getVehicleIcon(config.vehicleType)}</div>
                       <div className="font-semibold text-sm">{config.vehicleType}</div>

@@ -38,6 +38,21 @@ public class BookingService {
                 ParkingSpot parkingSpot = parkingSpotRepository.findByIdWithLock(dto.getParkingSpotId())
                                 .orElseThrow(() -> new RuntimeException("Parking Spot not found"));
 
+                // Enforce 45-day advance booking limit
+                long daysUntilStart = java.time.Duration.between(java.time.LocalDateTime.now(), dto.getStartTime())
+                                .toDays();
+                if (daysUntilStart > 45) {
+                        throw new RuntimeException("Advance bookings are only allowed up to 45 days from today.");
+                }
+
+                // Chronological validation
+                if (dto.getStartTime().isBefore(java.time.LocalDateTime.now())) {
+                        throw new RuntimeException("Start time cannot be in the past.");
+                }
+                if (dto.getEndTime().isBefore(dto.getStartTime()) || dto.getEndTime().isEqual(dto.getStartTime())) {
+                        throw new RuntimeException("End time must be after start time.");
+                }
+
                 // FIND VEHICLE CONFIG
                 com.smartparking.entity.SpotVehicleConfig config = parkingSpot.getVehicleConfigs().stream()
                                 .filter(c -> c.getVehicleType() == dto.getVehicleType())
@@ -187,6 +202,12 @@ public class BookingService {
                         java.time.LocalDateTime endTime) {
                 ParkingSpot spot = parkingSpotRepository.findById(spotId)
                                 .orElseThrow(() -> new RuntimeException("Parking Spot not found"));
+
+                // Enforce 45-day advance booking limit
+                long daysUntilStart = java.time.Duration.between(java.time.LocalDateTime.now(), startTime).toDays();
+                if (daysUntilStart > 45) {
+                        return 0;
+                }
 
                 com.smartparking.entity.SpotVehicleConfig config = spot.getVehicleConfigs().stream()
                                 .filter(c -> c.getVehicleType() == vehicleType)
