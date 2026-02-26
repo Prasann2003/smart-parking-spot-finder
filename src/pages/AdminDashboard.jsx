@@ -40,6 +40,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [chartData, setChartData] = useState([])
+  const [systemStatus, setSystemStatus] = useState("UNKNOWN")
 
   /* ===========================
      FETCH ADMIN DATA
@@ -48,6 +49,17 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchAdminData = async () => {
       try {
+        // Fetch health first, independently
+        let statusRes = { data: { status: "DOWN" } }
+        try {
+          statusRes = await api.get("/admin/system-health")
+        } catch (healthErr) {
+          console.error("Health check failed:", healthErr)
+          statusRes = healthErr.response || { data: { status: "DOWN" } }
+        }
+        setSystemStatus(statusRes.data?.status || "DOWN")
+
+        // Fetch remaining stats
         const statsRes = await api.get("/admin/stats")
         const appsRes = await api.get("/admin/provider-applications-paginated?status=PENDING&size=5")
         const chartRes = await api.get("/admin/revenue-chart")
@@ -55,12 +67,18 @@ export default function AdminDashboard() {
         setStats(statsRes.data)
         setApplications(appsRes.data.content || [])
         setChartData(chartRes.data || [])
+        setError("")
       } catch (err) {
-        console.error("Admin Dashboard Error:", err.response?.data)
-        const msg = err.response?.data?.message || "Unable to load admin dashboard."
-        toast.error(msg)
-        setError(msg)
-        setLoading(false)
+        console.error("Admin Dashboard Error:", err)
+        // Set stats to empty/default instead of blank error screen
+        setStats({
+          totalUsers: 0, totalProviders: 0, totalSpots: 0,
+          activeBookings: 0, cancelledBookings: 0,
+          totalRevenue: 0, platformEarnings: 0
+        })
+        setApplications([])
+        setChartData([])
+        toast.error("Database connection failed. Showing degraded view.")
       }
 
       setLoading(false)
@@ -128,9 +146,30 @@ export default function AdminDashboard() {
             Monitor and control the entire parking system <FaUniversity className="text-indigo-600" />
           </p>
         </div>
-        <div className="bg-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium text-gray-500">
-          System Status: <span className="text-emerald-600 flex items-center gap-1 inline-flex"><FaCheckCircle /> Operational</span>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`px-4 py-2.5 rounded-2xl shadow-sm border text-sm font-semibold flex items-center gap-2.5 transition-all duration-300
+            ${systemStatus === 'UP'
+              ? 'bg-emerald-50/80 border-emerald-200 text-emerald-700 shadow-[0_0_15px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/20'
+              : 'bg-red-50/80 border-red-200 text-red-700 shadow-[0_0_15px_rgba(239,68,68,0.15)] ring-1 ring-red-500/20'
+            }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-gray-500 font-medium">System Status:</span>
+            <div className="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-full border border-gray-100 shadow-sm">
+              <span className="relative flex h-2.5 w-2.5">
+                {systemStatus === 'UP' && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                )}
+                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${systemStatus === 'UP' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+              </span>
+              <span className={`${systemStatus === 'UP' ? 'text-emerald-700' : 'text-red-700'} font-bold tracking-tight`}>
+                {systemStatus === 'UP' ? 'Operational' : (systemStatus || 'Down/Degraded')}
+              </span>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* =========================

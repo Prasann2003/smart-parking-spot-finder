@@ -26,6 +26,7 @@ public class AdminController {
     private final ParkingSpotRepository parkingSpotRepository;
     private final ProviderRepository providerRepository;
     private final ParkingProviderApplicationRepository parkingProviderApplicationRepository;
+    private final org.springframework.boot.actuate.health.HealthEndpoint healthEndpoint;
 
     @GetMapping("/provider-applications-paginated")
     public ResponseEntity<org.springframework.data.domain.Page<Map<String, Object>>> getApplicationsPaginated(
@@ -268,6 +269,35 @@ public class AdminController {
                 "totalRevenue", totalRevenue != null ? totalRevenue : 0.0,
                 "platformEarnings", platformEarnings != null ? platformEarnings : 0.0,
                 "systemAlerts", alerts));
+    }
+
+    @GetMapping("/system-health")
+    public ResponseEntity<Map<String, Object>> getSystemHealth() {
+        try {
+            org.springframework.boot.actuate.health.HealthComponent health = healthEndpoint.health();
+            Map<String, Object> response = new HashMap<>();
+
+            String overallStatus = health.getStatus().getCode();
+            response.put("status", overallStatus);
+
+            if (health instanceof org.springframework.boot.actuate.health.CompositeHealth) {
+                org.springframework.boot.actuate.health.CompositeHealth compositeHealth = (org.springframework.boot.actuate.health.CompositeHealth) health;
+
+                Map<String, String> components = new HashMap<>();
+                compositeHealth.getComponents().forEach((name, component) -> {
+                    components.put(name, component.getStatus().getCode());
+                });
+                response.put("components", components);
+            }
+
+            if ("DOWN".equals(overallStatus) || "OUT_OF_SERVICE".equals(overallStatus)) {
+                return ResponseEntity.status(503).body(response);
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Failed to fetch system health", e);
+            return ResponseEntity.status(503).body(Map.of("status", "DOWN", "error", "Health check unavailable"));
+        }
     }
 
     @org.springframework.beans.factory.annotation.Autowired
