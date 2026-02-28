@@ -63,8 +63,12 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return !isDeleted;
     }
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean isDeleted = false;
 
     // Provider Details
     private String phoneNumber;

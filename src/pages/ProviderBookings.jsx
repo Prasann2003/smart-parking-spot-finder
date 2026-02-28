@@ -88,7 +88,7 @@ export default function ProviderBookings() {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div className="flex items-start gap-4">
                         <button
-                            onClick={() => navigate('/provider-dashboard')}
+                            onClick={() => navigate(-1)}
                             className="mt-1 flex-shrink-0 p-2 hover:bg-gray-200 rounded-full transition"
                             title="Back to Dashboard"
                         >

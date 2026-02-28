@@ -2,6 +2,8 @@ package com.smartparking.service;
 
 import com.smartparking.dto.UpdateProfileDTO;
 import com.smartparking.entity.User;
+import com.smartparking.exception.AdminAccountDeletionNotAllowedException;
+import com.smartparking.exception.NotFoundException;
 import com.smartparking.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +21,7 @@ public class UserService {
     private final BookingService bookingService;
 
     public User updateProfile(String email, UpdateProfileDTO dto) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (dto.getName() != null && !dto.getName().isEmpty())
@@ -43,7 +45,7 @@ public class UserService {
     }
 
     public com.smartparking.dto.UserProfileDTO getProfile(String email) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return com.smartparking.dto.UserProfileDTO.builder()
@@ -63,37 +65,47 @@ public class UserService {
 
     @org.springframework.transaction.annotation.Transactional
     public void deleteAccount(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (user.getRole() == com.smartparking.entity.Role.ADMIN) {
-            throw new RuntimeException("Admins cannot delete their account");
+            throw new AdminAccountDeletionNotAllowedException("Admins cannot delete their account");
         }
 
-        // 1. Cancel and Unlink User Bookings
+        // 1. Cancel Active User Bookings (Applying 24-hr refund rule internally via
+        // bookingService)
         bookingService.cancelAndUnlinkUserBookings(user.getId());
 
-        // 2. Delete User Ratings & Favorites
-        ratingRepository.deleteByUserId(user.getId());
+        // 2. Clear favorites and provider applications (these don't have financial
+        // impact)
         savedSpotRepository.deleteByUserId(user.getId());
 
-        // 3. If Provider, cascading delete
+        // 3. If Provider, soft delete all their parking spots
         if (user.getRole() == com.smartparking.entity.Role.PROVIDER) {
             providerRepository.findByUser(user).ifPresent(provider -> {
-                // For each spot
-                parkingSpotRepository.findByProviderId(provider.getId()).forEach(spot -> {
+                parkingSpotRepository.findByProviderIdAndIsDeletedFalse(provider.getId()).forEach(spot -> {
                     bookingService.cancelAndUnlinkSpotBookings(spot.getId());
-                    ratingRepository.deleteByParkingSpotId(spot.getId());
                     savedSpotRepository.deleteByParkingSpotId(spot.getId());
-                    parkingSpotRepository.delete(spot);
+                    spot.setDeleted(true);
+                    spot.setStatus(com.smartparking.entity.ParkingSpot.ParkingStatus.BLOCKED);
+                    parkingSpotRepository.save(spot);
                 });
-                providerRepository.delete(provider);
             });
 
             providerApplicationRepository.deleteByUserId(user.getId());
         }
 
-        // 4. Delete User
-        userRepository.delete(user);
+        // 4. Soft Delete and Scramble User Data
+        user.setEmail("deleted_" + java.util.UUID.randomUUID().toString() + "@smartparking.local");
+        user.setName("Deleted User");
+        user.setPhoneNumber(null);
+        user.setAddress1(null);
+        user.setAddress2(null);
+        user.setBankAccount(null);
+        user.setUpiId(null);
+        user.setPanNumber(null);
+        user.setDeleted(true);
+
+        userRepository.save(user);
     }
 }

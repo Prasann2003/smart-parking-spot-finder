@@ -25,7 +25,7 @@ public class ForgotPasswordService {
 
     @Transactional
     public void generateAndSendOtp(String email) {
-        if (!userRepository.existsByEmail(email)) {
+        if (!userRepository.existsByEmailAndIsDeletedFalse(email)) {
             throw new RuntimeException("User not found with email: " + email);
         }
 
@@ -68,7 +68,7 @@ public class ForgotPasswordService {
             throw new RuntimeException("Invalid OTP");
         }
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));

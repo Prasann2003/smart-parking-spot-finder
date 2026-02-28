@@ -243,8 +243,8 @@ public class AdminController {
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getAdminStats() {
         log.info("Fetching Admin Stats...");
-        long totalUsers = userRepository.countByRole(com.smartparking.entity.Role.USER);
-        long totalProviders = userRepository.countByRole(com.smartparking.entity.Role.PROVIDER);
+        long totalUsers = userRepository.countByRoleAndIsDeletedFalse(com.smartparking.entity.Role.USER);
+        long totalProviders = userRepository.countByRoleAndIsDeletedFalse(com.smartparking.entity.Role.PROVIDER);
         long totalSpots = parkingSpotRepository.count();
         long activeBookings = bookingRepository
                 .countByStatus(com.smartparking.entity.Booking.BookingStatus.CONFIRMED);
@@ -320,7 +320,7 @@ public class AdminController {
         org.springframework.data.domain.Page<User> userPage;
 
         if (role != null && !role.isEmpty() && !role.equalsIgnoreCase("ALL")) {
-            userPage = userRepository.findByRole(Role.valueOf(role.toUpperCase()), pageable);
+            userPage = userRepository.findByRoleAndIsDeletedFalse(Role.valueOf(role.toUpperCase()), pageable);
         } else {
             userPage = userRepository.findAll(pageable);
         }

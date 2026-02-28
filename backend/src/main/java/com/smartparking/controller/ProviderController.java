@@ -43,7 +43,7 @@ public class ProviderController {
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
         }
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Optional<Provider> provider = providerRepository.findByUser(user);
@@ -82,7 +82,7 @@ public class ProviderController {
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
         }
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(bookingService.getBookingsByOwner(user.getId()));
     }
@@ -101,7 +101,7 @@ public class ProviderController {
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
         }
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Optional<Provider> provider = providerRepository.findByUser(user);
@@ -123,7 +123,7 @@ public class ProviderController {
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
         }
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
         Optional<Provider> provider = providerRepository.findByUser(user);
@@ -158,7 +158,7 @@ public class ProviderController {
             return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
         }
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
         Optional<Provider> provider = providerRepository.findByUser(user);

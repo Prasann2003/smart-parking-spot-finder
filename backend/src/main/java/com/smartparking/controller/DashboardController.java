@@ -53,7 +53,7 @@ public class DashboardController {
 
     private User getUser(Authentication authentication) {
         User loggedUser = (User) authentication.getPrincipal();
-        return userRepository.findByEmail(loggedUser.getEmail())
+        return userRepository.findByEmailAndIsDeletedFalse(loggedUser.getEmail())
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 

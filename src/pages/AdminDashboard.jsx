@@ -59,10 +59,12 @@ export default function AdminDashboard() {
         }
         setSystemStatus(statusRes.data?.status || "DOWN")
 
-        // Fetch remaining stats
-        const statsRes = await api.get("/admin/stats")
-        const appsRes = await api.get("/admin/provider-applications-paginated?status=PENDING&size=5")
-        const chartRes = await api.get("/admin/revenue-chart")
+        // Fetch remaining stats in parallel
+        const [statsRes, appsRes, chartRes] = await Promise.all([
+          api.get("/admin/stats"),
+          api.get("/admin/provider-applications-paginated?status=PENDING&size=5"),
+          api.get("/admin/revenue-chart")
+        ])
 
         setStats(statsRes.data)
         setApplications(appsRes.data.content || [])

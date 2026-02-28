@@ -26,15 +26,20 @@ public class RatingService {
     private final UserRepository userRepository;
 
     public Rating submitRating(String userEmail, RatingDTO dto) {
-        User user = userRepository.findByEmail(userEmail)
+        User user = userRepository.findByEmailAndIsDeletedFalse(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Booking booking = bookingRepository.findById(dto.getBookingId())
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
         // Validation 1: Booking belongs to user
-        if (!booking.getUser().getId().equals(user.getId())) {
+        if (booking.getUser() == null || !booking.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("You can only rate your own bookings");
+        }
+
+        // Spot validation
+        if (booking.getParkingSpot() == null || booking.getParkingSpot().isDeleted()) {
+            throw new RuntimeException("Cannot rate a booking for a parking spot that no longer exists.");
         }
 
         // Validation 2: Booking is COMPLETED

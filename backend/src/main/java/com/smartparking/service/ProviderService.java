@@ -35,7 +35,7 @@ public class ProviderService {
         // String email = ((UserDetails)
         // SecurityContextHolder.getContext().getAuthentication().getPrincipal())
         // .getUsername();
-        // User user = userRepository.findByEmail(email)
+        // User user = userRepository.findByEmailAndIsDeletedFalse(email)
         // .orElseThrow(() -> new RuntimeException("User not found"));
         //
         // // 1. Create or Update Provider
@@ -123,7 +123,7 @@ public class ProviderService {
                                 .getPrincipal())
                                 .getUsername();
 
-                User user = userRepository.findByEmail(email)
+                User user = userRepository.findByEmailAndIsDeletedFalse(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
                 List<String> imageUrls = new ArrayList<>();
@@ -340,7 +340,8 @@ public class ProviderService {
         }
 
         public java.util.Map<String, String> getProviderStatus(String email) {
-                User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+                User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
                 Optional<ProviderApplication> app = parkingProviderApplicationRepository.findByUser(user);
 
                 if (app.isPresent()) {

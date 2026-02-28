@@ -7,14 +7,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Long> {
-        List<ParkingSpot> findByProviderId(Long providerId);
+        List<ParkingSpot> findByProviderIdAndIsDeletedFalse(Long providerId);
 
-        List<ParkingSpot> findByStateAndDistrict(String state, String district);
+        List<ParkingSpot> findByStateAndDistrictAndIsDeletedFalse(String state, String district);
 
-        List<ParkingSpot> findByStatus(com.smartparking.entity.ParkingSpot.ParkingStatus status);
+        List<ParkingSpot> findByStatusAndIsDeletedFalse(com.smartparking.entity.ParkingSpot.ParkingStatus status);
 
         @org.springframework.data.jpa.repository.Query("SELECT p FROM ParkingSpot p WHERE " +
-                        "p.state = :state AND p.district = :district AND p.status = :status " +
+                        "p.state = :state AND p.district = :district AND p.status = :status AND p.isDeleted = false " +
                         "AND (:cctv IS NULL OR p.cctv = :cctv) " +
                         "AND (:covered IS NULL OR p.covered = :covered) " +
                         "AND (:evCharging IS NULL OR p.evCharging = :evCharging) " +
@@ -29,7 +29,7 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Long> 
                         @org.springframework.data.repository.query.Param("guard") Boolean guard,
                         Pageable pageable);
 
-        @org.springframework.data.jpa.repository.Query(value = "SELECT p FROM ParkingSpot p WHERE p.status = 'ACTIVE' AND "
+        @org.springframework.data.jpa.repository.Query(value = "SELECT p FROM ParkingSpot p WHERE p.status = 'ACTIVE' AND p.isDeleted = false AND "
                         +
                         "(6371 * acos(cos(radians(:userLat)) * cos(radians(p.latitude)) * " +
                         "cos(radians(p.longitude) - radians(:userLng)) + " +
@@ -37,7 +37,7 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Long> 
                         "AND (:cctv IS NULL OR p.cctv = :cctv) " +
                         "AND (:covered IS NULL OR p.covered = :covered) " +
                         "AND (:evCharging IS NULL OR p.evCharging = :evCharging) " +
-                        "AND (:guard IS NULL OR p.guard = :guard)", countQuery = "SELECT count(p) FROM ParkingSpot p WHERE p.status = 'ACTIVE' AND "
+                        "AND (:guard IS NULL OR p.guard = :guard)", countQuery = "SELECT count(p) FROM ParkingSpot p WHERE p.status = 'ACTIVE' AND p.isDeleted = false AND "
                                         +
                                         "(6371 * acos(cos(radians(:userLat)) * cos(radians(p.latitude)) * " +
                                         "cos(radians(p.longitude) - radians(:userLng)) + " +
@@ -56,7 +56,7 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Long> 
                         @org.springframework.data.repository.query.Param("guard") Boolean guard,
                         Pageable pageable);
 
-        @org.springframework.data.jpa.repository.Query("SELECT count(p) FROM ParkingSpot p WHERE p.status = 'ACTIVE' AND "
+        @org.springframework.data.jpa.repository.Query("SELECT count(p) FROM ParkingSpot p WHERE p.status = 'ACTIVE' AND p.isDeleted = false AND "
                         +
                         "(6371 * acos(cos(radians(:userLat)) * cos(radians(p.latitude)) * " +
                         "cos(radians(p.longitude) - radians(:userLng)) + " +
@@ -67,7 +67,7 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Long> 
                         @org.springframework.data.repository.query.Param("radius") double radius);
 
         @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
-        @org.springframework.data.jpa.repository.Query("SELECT p FROM ParkingSpot p WHERE p.id = :id")
+        @org.springframework.data.jpa.repository.Query("SELECT p FROM ParkingSpot p WHERE p.id = :id AND p.isDeleted = false")
         java.util.Optional<ParkingSpot> findByIdWithLock(
                         @org.springframework.data.repository.query.Param("id") Long id);
 }

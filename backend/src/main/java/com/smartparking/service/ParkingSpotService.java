@@ -40,7 +40,7 @@ public class ParkingSpotService {
     // addParkingSpot removed - moved to ProviderService
 
     public List<ParkingSpotResponseDTO> getParkingSpotsByOwner(Long providerId) {
-        return parkingSpotRepository.findByProviderId(providerId).stream()
+        return parkingSpotRepository.findByProviderIdAndIsDeletedFalse(providerId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -55,7 +55,7 @@ public class ParkingSpotService {
                 .getPrincipal())
                 .getUsername();
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         // 2️⃣ Get provider for user
@@ -302,7 +302,7 @@ public class ParkingSpotService {
     }
 
     public List<ParkingSpotResponseDTO> getAllParkingSpots() {
-        return parkingSpotRepository.findByStatus(ParkingSpot.ParkingStatus.ACTIVE).stream()
+        return parkingSpotRepository.findByStatusAndIsDeletedFalse(ParkingSpot.ParkingStatus.ACTIVE).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }

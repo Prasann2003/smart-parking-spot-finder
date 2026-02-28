@@ -27,7 +27,7 @@ public class SmartParkingBackendApplication {
     @Bean
     CommandLineRunner commandLineRunner(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         return args -> {
-            if (!userRepository.existsByEmail(adminEmail)) {
+            if (!userRepository.existsByEmailAndIsDeletedFalse(adminEmail)) {
                 User admin = User.builder()
                         .name("Admin User")
                         .email(adminEmail)

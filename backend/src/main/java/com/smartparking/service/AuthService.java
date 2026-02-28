@@ -24,7 +24,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailAndIsDeletedFalse(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
@@ -56,7 +56,7 @@ public class AuthService {
             throw e;
         }
 
-        var user = userRepository.findByEmail(request.getEmail())
+        var user = userRepository.findByEmailAndIsDeletedFalse(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         var token = jwtTokenProvider.generateToken(user);
@@ -70,7 +70,7 @@ public class AuthService {
 
     public void changePassword(String email, com.smartparking.dto.ChangePasswordDTO request) {
 
-        var user = userRepository.findByEmail(email)
+        var user = userRepository.findByEmailAndIsDeletedFalse(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {

@@ -1,19 +1,19 @@
 package com.smartparking.service;
 
 import com.smartparking.dto.BookingDTO;
-import com.smartparking.entity.Booking;
-import com.smartparking.entity.ParkingSpot;
-import com.smartparking.entity.User;
+import com.smartparking.entity.*;
 import com.smartparking.repository.BookingRepository;
 import com.smartparking.repository.ParkingSpotRepository;
 import com.smartparking.repository.PaymentRepository;
 import com.smartparking.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,7 +31,7 @@ public class BookingService {
         public BookingDTO createBooking(BookingDTO dto) {
                 String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
                                 .getUsername();
-                User user = userRepository.findByEmail(email)
+                User user = userRepository.findByEmailAndIsDeletedFalse(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
                 // Use Pessimistic Lock to prevent double booking
@@ -121,7 +121,7 @@ public class BookingService {
                         String filterStatus) {
                 String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
                                 .getUsername();
-                User user = userRepository.findByEmail(email)
+                User user = userRepository.findByEmailAndIsDeletedFalse(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
                 org.springframework.data.jpa.domain.Specification<Booking> spec = (root, query, cb) -> {
@@ -181,7 +181,7 @@ public class BookingService {
         public List<BookingDTO> getUserBookings() {
                 String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
                                 .getUsername();
-                User user = userRepository.findByEmail(email)
+                User user = userRepository.findByEmailAndIsDeletedFalse(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
 
                 return bookingRepository.findByUserId(user.getId()).stream()
@@ -282,7 +282,7 @@ public class BookingService {
         public BookingDTO getBookingById(Long id) {
                 String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
                                 .getUsername();
-                User user = userRepository.findByEmail(email)
+                User user = userRepository.findByEmailAndIsDeletedFalse(email)
                                 .orElseThrow(() -> new RuntimeException("User not found"));
                 return bookingRepository.findByIdAndUser(id, user).map(this::mapToDTO)
                                 .orElseThrow(() -> new RuntimeException("Booking not found by id: " + id));
@@ -457,59 +457,74 @@ public class BookingService {
         public void cancelAndUnlinkUserBookings(Long userId) {
                 List<Booking> userBookings = bookingRepository.findByUserId(userId);
                 java.time.LocalDateTime now = java.time.LocalDateTime.now();
+                java.time.LocalDateTime refundDeadline = now.plusHours(24);
 
                 for (Booking booking : userBookings) {
-                        // If booking is active/upcoming, cancel and refund
                         if (booking.getStatus() == Booking.BookingStatus.CONFIRMED
                                         && booking.getEndTime().isAfter(now)) {
+
+                                boolean hasStarted = booking.getStartTime().isBefore(now)
+                                                || booking.getStartTime().isEqual(now);
+
+                                boolean isEligibleForRefund = !hasStarted
+                                                && (booking.getStartTime().isAfter(refundDeadline)
+                                                                || booking.getStartTime().isEqual(refundDeadline));
+
                                 booking.setStatus(Booking.BookingStatus.CANCELLED);
-                                if (booking.getPayment() != null) {
+
+                                if (booking.getPayment() != null && isEligibleForRefund) {
                                         booking.getPayment()
                                                         .setStatus(com.smartparking.entity.Payment.PaymentStatus.REFUNDED);
                                 }
+                                bookingRepository.save(booking);
                         }
-                        // Unlink User
-                        booking.setUser(null);
-                        bookingRepository.save(booking);
                 }
         }
 
+        @Transactional
         public void cancelAndUnlinkSpotBookings(Long spotId) {
+
                 List<Booking> spotBookings = bookingRepository.findByParkingSpotId(spotId);
-                java.time.LocalDateTime now = java.time.LocalDateTime.now();
+                LocalDateTime now = LocalDateTime.now();
 
                 for (Booking booking : spotBookings) {
-                        // If booking is active/upcoming, cancel and refund
-                        if (booking.getStatus() == Booking.BookingStatus.CONFIRMED
-                                        && booking.getEndTime().isAfter(now)) {
-                                booking.setStatus(Booking.BookingStatus.CANCELLED);
-                                if (booking.getPayment() != null) {
-                                        booking.getPayment()
-                                                        .setStatus(com.smartparking.entity.Payment.PaymentStatus.REFUNDED);
-                                }
 
-                                // Notify User
-                                if (booking.getUser() != null) {
-                                        com.smartparking.entity.Notification notification = com.smartparking.entity.Notification
-                                                        .builder()
-                                                        .user(booking.getUser())
-                                                        .title("Booking Cancelled")
-                                                        .message("Your booking at "
-                                                                        + (booking.getParkingSpot() != null
-                                                                                        ? booking.getParkingSpot()
-                                                                                                        .getName()
-                                                                                        : "Unknown Spot")
-                                                                        + " has been cancelled because the provider is no longer available. A refund has been initiated.")
-                                                        .type("danger")
-                                                        .isRead(false)
-                                                        .build();
-                                        notificationRepository.save(notification);
-                                }
+                        if (booking.getStatus() != Booking.BookingStatus.CONFIRMED
+                                        || !booking.getEndTime().isAfter(now)) {
+                                continue;
                         }
-                        // Unlink Spot
-                        booking.setParkingSpot(null);
+
+                        booking.setStatus(Booking.BookingStatus.CANCELLED);
+
+                        boolean hasPayment = booking.getPayment() != null;
+
+                        if (hasPayment) {
+                                booking.getPayment()
+                                                .setStatus(Payment.PaymentStatus.REFUNDED);
+                        }
+
+                        if (booking.getUser() != null) {
+
+                                String spotName = booking.getParkingSpot() != null
+                                                ? booking.getParkingSpot().getName()
+                                                : "Unknown Spot";
+
+                                String message = "Your booking at " + spotName +
+                                                " has been cancelled because the provider is no longer available."
+                                                + (hasPayment ? " A full refund has been initiated." : "");
+
+                                Notification notification = Notification.builder()
+                                                .user(booking.getUser())
+                                                .title("Booking Cancelled")
+                                                .message(message)
+                                                .type("danger")
+                                                .isRead(false)
+                                                .build();
+
+                                notificationRepository.save(notification);
+                        }
+
                         bookingRepository.save(booking);
                 }
         }
-
 }

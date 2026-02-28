@@ -19,47 +19,48 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NotificationController {
 
-    private final NotificationRepository notificationRepository;
-    private final UserRepository userRepository;
+        private final NotificationRepository notificationRepository;
+        private final UserRepository userRepository;
 
-    @GetMapping
-    public ResponseEntity<List<NotificationDTO>> getUserNotifications() {
-        String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
-                .getUsername();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        @GetMapping
+        public ResponseEntity<List<NotificationDTO>> getUserNotifications() {
+                String email = ((UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal())
+                                .getUsername();
+                User user = userRepository.findByEmailAndIsDeletedFalse(email)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<NotificationDTO> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
-                .stream()
-                .map(n -> NotificationDTO.builder()
-                        .id(n.getId())
-                        .title(n.getTitle())
-                        .message(n.getMessage())
-                        .type(n.getType())
-                        .read(n.isRead())
-                        .createdAt(n.getCreatedAt())
-                        .build())
-                .collect(Collectors.toList());
+                List<NotificationDTO> notifications = notificationRepository
+                                .findByUserIdOrderByCreatedAtDesc(user.getId())
+                                .stream()
+                                .map(n -> NotificationDTO.builder()
+                                                .id(n.getId())
+                                                .title(n.getTitle())
+                                                .message(n.getMessage())
+                                                .type(n.getType())
+                                                .read(n.isRead())
+                                                .createdAt(n.getCreatedAt())
+                                                .build())
+                                .collect(Collectors.toList());
 
-        return ResponseEntity.ok(notifications);
-    }
+                return ResponseEntity.ok(notifications);
+        }
 
-    @PatchMapping("/{id}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable Long id) {
-        Notification notification = notificationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
+        @PatchMapping("/{id}/read")
+        public ResponseEntity<Void> markAsRead(@PathVariable Long id) {
+                Notification notification = notificationRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Notification not found"));
 
-        // Security check: ensure notification belongs to current user?
-        // Skipping strict ownership check for speed, but ideally should have it.
+                // Security check: ensure notification belongs to current user?
+                // Skipping strict ownership check for speed, but ideally should have it.
 
-        notification.setRead(true);
-        notificationRepository.save(notification);
-        return ResponseEntity.ok().build();
-    }
+                notification.setRead(true);
+                notificationRepository.save(notification);
+                return ResponseEntity.ok().build();
+        }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteNotification(@PathVariable Long id) {
-        notificationRepository.deleteById(id);
-        return ResponseEntity.ok().build();
-    }
+        @DeleteMapping("/{id}")
+        public ResponseEntity<Void> deleteNotification(@PathVariable Long id) {
+                notificationRepository.deleteById(id);
+                return ResponseEntity.ok().build();
+        }
 }

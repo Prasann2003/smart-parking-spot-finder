@@ -6,7 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -56,6 +59,16 @@ public class ParkingSpot {
 
         @Column(name = "has_ev_charging")
         private boolean evCharging;
+
+        @CreationTimestamp
+        private LocalDateTime createdAt;
+
+        @UpdateTimestamp
+        private LocalDateTime updatedAt;
+
+        @Column(nullable = false)
+        @Builder.Default
+        private boolean isDeleted = false;
 
         // Ratings
         private Double averageRating = 0.0;
