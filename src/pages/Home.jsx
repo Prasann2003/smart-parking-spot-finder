@@ -123,12 +123,30 @@ export default function Home() {
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {[
-            "Real-Time Availability",
-            "Smart AI Matching",
-            "Fast Digital Booking",
-            "Secure Locations",
-            "Optimized Routes",
-            "Future Ready System",
+            {
+              title: "Real-Time Availability",
+              desc: "Check live availability and book parking spots instantly without any hassle."
+            },
+            {
+              title: "Nearby Spot Discovery",
+              desc: "Quickly find the closest parking spots around you using location-based search."
+            },
+            {
+              title: "Fast Digital Booking",
+              desc: "Secure your parking space in advance with our seamless digital booking system."
+            },
+            {
+              title: "Secure Payments",
+              desc: "Experience a smooth, integrated payment flow that guarantees your spot reservation."
+            },
+            {
+              title: "Host Your Space",
+              desc: "Become a provider and easily list your own driveway or parking space to start earning."
+            },
+            {
+              title: "Save Favorite Spots",
+              desc: "Save your frequently used parking locations for quick access and faster future bookings."
+            }
           ].map((feature, i) => (
             <motion.div
               key={i}
@@ -136,11 +154,10 @@ export default function Home() {
               className="bg-white/5 backdrop-blur-lg border border-white/10 p-8 rounded-2xl shadow-xl hover:shadow-cyan-500/10 transition-shadow"
             >
               <h3 className="text-xl font-semibold mb-3 text-cyan-400 flex items-center gap-2">
-                <FaCheckCircle /> {feature}
+                <FaCheckCircle /> {feature.title}
               </h3>
               <p className="text-gray-400 text-sm">
-                Experience seamless smart parking with
-                modern infrastructure and real-time updates.
+                {feature.desc}
               </p>
             </motion.div>
           ))}
