@@ -11,9 +11,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.ArrayList;
 
 @Data
 @Builder
@@ -77,7 +75,7 @@ public class ParkingSpot {
         // Vehicles Allowed & Pricing - NEW RELATIONSHIP
         @Builder.Default
         @OneToMany(mappedBy = "parkingSpot", cascade = CascadeType.ALL, orphanRemoval = true)
-        private List<SpotVehicleConfig> vehicleConfigs = new ArrayList<>();
+        private Set<SpotVehicleConfig> vehicleConfigs = new HashSet<>();
 
         @Convert(converter = ParkingTypeConverter.class)
         private ParkingType parkingType;
@@ -87,7 +85,7 @@ public class ParkingSpot {
         @ElementCollection
         @CollectionTable(name = "parking_spot_images", joinColumns = @JoinColumn(name = "parking_spot_id"))
         @Column(name = "image_url")
-        private List<String> imageUrls;
+        private Set<String> imageUrls = new HashSet<>();
 
         // System-controlled
         @Enumerated(EnumType.STRING)
@@ -134,14 +132,14 @@ public class ParkingSpot {
                 spot.setLongitude(application.getLongitude());
 
                 if (application.getVehicleConfigs() != null) {
-                        List<SpotVehicleConfig> spotConfigs = application.getVehicleConfigs().stream()
+                        Set<SpotVehicleConfig> spotConfigs = application.getVehicleConfigs().stream()
                                         .map(appConfig -> SpotVehicleConfig.builder()
                                                         .vehicleType(appConfig.getVehicleType())
                                                         .capacity(appConfig.getCapacity())
                                                         .pricePerHour(appConfig.getPricePerHour())
                                                         .parkingSpot(spot)
                                                         .build())
-                                        .collect(java.util.stream.Collectors.toList());
+                                        .collect(java.util.stream.Collectors.toSet());
                         spot.setVehicleConfigs(spotConfigs);
                         spot.calculateTotalCapacity();
                 }
@@ -162,8 +160,8 @@ public class ParkingSpot {
                 // Images
                 spot.setImageUrls(
                                 application.getImageUrls() != null
-                                                ? new ArrayList<>(application.getImageUrls())
-                                                : new ArrayList<>());
+                                                ? new HashSet<>(application.getImageUrls())
+                                                : new HashSet<>());
 
                 // Initial status
                 spot.setStatus(ParkingStatus.BLOCKED);

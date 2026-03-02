@@ -134,7 +134,7 @@ public class ParkingSpotService {
 
         // Map Vehicle Configs
         if (dto.getVehicleConfigs() != null) {
-            List<com.smartparking.entity.SpotVehicleConfig> configs = new ArrayList<>();
+            java.util.Set<com.smartparking.entity.SpotVehicleConfig> configs = new java.util.HashSet<>();
             for (com.smartparking.dto.SpotVehicleConfigDTO configDto : dto.getVehicleConfigs()) {
                 com.smartparking.entity.SpotVehicleConfig config = com.smartparking.entity.SpotVehicleConfig.builder()
                         .vehicleType(configDto.getVehicleType())
@@ -149,7 +149,7 @@ public class ParkingSpotService {
         }
 
         // Images
-        spot.setImageUrls(imageUrls);
+        spot.setImageUrls(new java.util.HashSet<>(imageUrls));
 
         // System-controlled fields
         spot.setStatus(ParkingSpot.ParkingStatus.ACTIVE);

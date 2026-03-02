@@ -34,5 +34,7 @@ public class SpotVehicleConfig {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parking_spot_id")
     @JsonIgnore
+    @lombok.EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
     private ParkingSpot parkingSpot;
 }

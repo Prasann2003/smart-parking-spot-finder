@@ -460,24 +460,28 @@ public class BookingService {
                 java.time.LocalDateTime refundDeadline = now.plusHours(24);
 
                 for (Booking booking : userBookings) {
-                        if (booking.getStatus() == Booking.BookingStatus.CONFIRMED
-                                        && booking.getEndTime().isAfter(now)) {
-
-                                boolean hasStarted = booking.getStartTime().isBefore(now)
-                                                || booking.getStartTime().isEqual(now);
-
-                                boolean isEligibleForRefund = !hasStarted
-                                                && (booking.getStartTime().isAfter(refundDeadline)
-                                                                || booking.getStartTime().isEqual(refundDeadline));
-
-                                booking.setStatus(Booking.BookingStatus.CANCELLED);
-
-                                if (booking.getPayment() != null && isEligibleForRefund) {
-                                        booking.getPayment()
-                                                        .setStatus(com.smartparking.entity.Payment.PaymentStatus.REFUNDED);
-                                }
-                                bookingRepository.save(booking);
+                        // Skip unconfirmed or already finished bookings
+                        if (booking.getStatus() != Booking.BookingStatus.CONFIRMED
+                                        || !booking.getEndTime().isAfter(now)) {
+                                continue;
                         }
+
+                        // Skip active bookings or bookings starting within 24 hours
+                        if (!booking.getStartTime().isAfter(refundDeadline)) {
+                                continue;
+                        }
+
+                        // Apply cancellation
+                        booking.setStatus(Booking.BookingStatus.CANCELLED);
+
+                        // Process refund safely (avoid double refunds)
+                        if (booking.getPayment() != null &&
+                                        booking.getPayment()
+                                                        .getStatus() != com.smartparking.entity.Payment.PaymentStatus.REFUNDED) {
+                                booking.getPayment().setStatus(com.smartparking.entity.Payment.PaymentStatus.REFUNDED);
+                        }
+
+                        bookingRepository.save(booking);
                 }
         }
 

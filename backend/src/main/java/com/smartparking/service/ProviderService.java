@@ -199,13 +199,13 @@ public class ProviderService {
                         application.setGoogleMapsLink(dto.getGoogleMapsLink());
 
                         // Map vehicle configs
-                        List<ApplicationVehicleConfig> appConfigs = dto.getVehicleConfigs().stream()
+                        java.util.Set<ApplicationVehicleConfig> appConfigs = dto.getVehicleConfigs().stream()
                                         .map(c -> ApplicationVehicleConfig.builder()
                                                         .vehicleType(c.getVehicleType())
                                                         .capacity(c.getCapacity())
                                                         .pricePerHour(c.getPricePerHour())
                                                         .build())
-                                        .collect(java.util.stream.Collectors.toList());
+                                        .collect(java.util.stream.Collectors.toSet());
                         application.setVehicleConfigs(appConfigs);
 
                         application.setCovered(dto.isCovered());
@@ -246,13 +246,13 @@ public class ProviderService {
 
                 } else {
                         // Create new application
-                        List<ApplicationVehicleConfig> appConfigs = dto.getVehicleConfigs().stream()
+                        java.util.Set<ApplicationVehicleConfig> appConfigs = dto.getVehicleConfigs().stream()
                                         .map(c -> ApplicationVehicleConfig.builder()
                                                         .vehicleType(c.getVehicleType())
                                                         .capacity(c.getCapacity())
                                                         .pricePerHour(c.getPricePerHour())
                                                         .build())
-                                        .collect(java.util.stream.Collectors.toList());
+                                        .collect(java.util.stream.Collectors.toSet());
 
                         application = ProviderApplication.builder()
                                         .name(dto.getName())
@@ -284,7 +284,7 @@ public class ProviderService {
                                                         : user.getName())
                                         .phoneNumber(dto.getPhoneNumber())
                                         .status(ProviderApplication.ApplicationStatus.PENDING)
-                                        .imageUrls(imageUrls)
+                                        .imageUrls(new java.util.HashSet<>(imageUrls))
                                         .user(user)
                                         .build();
                 }
@@ -316,22 +316,22 @@ public class ProviderService {
                 spot.setMonthlyDiscountPercent(dto.getMonthlyDiscountPercent());
 
                 if (dto.getVehicleConfigs() != null) {
-                        List<SpotVehicleConfig> spotConfigs = dto.getVehicleConfigs().stream()
+                        java.util.Set<SpotVehicleConfig> spotConfigs = dto.getVehicleConfigs().stream()
                                         .map(c -> SpotVehicleConfig.builder()
                                                         .vehicleType(c.getVehicleType())
                                                         .capacity(c.getCapacity())
                                                         .pricePerHour(c.getPricePerHour())
                                                         .parkingSpot(spot)
                                                         .build())
-                                        .collect(java.util.stream.Collectors.toList());
+                                        .collect(java.util.stream.Collectors.toSet());
                         spot.setVehicleConfigs(spotConfigs);
                         spot.calculateTotalCapacity();
                 }
 
                 if (!imageUrls.isEmpty()) {
-                        spot.setImageUrls(new ArrayList<>(imageUrls));
+                        spot.setImageUrls(new java.util.HashSet<>(imageUrls));
                 } else {
-                        spot.setImageUrls(new ArrayList<>());
+                        spot.setImageUrls(new java.util.HashSet<>());
                 }
 
                 spot.setStatus(ParkingSpot.ParkingStatus.ACTIVE);

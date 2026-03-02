@@ -5,31 +5,44 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.Lock;
 
 public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Long> {
+        @EntityGraph(attributePaths = { "vehicleConfigs", "imageUrls" })
+        List<ParkingSpot> findAll();
+
+        @EntityGraph(attributePaths = { "vehicleConfigs", "imageUrls" })
+        java.util.Optional<ParkingSpot> findById(Long id);
+
+        @EntityGraph(attributePaths = { "vehicleConfigs", "imageUrls" })
         List<ParkingSpot> findByProviderIdAndIsDeletedFalse(Long providerId);
 
+        @EntityGraph(attributePaths = { "vehicleConfigs", "imageUrls" })
         List<ParkingSpot> findByStateAndDistrictAndIsDeletedFalse(String state, String district);
 
+        @EntityGraph(attributePaths = { "vehicleConfigs", "imageUrls" })
         List<ParkingSpot> findByStatusAndIsDeletedFalse(com.smartparking.entity.ParkingSpot.ParkingStatus status);
 
-        @org.springframework.data.jpa.repository.Query("SELECT p FROM ParkingSpot p WHERE " +
+        @Query("SELECT p FROM ParkingSpot p WHERE " +
                         "p.state = :state AND p.district = :district AND p.status = :status AND p.isDeleted = false " +
                         "AND (:cctv IS NULL OR p.cctv = :cctv) " +
                         "AND (:covered IS NULL OR p.covered = :covered) " +
                         "AND (:evCharging IS NULL OR p.evCharging = :evCharging) " +
                         "AND (:guard IS NULL OR p.guard = :guard)")
         Page<ParkingSpot> findByStateAndDistrictAndStatus(
-                        @org.springframework.data.repository.query.Param("state") String state,
-                        @org.springframework.data.repository.query.Param("district") String district,
-                        @org.springframework.data.repository.query.Param("status") com.smartparking.entity.ParkingSpot.ParkingStatus status,
-                        @org.springframework.data.repository.query.Param("cctv") Boolean cctv,
-                        @org.springframework.data.repository.query.Param("covered") Boolean covered,
-                        @org.springframework.data.repository.query.Param("evCharging") Boolean evCharging,
-                        @org.springframework.data.repository.query.Param("guard") Boolean guard,
+                        @Param("state") String state,
+                        @Param("district") String district,
+                        @Param("status") com.smartparking.entity.ParkingSpot.ParkingStatus status,
+                        @Param("cctv") Boolean cctv,
+                        @Param("covered") Boolean covered,
+                        @Param("evCharging") Boolean evCharging,
+                        @Param("guard") Boolean guard,
                         Pageable pageable);
 
-        @org.springframework.data.jpa.repository.Query(value = "SELECT p FROM ParkingSpot p WHERE p.status = 'ACTIVE' AND p.isDeleted = false AND "
+        @Query(value = "SELECT p FROM ParkingSpot p WHERE p.status = 'ACTIVE' AND p.isDeleted = false AND "
                         +
                         "(6371 * acos(cos(radians(:userLat)) * cos(radians(p.latitude)) * " +
                         "cos(radians(p.longitude) - radians(:userLng)) + " +
@@ -47,27 +60,27 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, Long> 
                                         "AND (:evCharging IS NULL OR p.evCharging = :evCharging) " +
                                         "AND (:guard IS NULL OR p.guard = :guard)")
         Page<ParkingSpot> findNearbySpots(
-                        @org.springframework.data.repository.query.Param("userLat") double userLat,
-                        @org.springframework.data.repository.query.Param("userLng") double userLng,
-                        @org.springframework.data.repository.query.Param("radius") double radius,
-                        @org.springframework.data.repository.query.Param("cctv") Boolean cctv,
-                        @org.springframework.data.repository.query.Param("covered") Boolean covered,
-                        @org.springframework.data.repository.query.Param("evCharging") Boolean evCharging,
-                        @org.springframework.data.repository.query.Param("guard") Boolean guard,
+                        @Param("userLat") double userLat,
+                        @Param("userLng") double userLng,
+                        @Param("radius") double radius,
+                        @Param("cctv") Boolean cctv,
+                        @Param("covered") Boolean covered,
+                        @Param("evCharging") Boolean evCharging,
+                        @Param("guard") Boolean guard,
                         Pageable pageable);
 
-        @org.springframework.data.jpa.repository.Query("SELECT count(p) FROM ParkingSpot p WHERE p.status = 'ACTIVE' AND p.isDeleted = false AND "
+        @Query("SELECT count(p) FROM ParkingSpot p WHERE p.status = 'ACTIVE' AND p.isDeleted = false AND "
                         +
                         "(6371 * acos(cos(radians(:userLat)) * cos(radians(p.latitude)) * " +
                         "cos(radians(p.longitude) - radians(:userLng)) + " +
                         "sin(radians(:userLat)) * sin(radians(p.latitude)))) <= :radius")
         long countNearbySpots(
-                        @org.springframework.data.repository.query.Param("userLat") double userLat,
-                        @org.springframework.data.repository.query.Param("userLng") double userLng,
-                        @org.springframework.data.repository.query.Param("radius") double radius);
+                        @Param("userLat") double userLat,
+                        @Param("userLng") double userLng,
+                        @Param("radius") double radius);
 
-        @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
-        @org.springframework.data.jpa.repository.Query("SELECT p FROM ParkingSpot p WHERE p.id = :id AND p.isDeleted = false")
+        @Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+        @Query("SELECT p FROM ParkingSpot p WHERE p.id = :id AND p.isDeleted = false")
         java.util.Optional<ParkingSpot> findByIdWithLock(
-                        @org.springframework.data.repository.query.Param("id") Long id);
+                        @Param("id") Long id);
 }

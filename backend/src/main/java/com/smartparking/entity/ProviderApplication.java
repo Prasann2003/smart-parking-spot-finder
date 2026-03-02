@@ -59,9 +59,9 @@ public class ProviderApplication {
     private boolean evCharging;
 
     // Parking Configuration
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection
     @CollectionTable(name = "application_vehicle_configs", joinColumns = @JoinColumn(name = "application_id"))
-    private java.util.List<ApplicationVehicleConfig> vehicleConfigs;
+    private java.util.Set<ApplicationVehicleConfig> vehicleConfigs;
 
     // private Set<String> vehicleTypes; // REMOVED
 
@@ -75,7 +75,7 @@ public class ProviderApplication {
     @ElementCollection
     @CollectionTable(name = "parking_images", joinColumns = @JoinColumn(name = "parking_application_id"))
     @Column(name = "image_url")
-    private List<String> imageUrls;
+    private Set<String> imageUrls;
 
     // Bank & Compliance Details
     private String bankAccount;
