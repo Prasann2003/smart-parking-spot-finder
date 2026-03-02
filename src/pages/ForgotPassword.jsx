@@ -42,6 +42,12 @@ export default function ForgotPassword() {
             return
         }
 
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        if (!passwordRegex.test(passwords.newPassword)) {
+            toast.error("Password must be at least 8 chars with uppercase, lowercase, and number ❌")
+            return
+        }
+
         setLoading(true)
         const success = await resetPassword(email, otp, passwords.newPassword)
         setLoading(false)
@@ -156,6 +162,9 @@ export default function ForgotPassword() {
                                     value={passwords.newPassword}
                                     onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
                                 />
+                                <p className="text-xs text-gray-500 mt-2">
+                                    At least 8 characters, 1 uppercase, 1 lowercase, 1 number.
+                                </p>
                             </div>
                             <div className="mb-6">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>

@@ -187,6 +187,12 @@ function ChangePasswordModal({ close }) {
       return
     }
 
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(form.newPassword)) {
+      toast.error("Password must be at least 8 chars with uppercase, lowercase, and number")
+      return
+    }
+
     setLoading(true)
     try {
       await api.post("/auth/change-password", {
@@ -234,6 +240,9 @@ function ChangePasswordModal({ close }) {
               onChange={e => setForm({ ...form, newPassword: e.target.value })}
               className="w-full px-4 py-2 rounded-lg border dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-indigo-500"
             />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              At least 8 characters, 1 uppercase, 1 lowercase, 1 number.
+            </p>
           </div>
 
           <div>

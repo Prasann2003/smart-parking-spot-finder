@@ -33,6 +33,13 @@ export default function AuthPage() {
           return
         }
 
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        if (!passwordRegex.test(form.password)) {
+          toast.error("Password must be at least 8 characters with a mix of uppercase, lowercase, and numbers")
+          setLoading(false)
+          return
+        }
+
         const success = await register(form)
         if (success) {
           setIsLogin(true)
@@ -152,6 +159,12 @@ export default function AuthPage() {
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
+
+              {!isLogin && (
+                <p className="text-xs text-gray-500 mt-2 ml-1">
+                  At least 8 characters, 1 uppercase, 1 lowercase, 1 number.
+                </p>
+              )}
             </div>
 
             <AnimatePresence mode="wait">
