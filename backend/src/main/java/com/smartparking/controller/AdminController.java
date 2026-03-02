@@ -255,7 +255,7 @@ public class AdminController {
         Double platformEarnings = bookingRepository.calculateTotalPlatformEarnings();
 
         long pendingApps = providerRepository
-                .findByVerificationStatus(Provider.VerificationStatus.PENDING).size();
+                .countByVerificationStatus(Provider.VerificationStatus.PENDING);
         List<String> alerts = new java.util.ArrayList<>();
         if (pendingApps > 0)
             alerts.add(pendingApps + " pending provider applications");

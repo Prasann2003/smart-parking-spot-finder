@@ -10,4 +10,6 @@ public interface ProviderRepository extends JpaRepository<Provider, Long> {
     Optional<Provider> findByUser(User user);
 
     List<Provider> findByVerificationStatus(Provider.VerificationStatus status);
+
+    long countByVerificationStatus(Provider.VerificationStatus status);
 }

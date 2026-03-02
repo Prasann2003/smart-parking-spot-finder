@@ -17,7 +17,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {
+        @Index(name = "idx_user_role_deleted", columnList = "role, isDeleted")
+})
 public class User implements UserDetails {
 
     @Id

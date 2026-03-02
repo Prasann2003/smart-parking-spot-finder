@@ -14,7 +14,9 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "provider_applications")
+@Table(name = "provider_applications", indexes = {
+        @Index(name = "idx_provider_app_status", columnList = "status")
+})
 public class ProviderApplication {
 
     @Id
