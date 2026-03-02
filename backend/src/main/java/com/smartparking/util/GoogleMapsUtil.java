@@ -38,7 +38,7 @@ public class GoogleMapsUtil {
                 connection.setRequestMethod("GET");
                 connection.setConnectTimeout(5000);
                 connection.setReadTimeout(5000);
-                // Use a generic wget/curl user agent to encourage raw redirects instead of JS
+
                 // pages
                 connection.setRequestProperty("User-Agent", "curl/7.64.1");
 

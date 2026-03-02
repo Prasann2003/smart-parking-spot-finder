@@ -22,6 +22,7 @@ public class GlobalExceptionHandler {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
+            System.err.println("VALIDATION ERROR -> Field: " + fieldName + " | Message: " + errorMessage);
         });
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
@@ -54,12 +55,21 @@ public class GlobalExceptionHandler {
         error.put("error", "The parking spot is currently being booked by someone else. Please try again.");
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
+
     @ExceptionHandler(AdminAccountDeletionNotAllowedException.class)
     public ResponseEntity<Map<String, String>> handleAdminAccountDeletionNotAllowedException(
-            AdminAccountDeletionNotAllowedException ex
-    ){
+            AdminAccountDeletionNotAllowedException ex) {
         Map<String, String> error = new HashMap<>();
         error.put("error", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleHttpMessageNotReadable(
+            org.springframework.http.converter.HttpMessageNotReadableException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Malformed JSON request: " + ex.getMostSpecificCause().getMessage());
+        System.err.println("JSON Parse Error: " + ex.getMostSpecificCause().getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }

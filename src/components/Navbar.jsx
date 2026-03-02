@@ -70,7 +70,7 @@ export default function Navbar() {
             tracking-wide
           "
         >
-          Smart Parking
+          ParkEase
         </h1>
       </div>
 

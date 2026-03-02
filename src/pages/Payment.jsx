@@ -230,6 +230,11 @@ export default function Payment() {
       return
     }
 
+    if (!selectedVehicleType) {
+      toast.error("Error: This parking spot does not support your vehicle type or lacks vehicle configurations.")
+      return
+    }
+
     setProcessing(true)
 
     try {
@@ -243,6 +248,8 @@ export default function Payment() {
         paymentMethod: paymentMethod,
         vehicleType: selectedVehicleType
       }
+
+      console.log("SENDING PAYLOAD:", payload);
 
       await api.post("/bookings/create", payload)
       toast.success("Booking Confirmed!")
@@ -323,6 +330,19 @@ export default function Payment() {
                     <FaCheckCircle className="text-blue-500" /> CCTV
                   </span>
                 </div>
+
+                {spot.description && (
+                  <p className="mt-4 text-sm text-gray-600 italic border-l-4 border-indigo-200 pl-3">
+                    "{spot.description}"
+                  </p>
+                )}
+
+                {spot.monthlyPlan && Number(spot.monthlyDiscountPercent) > 0 && (
+                  <div className="mt-4 bg-green-50 text-green-700 text-sm px-4 py-2 rounded-lg border border-green-100 flex items-center gap-2">
+                    <FaBolt className="text-green-500" />
+                    <strong>{spot.monthlyDiscountPercent}% Monthly Discount Available!</strong> Book for 30+ days to apply.
+                  </div>
+                )}
               </div>
             </div>
 

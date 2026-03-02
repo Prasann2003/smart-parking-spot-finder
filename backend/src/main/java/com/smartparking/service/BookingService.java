@@ -46,7 +46,7 @@ public class BookingService {
                 }
 
                 // Chronological validation
-                if (dto.getStartTime().isBefore(java.time.LocalDateTime.now())) {
+                if (dto.getStartTime().isBefore(java.time.LocalDateTime.now().minusMinutes(5))) {
                         throw new RuntimeException("Start time cannot be in the past.");
                 }
                 if (dto.getEndTime().isBefore(dto.getStartTime()) || dto.getEndTime().isEqual(dto.getStartTime())) {
