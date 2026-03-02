@@ -142,7 +142,8 @@ public class ProviderController {
 
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalParkings", spots.size());
-        stats.put("activeBookings", bookings.stream().filter(b -> "CONFIRMED".equals(b.getStatus())).count());
+        stats.put("activeBookings", bookings.stream()
+                .filter(b -> "CONFIRMED".equals(b.getStatus()) || "ACTIVE".equals(b.getStatus())).count());
         stats.put("todayEarnings", todayEarnings);
         stats.put("monthlyEarnings", monthlyEarnings);
 
@@ -171,7 +172,8 @@ public class ProviderController {
 
     private double calculateTotalEarnings(List<BookingDTO> bookings) {
         return bookings.stream()
-                .filter(b -> "CONFIRMED".equals(b.getStatus()) || "COMPLETED".equals(b.getStatus()))
+                .filter(b -> "CONFIRMED".equals(b.getStatus()) || "ACTIVE".equals(b.getStatus())
+                        || "COMPLETED".equals(b.getStatus()))
                 .mapToDouble(b -> {
                     Double earnings = b.getProviderEarnings();
                     if (earnings == null) {
@@ -189,7 +191,8 @@ public class ProviderController {
         return bookings.stream()
                 .filter(booking -> booking.getCreatedAt() != null)
                 .filter(booking -> booking.getCreatedAt().toLocalDate().equals(today))
-                .filter(b -> "CONFIRMED".equals(b.getStatus()) || "COMPLETED".equals(b.getStatus()))
+                .filter(b -> "CONFIRMED".equals(b.getStatus()) || "ACTIVE".equals(b.getStatus())
+                        || "COMPLETED".equals(b.getStatus()))
                 .mapToDouble(b -> {
                     Double earnings = b.getProviderEarnings();
                     if (earnings == null) {

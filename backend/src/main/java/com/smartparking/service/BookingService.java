@@ -88,7 +88,10 @@ public class BookingService {
                                 .startTime(dto.getStartTime())
                                 .endTime(dto.getEndTime())
                                 .totalPrice(totalPrice)
-                                .status(Booking.BookingStatus.CONFIRMED)
+                                .status(dto.getStartTime().isEqual(java.time.LocalDateTime.now())
+                                                || dto.getStartTime().isBefore(java.time.LocalDateTime.now())
+                                                                ? Booking.BookingStatus.ACTIVE
+                                                                : Booking.BookingStatus.CONFIRMED)
                                 .build();
 
                 Booking savedBooking = bookingRepository.save(booking);
@@ -132,7 +135,10 @@ public class BookingService {
                                 if (filterStatus.equals("ACTIVE")) {
                                         // Active means CONFIRMED and now between start and end
                                         p = cb.and(p,
-                                                        cb.equal(root.get("status"), Booking.BookingStatus.CONFIRMED),
+                                                        root.get("status")
+                                                                        .in(java.util.Arrays.asList(
+                                                                                        Booking.BookingStatus.CONFIRMED,
+                                                                                        Booking.BookingStatus.ACTIVE)),
                                                         cb.lessThanOrEqualTo(root.get("startTime"), now),
                                                         cb.greaterThanOrEqualTo(root.get("endTime"), now));
                                 } else if (filterStatus.equals("UPCOMING")) {
@@ -250,9 +256,11 @@ public class BookingService {
                 }
 
                 String computedStatus = booking.getStatus() != null ? booking.getStatus().name() : "UNKNOWN";
-                if (booking.getStatus() == Booking.BookingStatus.CONFIRMED) {
+                if (booking.getStatus() == Booking.BookingStatus.CONFIRMED
+                                || booking.getStatus() == Booking.BookingStatus.ACTIVE) {
                         java.time.LocalDateTime now = java.time.LocalDateTime.now();
-                        if (now.isAfter(booking.getStartTime()) && now.isBefore(booking.getEndTime())) {
+                        if ((now.isAfter(booking.getStartTime()) || now.isEqual(booking.getStartTime()))
+                                        && now.isBefore(booking.getEndTime())) {
                                 computedStatus = "ACTIVE";
                         }
                 }
@@ -460,14 +468,16 @@ public class BookingService {
                 java.time.LocalDateTime refundDeadline = now.plusHours(24);
 
                 for (Booking booking : userBookings) {
-                        // Skip unconfirmed or already finished bookings
-                        if (booking.getStatus() != Booking.BookingStatus.CONFIRMED
+                        // Skip unconfirmed/active or already finished bookings
+                        if ((booking.getStatus() != Booking.BookingStatus.CONFIRMED
+                                        && booking.getStatus() != Booking.BookingStatus.ACTIVE)
                                         || !booking.getEndTime().isAfter(now)) {
                                 continue;
                         }
 
                         // Skip active bookings or bookings starting within 24 hours
-                        if (!booking.getStartTime().isAfter(refundDeadline)) {
+                        if (booking.getStatus() == Booking.BookingStatus.ACTIVE
+                                        || !booking.getStartTime().isAfter(refundDeadline)) {
                                 continue;
                         }
 
@@ -493,8 +503,15 @@ public class BookingService {
 
                 for (Booking booking : spotBookings) {
 
-                        if (booking.getStatus() != Booking.BookingStatus.CONFIRMED
+                        if ((booking.getStatus() != Booking.BookingStatus.CONFIRMED
+                                        && booking.getStatus() != Booking.BookingStatus.ACTIVE)
                                         || !booking.getEndTime().isAfter(now)) {
+                                continue;
+                        }
+
+                        // Skip ACTIVE bookings that are currently ongoing
+                        if (booking.getStatus() == Booking.BookingStatus.ACTIVE || (now.isAfter(booking.getStartTime())
+                                        && now.isBefore(booking.getEndTime()))) {
                                 continue;
                         }
 

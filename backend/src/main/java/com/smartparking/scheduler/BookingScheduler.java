@@ -19,6 +19,14 @@ public class BookingScheduler {
     @Transactional
     public void autoCompleteBookings() {
         LocalDateTime now = LocalDateTime.now();
+
+        // 1. Activate bookings that have started
+        int activatedCount = bookingRepository.updateActiveBookings(now);
+        if (activatedCount > 0) {
+            log.info("▶️ Auto-Activated {} bookings at {}", activatedCount, now);
+        }
+
+        // 2. Complete bookings that have ended
         int updatedCount = bookingRepository.updateExpiredBookings(now);
         if (updatedCount > 0) {
             log.info("🔄 Auto-Completed {} expired bookings at {}", updatedCount, now);

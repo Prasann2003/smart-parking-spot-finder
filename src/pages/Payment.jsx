@@ -17,6 +17,7 @@ import {
   FaShieldAlt,
   FaMapMarkerAlt,
   FaWallet,
+  FaArrowLeft,
   FaBus,
   FaBolt
 } from "react-icons/fa"
@@ -243,7 +244,7 @@ export default function Payment() {
 
       const payload = {
         parkingSpotId: spot.id,
-        startTime: formattedStart,
+        startTime: formattedStart, // e.g. "2026-03-03 00:39:00"
         endTime: formattedEnd,
         paymentMethod: paymentMethod,
         vehicleType: selectedVehicleType
@@ -255,7 +256,8 @@ export default function Payment() {
       toast.success("Booking Confirmed!")
       navigate("/dashboard")
     } catch (error) {
-      console.error("Booking Error", error)
+      console.error("Booking Error AxiosError:", error)
+      console.log("EXACT BACKEND ERROR:", error.response?.data)
       toast.error(error.response?.data?.message || "Booking failed")
     } finally {
       setProcessing(false)
@@ -279,9 +281,18 @@ export default function Payment() {
 
       <main className="max-w-7xl mx-auto pt-28 px-4 sm:px-6 lg:px-8">
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
-          <p className="text-gray-500 mt-1">Complete your booking for {spot.name}</p>
+        <div className="mb-8 flex items-center gap-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition font-medium"
+            title="Go Back"
+          >
+            <FaArrowLeft />
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
+            <p className="text-gray-500 mt-1">Complete your booking for {spot.name}</p>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">

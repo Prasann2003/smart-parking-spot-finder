@@ -38,10 +38,12 @@ public class Booking {
     private VehicleType vehicleType;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private BookingStatus status;
 
     public enum BookingStatus {
         CONFIRMED,
+        ACTIVE,
         CANCELLED,
         COMPLETED
     }

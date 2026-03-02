@@ -208,7 +208,7 @@ export default function MyBookings() {
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ delay: index * 0.05 }}
                     whileHover={{ y: -4, boxShadow: "0 10px 30px -10px rgba(0, 0, 0, 0.1)" }}
-                    className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 md:p-8 flex flex-col lg:flex-row justify-between gap-8 transition-all"
+                    className={`bg-white dark:bg-gray-800 rounded-3xl shadow-sm border p-6 md:p-8 flex flex-col lg:flex-row justify-between gap-8 transition-all ${displayStatus === 'ACTIVE' ? 'border-indigo-400 dark:border-indigo-500 shadow-indigo-100 dark:shadow-indigo-900/20' : 'border-gray-100 dark:border-gray-700'}`}
                   >
                     <div className="flex-1">
                       <div className="flex flex-wrap items-start justify-between mb-6 gap-4">

@@ -74,6 +74,7 @@ export default function ProviderBookings() {
     const getStatusColor = (status) => {
         switch (status) {
             case "CONFIRMED": return "bg-emerald-100 text-emerald-700 border-emerald-200"
+            case "ACTIVE": return "bg-indigo-100 text-indigo-700 border-indigo-200 animate-pulse"
             case "COMPLETED": return "bg-blue-100 text-blue-700 border-blue-200"
             case "CANCELLED": return "bg-red-100 text-red-700 border-red-200"
             default: return "bg-gray-100 text-gray-700 border-gray-200"
@@ -132,6 +133,7 @@ export default function ProviderBookings() {
                     >
                         <option value="">All Statuses</option>
                         <option value="CONFIRMED">Confirmed</option>
+                        <option value="ACTIVE">Active</option>
                         <option value="COMPLETED">Completed</option>
                         <option value="CANCELLED">Cancelled</option>
                     </select>

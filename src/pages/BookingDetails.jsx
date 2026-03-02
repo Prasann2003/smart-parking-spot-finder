@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import Navbar from "../components/Navbar"
 import api from "../utils/api"
@@ -8,10 +8,12 @@ import {
   FaCalendarAlt,
   FaMoneyBillWave,
   FaCreditCard,
+  FaArrowLeft,
   FaBolt
 } from "react-icons/fa"
 
 export default function BookingDetails() {
+  const navigate = useNavigate()
   const { id } = useParams()
   const [booking, setBooking] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -47,9 +49,18 @@ export default function BookingDetails() {
 
       <div className="max-w-4xl mx-auto pt-28 px-6">
         <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg">
-          <h2 className="text-3xl font-bold mb-6 dark:text-white">
-            Booking Details #{booking.id}
-          </h2>
+          <div className="flex items-center gap-4 mb-6">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition font-medium"
+              title="Go Back"
+            >
+              <FaArrowLeft />
+            </button>
+            <h2 className="text-3xl font-bold dark:text-white m-0">
+              Booking Details #{booking.id}
+            </h2>
+          </div>
 
           <div className="space-y-4 text-lg dark:text-gray-300">
             <p className="flex items-center gap-2"><strong><FaMapMarkerAlt className="text-red-500" /> Parking:</strong> {booking.parkingSpotName}</p>

@@ -247,7 +247,9 @@ public class AdminController {
         long totalProviders = userRepository.countByRoleAndIsDeletedFalse(com.smartparking.entity.Role.PROVIDER);
         long totalSpots = parkingSpotRepository.count();
         long activeBookings = bookingRepository
-                .countByStatus(com.smartparking.entity.Booking.BookingStatus.CONFIRMED);
+                .countByStatusIn(java.util.Arrays.asList(
+                        com.smartparking.entity.Booking.BookingStatus.CONFIRMED,
+                        com.smartparking.entity.Booking.BookingStatus.ACTIVE));
         long cancelledBookings = bookingRepository
                 .countByStatus(com.smartparking.entity.Booking.BookingStatus.CANCELLED);
 
